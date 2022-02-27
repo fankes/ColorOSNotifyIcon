@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorThemeBackground"
+    android:orientation="vertical"
+    tools:context=".ui.MainActivity"
+    tools:ignore="HardcodedText,UseCompoundDrawables,ContentDescription">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="0dp"
+        android:gravity="center|start"
+        android:paddingLeft="15dp"
+        android:paddingTop="13dp"
+        android:paddingRight="15dp"
+        android:paddingBottom="5dp">
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/title_back_icon"
+            style="?android:attr/selectableItemBackgroundBorderless"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="25dp"
+            android:src="@mipmap/ic_back"
+            android:tint="@color/colorTextGray"
+            android:tooltipText="返回" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:layout_weight="1"
+            android:gravity="center|start"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:singleLine="true"
+                android:text="通知图标优化名单"
+                android:textColor="@color/colorTextGray"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/config_title_count_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:text="适配列表正在等待装载"
+                android:textColor="@color/colorTextDark"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/config_title_up"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="5dp"
+            android:src="@mipmap/ic_page_top"
+            android:tint="@color/colorTextGray"
+            android:tooltipText="滚动到顶部" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/config_title_down"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="15dp"
+            android:src="@mipmap/ic_page_bottom"
+            android:tint="@color/colorTextGray"
+            android:tooltipText="滚动到底部" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/config_title_filter"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_marginEnd="10dp"
+            android:src="@mipmap/ic_filter"
+            android:tint="@color/colorTextGray"
+            android:tooltipText="按条件过滤" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/config_title_sync"
+            android:layout_width="23dp"
+            android:layout_height="23dp"
+            android:layout_marginEnd="10dp"
+            android:src="@mipmap/ic_sync"
+            android:tint="@color/colorTextGray"
+            android:tooltipText="同步列表" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="15dp"
+        android:background="@drawable/bg_permotion_round"
+        android:elevation="0dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="15dp">
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginEnd="10dp"
+            android:alpha="0.85"
+            android:src="@mipmap/ic_about"
+            android:tint="@color/colorTextDark" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.6"
+            android:lineSpacingExtra="5dp"
+            android:text="启用替换后 APP 的彩色通知图标将被替换为预设的小图标。\n启用全部替换将忽略 APP 单色图标，强制将全部通知图标替换为列表中预设的小图标。"
+            android:textColor="@color/colorTextGray"
+            android:textSize="11sp"
+            tools:ignore="SmallSp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/config_list_no_data_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:lineSpacingExtra="6dp"
+            android:text="没有数据"
+            android:textColor="@color/colorTextDark"
+            android:textSize="17sp"
+            android:visibility="gone" />
+
+        <ListView
+            android:id="@+id/config_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@color/trans"
+            android:dividerHeight="15dp"
+            android:fadingEdgeLength="10dp"
+            android:listSelector="@null"
+            android:padding="15dp"
+            android:requiresFadingEdge="vertical"
+            android:scrollbars="none" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/config_cbr_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/bg_button_round"
+        android:gravity="center"
+        android:padding="10dp"
+        android:singleLine="true"
+        android:text="贡献通知图标优化名单"
+        android:textColor="@color/colorTextGray"
+        android:textSize="15sp" />
+</LinearLayout>
