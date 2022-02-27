@@ -380,7 +380,7 @@
                     android:layout_marginBottom="10dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
-                    android:text="注意：部分机型可能无效，取决于系统。"
+                    android:text="注意：请务必在 LSPosed 中关闭“强制显示桌面图标”功能"
                     android:textColor="#FF5722"
                     android:textSize="12sp" />
             </LinearLayout>
