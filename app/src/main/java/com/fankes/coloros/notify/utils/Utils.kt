@@ -102,7 +102,7 @@ inline val isNotColorOS get() = !isColorOS
 val colorOSVersion
     get() = safeOf(default = "无法获取") {
         findPropString(key = "ro.system.build.fingerprint", default = "无法获取")
-            .split("ossi:")[1]
+            .split("ssi:")[1]
             .split("/")[0].trim()
     }
 
