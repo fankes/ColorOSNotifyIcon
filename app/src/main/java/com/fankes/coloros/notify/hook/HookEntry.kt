@@ -44,6 +44,7 @@ import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.utils.*
 import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
+import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.factory.configs
@@ -176,8 +177,12 @@ class HookEntry : YukiHookXposedInitProxy {
      */
     private fun PackageParam.compatCustomIcon(isGrayscaleIcon: Boolean, packageName: String): Pair<Bitmap?, Int> {
         var customPair: Pair<Bitmap?, Int>? = null
-        if (prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true))
-            run {
+        when {
+            /** 替换系统图标为 Android 默认 */
+            (packageName == "android" || packageName == "com.android.systemui") && !isGrayscaleIcon -> customPair =
+                Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
+            /** 替换自定义通知图标 */
+            prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) -> run {
                 if (iconDatas.isNotEmpty())
                     iconDatas.forEach {
                         if (packageName == it.packageName && isAppNotifyHookOf(it)) {
@@ -187,6 +192,7 @@ class HookEntry : YukiHookXposedInitProxy {
                         }
                     }
             }
+        }
         return customPair ?: Pair(null, 0)
     }
 
@@ -301,7 +307,10 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                         }
                     }
-                    /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断 */
+                    /**
+                     * 修复并替换新版本 ColorOS 原生灰度图标色彩判断
+                     * TODO 这里有一个 [YukiHookAPI] 捕捉异常错误后面填坑
+                     */
                     if (OplusContrastColorUtilClass.hasClass)
                         NotificationUtilsClass.hook {
                             injectMember {
