@@ -18,7 +18,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeOS\n开发者：酷安 @星夜不荟" />
+            android:value="为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeUI\n开发者：酷安 @星夜不荟" />
         <meta-data
             android:name="xposedminversion"
             android:value="93" />
