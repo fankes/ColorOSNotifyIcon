@@ -7,7 +7,7 @@
 <img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png" width = "100" height = "100"/>
 <br/>
 Optimize notification icons for ColorOS and adapt to native notification icon specifications.<br/>
-为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeOS。
+为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeUI。
 
 # 开始使用
 
