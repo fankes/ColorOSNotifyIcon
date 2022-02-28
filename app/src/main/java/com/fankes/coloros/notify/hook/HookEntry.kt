@@ -84,15 +84,17 @@ class HookEntry : YukiHookXposedInitProxy {
         /** 原生存在的类 */
         private const val IconManagerClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconManager"
 
-        /** ColorOS 存在的类 */
+        /** ColorOS 存在的类 - 旧版本不存在 */
         private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
 
         /** ColorOS 存在的类 */
-        private const val OplusPowerNotificationWarningsClass =
-            "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings"
-
-        /** ColorOS 存在的类 */
         private const val SystemPromptControllerClass = "com.oplusos.systemui.statusbar.policy.SystemPromptController"
+
+        /** 根据多个版本存在不同的包名相同的类 */
+        private val OplusPowerNotificationWarningsClass = VariousClass(
+            "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
+            "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
+        )
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val ExpandableNotificationRowClass = VariousClass(
@@ -293,16 +295,17 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                         }
                     }
-                    /** 修复并替换 ColorOS 原生灰度图标色彩判断 */
-                    NotificationUtilsClass.hook {
-                        injectMember {
-                            method {
-                                name = "isGrayscaleOplus"
-                                param(ImageViewClass, OplusContrastColorUtilClass.clazz)
+                    /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断 */
+                    if (OplusContrastColorUtilClass.hasClass)
+                        NotificationUtilsClass.hook {
+                            injectMember {
+                                method {
+                                    name = "isGrayscaleOplus"
+                                    param(ImageViewClass, OplusContrastColorUtilClass.clazz)
+                                }
+                                replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
                             }
-                            replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
                         }
-                    }
                     /** 替换状态栏图标 */
                     IconManagerClass.hook {
                         injectMember {
