@@ -147,10 +147,12 @@ class MainActivity : BaseActivity() {
         devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DEV_NOTIFY, b)
+            SystemUITool.showNeedRestartSnake(context = this)
         }
         crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
+            SystemUITool.showNeedRestartSnake(context = this)
         }
         a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
