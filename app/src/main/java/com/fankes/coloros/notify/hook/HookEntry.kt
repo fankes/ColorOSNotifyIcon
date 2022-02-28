@@ -230,18 +230,24 @@ class HookEntry : YukiHookXposedInitProxy {
                     val oldStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else 0xff707173).toInt()
 
                     /** 新版风格 */
-                    val newStyle = (if (context.isSystemInDarkMode) 0xff2d2d2d else Color.WHITE).toInt()
+                    val newStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else Color.WHITE).toInt()
 
-                    /** 图标着色 */
-                    val applyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
+                    /** 优化风格 */
+                    val fixStyle = (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
+
+                    /** 旧版图标着色 */
+                    val oldApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
+
+                    /** 新版图标着色 */
+                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: fixStyle
                     /** 判断风格并开始 Hook */
                     if (isA12Style) {
-                        background = DrawableBuilder().rounded().solidColor(applyColor).build()
-                        setColorFilter(if (isA12Style) newStyle else oldStyle)
+                        background = DrawableBuilder().rounded().solidColor(newApplyColor).build()
+                        setColorFilter(newStyle)
                         setPadding(2.dp(context), 2.dp(context), 2.dp(context), 2.dp(context))
                     } else {
                         background = null
-                        setColorFilter(applyColor)
+                        setColorFilter(oldApplyColor)
                         setPadding(0, 0, 0, 0)
                     }
                 }
