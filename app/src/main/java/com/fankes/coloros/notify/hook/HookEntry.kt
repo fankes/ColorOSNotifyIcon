@@ -258,7 +258,6 @@ class HookEntry : YukiHookXposedInitProxy {
                     }
                 }
                 else -> iconView.apply {
-                    setImageDrawable(drawable)
                     setPadding(0, 0, 0, 0)
                     background = null
                     colorFilter = null
