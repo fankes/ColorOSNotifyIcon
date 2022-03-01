@@ -44,7 +44,6 @@ import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.utils.*
 import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
-import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.factory.configs
@@ -306,20 +305,16 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                         }
                     }
-                    /**
-                     * 修复并替换新版本 ColorOS 原生灰度图标色彩判断
-                     * TODO 这里有一个 [YukiHookAPI] 捕捉异常错误后面填坑
-                     */
-                    if (OplusContrastColorUtilClass.hasClass)
-                        NotificationUtilsClass.hook {
-                            injectMember {
-                                method {
-                                    name = "isGrayscaleOplus"
-                                    param(ImageViewClass, OplusContrastColorUtilClass.clazz)
-                                }
-                                replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
+                    /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断*/
+                    NotificationUtilsClass.hook {
+                        injectMember {
+                            method {
+                                name = "isGrayscaleOplus"
+                                param(ImageViewClass, OplusContrastColorUtilClass.clazz)
                             }
-                        }
+                            replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
+                        }.ignoredHookingFailure()
+                    }
                     /** 替换状态栏图标 */
                     IconManagerClass.hook {
                         injectMember {
