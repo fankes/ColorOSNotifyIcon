@@ -13,7 +13,7 @@ assignees: fankes
 
 **系统类型(请保留一个)**
 
-* ColorOS/RealmeOS/OxygenOS
+* ColorOS/RealmeUI/OxygenOS
 
 **Android 版本(必填)**
 
