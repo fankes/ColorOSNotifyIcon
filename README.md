@@ -31,7 +31,7 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 
 此项目是 `AndroidNotifyIconAdapt` 项目的一部分，详情请参考下方。<br/>
 
-- [Android 通知图标规范适配](https://github.com/fankes/AndroidNotifyIconAdapt)
+- [Android 通知图标规范适配计划](https://github.com/fankes/AndroidNotifyIconAdapt)
 
 # 历史背景
 
