@@ -60,7 +60,7 @@ class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         /** 设置文本 */
-        findViewById<TextView>(R.id.main_text_version).text = "当前版本：$moduleVersion"
+        findViewById<TextView>(R.id.main_text_version).text = "模块版本：$moduleVersion"
         findViewById<TextView>(R.id.main_text_coloros_version).text = "系统版本：$colorOSVersion"
         when {
             /** 判断是否为 ColorOS 系统 */
