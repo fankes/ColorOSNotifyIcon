@@ -8,6 +8,8 @@
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.335" />
         <entry key="app/src/main/res/layout/adapter_config.xml" value="0.4375" />
         <entry key="app/src/main/res/layout/dia_icon_filter.xml" value="0.4375" />
+        <entry key="app/src/main/res/layout/dia_source_from.xml" value="0.4375" />
+        <entry key="app/src/main/res/layout/dia_source_from_string.xml" value="0.4375" />
       </map>
     </option>
   </component>

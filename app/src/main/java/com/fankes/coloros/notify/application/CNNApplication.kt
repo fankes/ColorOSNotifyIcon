@@ -25,7 +25,9 @@
 package com.fankes.coloros.notify.application
 
 import android.app.Application
+import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import me.weishu.reflection.Reflection
 
 class CNNApplication : Application() {
 
@@ -36,6 +38,12 @@ class CNNApplication : Application() {
 
         /** 调用全局静态实例 */
         val appContext get() = context ?: error("App is death")
+    }
+
+    override fun attachBaseContext(base: Context?) {
+        super.attachBaseContext(base)
+        /** 解锁隐藏 API */
+        Reflection.unseal(base)
     }
 
     override fun onCreate() {

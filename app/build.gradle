@@ -60,6 +60,7 @@ tasks.whenTaskAdded {
 }
 
 dependencies {
+    implementation 'com.github.tiann:FreeReflection:3.1.0'
     implementation "com.github.topjohnwu.libsu:core:3.1.2"
     implementation 'androidx.annotation:annotation:1.3.0'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.3.1'
