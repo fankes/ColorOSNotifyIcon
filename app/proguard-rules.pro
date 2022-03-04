@@ -40,6 +40,8 @@
 -keep class android.support**
 -keep class androidx**
 
+-keep class me.weishu**{*;}
+
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Application
 -keep public class * extends android.app.Service
