@@ -29,7 +29,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.hook.HookConst.NOTIFY_ICON_DATAS
-import com.fankes.coloros.notify.utils.*
+import com.fankes.coloros.notify.utils.factory.*
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import org.json.JSONArray

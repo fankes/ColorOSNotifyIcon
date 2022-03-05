@@ -20,9 +20,13 @@
  *
  * This file is Created by fankes on 2022/2/8.
  */
-package com.fankes.coloros.notify.utils
+package com.fankes.coloros.notify.utils.tool
 
 import android.content.Context
+import com.fankes.coloros.notify.utils.factory.execShellSu
+import com.fankes.coloros.notify.utils.factory.showDialog
+import com.fankes.coloros.notify.utils.factory.snake
+import com.fankes.coloros.notify.utils.factory.toast
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 

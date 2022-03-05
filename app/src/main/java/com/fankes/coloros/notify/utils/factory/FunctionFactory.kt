@@ -22,7 +22,7 @@
  */
 @file:Suppress("DEPRECATION", "PrivateApi", "unused", "ObsoleteSdkInt")
 
-package com.fankes.coloros.notify.utils
+package com.fankes.coloros.notify.utils.factory
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -47,7 +47,6 @@ import com.highcapable.yukihookapi.hook.factory.classOf
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.hasClass
 import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.log.loggerE
 import com.highcapable.yukihookapi.hook.type.java.StringType
 import com.topjohnwu.superuser.Shell
 import java.io.ByteArrayOutputStream
@@ -110,9 +109,9 @@ val colorOSVersion
         (classOf(name = "com.oplus.os.OplusBuild").let {
             it.field { name = "VERSIONS" }.ignoredError().of<Array<String>>()
                 ?.get((it.method { name = "getOplusOSVERSION" }.ignoredError().get().invoke<Int>() ?: 23) - 1)
-        } ?: findPropString(key = "ro.system.build.fingerprint", default = "无法获取")
-            .split("ssi:")[1]
-            .split("/")[0].trim()) + " ${Build.DISPLAY}"
+        } ?: findPropString(
+            key = "ro.system.build.fingerprint", default = "无法获取"
+        ).split("ssi:")[1].split("/")[0].trim()) + " ${Build.DISPLAY}"
     }
 
 /**
@@ -128,8 +127,7 @@ val Context.packageInfo get() = packageManager?.getPackageInfo(packageName, 0) ?
 val String.isInstall
     get() = safeOfFalse {
         appContext.packageManager.getPackageInfo(
-            this,
-            PackageManager.GET_UNINSTALLED_PACKAGES
+            this, PackageManager.GET_UNINSTALLED_PACKAGES
         )
         true
     }
@@ -198,16 +196,13 @@ val String.bitmap: Bitmap get() = unbase64.bitmap
  * 设置对话框默认风格
  * @param context 使用的实例
  */
-fun AlertDialog.setDefaultStyle(context: Context) =
-    window?.setBackgroundDrawable(
-        GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(Color.WHITE, Color.WHITE)
-        ).apply {
-            shape = GradientDrawable.RECTANGLE
-            gradientType = GradientDrawable.LINEAR_GRADIENT
-            cornerRadius = 15.dp(context).toFloat()
-        })
+fun AlertDialog.setDefaultStyle(context: Context) = window?.setBackgroundDrawable(GradientDrawable(
+    GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.WHITE, Color.WHITE)
+).apply {
+    shape = GradientDrawable.RECTANGLE
+    gradientType = GradientDrawable.LINEAR_GRADIENT
+    cornerRadius = 15.dp(context).toFloat()
+})
 
 /**
  * 获取系统 Prop 值
@@ -246,32 +241,29 @@ fun toast(msg: String) = Toast.makeText(appContext, msg, Toast.LENGTH_SHORT).sho
  * @param it 按钮事件回调
  */
 fun Context.snake(msg: String, actionText: String = "", it: () -> Unit = {}) =
-    Snackbar.make((this as Activity).findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG)
-        .apply {
-            if (actionText.isBlank()) return@apply
-            setActionTextColor(Color.WHITE)
-            setAction(actionText) { it() }
-        }.show()
+    Snackbar.make((this as Activity).findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).apply {
+        if (actionText.isBlank()) return@apply
+        setActionTextColor(Color.WHITE)
+        setAction(actionText) { it() }
+    }.show()
 
 /**
  * 启动系统浏览器
  * @param url 网址
  * @param packageName 指定包名 - 可不填
  */
-fun Context.openBrowser(url: String, packageName: String = "") =
-    runCatching {
-        startActivity(Intent().apply {
-            if (packageName.isNotBlank()) setPackage(packageName)
-            action = Intent.ACTION_VIEW
-            data = Uri.parse(url)
-            /** 防止顶栈一样重叠在自己的 APP 中 */
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        })
-    }.onFailure {
-        if (packageName.isNotBlank())
-            snake(msg = "启动 $packageName 失败")
-        else snake(msg = "启动系统浏览器失败")
-    }
+fun Context.openBrowser(url: String, packageName: String = "") = runCatching {
+    startActivity(Intent().apply {
+        if (packageName.isNotBlank()) setPackage(packageName)
+        action = Intent.ACTION_VIEW
+        data = Uri.parse(url)
+        /** 防止顶栈一样重叠在自己的 APP 中 */
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    })
+}.onFailure {
+    if (packageName.isNotBlank()) snake(msg = "启动 $packageName 失败")
+    else snake(msg = "启动系统浏览器失败")
+}
 
 /**
  * 复制到剪贴板
@@ -283,102 +275,5 @@ fun Context.copyToClipboard(content: String) = runCatching {
         (primaryClip?.getItemAt(0)?.text ?: "").also {
             if (it != content) snake(msg = "复制失败") else snake(msg = "已复制")
         }
-    }
-}
-
-/**
- * 忽略异常返回值
- * @param it 回调 - 如果异常为空
- * @return [T] 发生异常时返回设定值否则返回正常值
- */
-inline fun <T> safeOfNull(it: () -> T): T? = safeOf(null, it)
-
-/**
- * 忽略异常返回值
- * @param it 回调 - 如果异常为 false
- * @return [Boolean] 发生异常时返回设定值否则返回正常值
- */
-inline fun safeOfFalse(it: () -> Boolean) = safeOf(default = false, it)
-
-/**
- * 忽略异常返回值
- * @param it 回调 - 如果异常为 true
- * @return [Boolean] 发生异常时返回设定值否则返回正常值
- */
-inline fun safeOfTrue(it: () -> Boolean) = safeOf(default = true, it)
-
-/**
- * 忽略异常返回值
- * @param it 回调 - 如果异常为 false
- * @return [String] 发生异常时返回设定值否则返回正常值
- */
-inline fun safeOfNothing(it: () -> String) = safeOf(default = "", it)
-
-/**
- * 忽略异常返回值
- * @param it 回调 - 如果异常为 false
- * @return [Int] 发生异常时返回设定值否则返回正常值
- */
-inline fun safeOfNan(it: () -> Int) = safeOf(default = 0, it)
-
-/**
- * 忽略异常返回值
- * @param default 异常返回值
- * @param it 正常回调值
- * @return [T] 发生异常时返回设定值否则返回正常值
- */
-inline fun <T> safeOf(default: T, it: () -> T): T {
-    return try {
-        it()
-    } catch (t: NullPointerException) {
-        default
-    } catch (t: UnsatisfiedLinkError) {
-        default
-    } catch (t: UnsupportedOperationException) {
-        default
-    } catch (t: ClassNotFoundException) {
-        default
-    } catch (t: IllegalStateException) {
-        default
-    } catch (t: NoSuchMethodError) {
-        default
-    } catch (t: NoSuchFieldError) {
-        default
-    } catch (t: Error) {
-        default
-    } catch (t: Exception) {
-        default
-    } catch (t: Throwable) {
-        default
-    }
-}
-
-/**
- * 忽略异常运行
- * @param msg 出错输出的消息 - 默认为空
- * @param it 正常回调
- */
-inline fun safeRun(msg: String = "", it: () -> Unit) {
-    try {
-        it()
-    } catch (e: NullPointerException) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: UnsatisfiedLinkError) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: UnsupportedOperationException) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: ClassNotFoundException) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: IllegalStateException) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: NoSuchMethodError) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: NoSuchFieldError) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: Error) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: Exception) {
-        if (msg.isNotBlank()) loggerE(msg = msg, e = e)
-    } catch (e: Throwable) {
     }
 }

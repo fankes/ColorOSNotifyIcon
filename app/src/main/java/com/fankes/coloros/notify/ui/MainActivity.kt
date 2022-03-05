@@ -44,7 +44,8 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.ui.base.BaseActivity
-import com.fankes.coloros.notify.utils.*
+import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
 import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 

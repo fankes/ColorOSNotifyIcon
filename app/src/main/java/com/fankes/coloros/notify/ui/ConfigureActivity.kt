@@ -48,7 +48,9 @@ import com.fankes.coloros.notify.hook.factory.putAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.putAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.base.BaseActivity
-import com.fankes.coloros.notify.utils.*
+import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.tool.ClientRequestTool
+import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.fankes.coloros.notify.view.MaterialSwitch
 import com.google.android.material.radiobutton.MaterialRadioButton
 import com.google.android.material.textfield.TextInputEditText
