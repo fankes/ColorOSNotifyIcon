@@ -2,7 +2,7 @@
 
 ![Eclipse Marketplace](https://img.shields.io/badge/build-passing-brightgreen)
 ![Eclipse Marketplace](https://img.shields.io/badge/license-AGPL3.0-blue)
-![Eclipse Marketplace](https://img.shields.io/badge/version-v1.3-green)
+![Eclipse Marketplace](https://img.shields.io/badge/version-v1.35-green)
 <br/><br/>
 <img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png" width = "100" height = "100"/>
 <br/>
@@ -12,7 +12,7 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 # 开始使用
 
 点击下载最新版本
-<a href='https://github.com/fankes/ColorOSNotifyIcon/releases'>![Eclipse Marketplace](https://img.shields.io/badge/download-v1.3-green)</a>
+<a href='https://github.com/fankes/ColorOSNotifyIcon/releases'>![Eclipse Marketplace](https://img.shields.io/badge/download-v1.35-green)</a>
 <br/><br/>
 ⚠️ 适配说明<br/>
 
