@@ -25,7 +25,7 @@ package com.fankes.coloros.notify.ui.base
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.fankes.coloros.notify.R
-import com.fankes.coloros.notify.utils.isNotSystemInDarkMode
+import com.fankes.coloros.notify.utils.factory.isNotSystemInDarkMode
 import com.gyf.immersionbar.ktx.immersionBar
 
 abstract class BaseActivity : AppCompatActivity() {

@@ -22,7 +22,7 @@
  */
 @file:Suppress("unused", "DEPRECATION")
 
-package com.fankes.coloros.notify.utils
+package com.fankes.coloros.notify.utils.factory
 
 import android.app.AlertDialog
 import android.content.Context

@@ -29,7 +29,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.util.AttributeSet
 import androidx.appcompat.widget.SwitchCompat
-import com.fankes.coloros.notify.utils.dp
+import com.fankes.coloros.notify.utils.factory.dp
 import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
 
 class MaterialSwitch(context: Context, attrs: AttributeSet?) : SwitchCompat(context, attrs) {

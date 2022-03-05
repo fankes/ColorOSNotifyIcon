@@ -23,7 +23,7 @@
 package com.fankes.coloros.notify.bean
 
 import android.graphics.Bitmap
-import com.fankes.coloros.notify.utils.base64
+import com.fankes.coloros.notify.utils.factory.base64
 import java.io.Serializable
 
 /**
