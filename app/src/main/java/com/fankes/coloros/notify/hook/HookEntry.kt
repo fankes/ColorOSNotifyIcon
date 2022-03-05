@@ -267,11 +267,19 @@ class HookEntry : YukiHookXposedInitProxy {
         }
     }
 
-    override fun onHook() = encase {
-        configs {
-            debugTag = "ColorOSNotify"
-            isDebug = false
-        }
+    override fun onHook() {
+        runConfig()
+        runHook()
+    }
+
+    /** 配置 Hook */
+    private fun runConfig() = configs {
+        debugTag = "ColorOSNotify"
+        isDebug = false
+    }
+
+    /** 开始 Hook */
+    private fun runHook() = encase {
         loadApp(SYSTEMUI_PACKAGE_NAME) {
             when {
                 /** 不是 ColorOS 系统停止 Hook */
@@ -301,7 +309,11 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                             beforeHook {
                                 /** 是否移除 */
-                                if (firstArgs as Int == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)) resultNull()
+                                if (firstArgs as Int == 7 && prefs.getBoolean(
+                                        REMOVE_CHANGECP_NOTIFY,
+                                        default = false
+                                    )
+                                ) resultNull()
                             }
                         }
                     }
