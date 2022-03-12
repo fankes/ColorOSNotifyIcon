@@ -233,13 +233,31 @@
                     android:textSize="15sp" />
 
                 <TextView
-                    android:id="@+id/color_icon_compat_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
                     android:text="充电完成后总是会推送一条通知，有时候甚至还不是静音状态，开启后将直接移除这个“你在教我做事”的通知功能。"
+                    android:textColor="@color/colorTextDark"
+                    android:textSize="12sp" />
+
+                <com.fankes.coloros.notify.view.MaterialSwitch
+                    android:id="@+id/remove_dndalert_n_enable_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="35dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="移除免打扰通知"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:alpha="0.6"
+                    android:lineSpacingExtra="6dp"
+                    android:text="开启免打扰后无论任何时长，总是会推送一条通知，开启后将直接移除这个“你在教我做事”的通知功能。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
             </LinearLayout>

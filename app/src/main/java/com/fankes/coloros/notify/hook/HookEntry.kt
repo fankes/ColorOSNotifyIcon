@@ -38,6 +38,7 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
+import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.SYSTEMUI_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
@@ -59,6 +60,7 @@ import com.highcapable.yukihookapi.hook.type.android.IconClass
 import com.highcapable.yukihookapi.hook.type.android.ImageViewClass
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
+import com.highcapable.yukihookapi.hook.type.java.LongType
 import com.highcapable.yukihookapi.hook.xposed.proxy.YukiHookXposedInitProxy
 
 @InjectYukiHookWithXposed
@@ -89,6 +91,9 @@ class HookEntry : YukiHookXposedInitProxy {
 
         /** ColorOS 存在的类 */
         private const val SystemPromptControllerClass = "com.oplusos.systemui.statusbar.policy.SystemPromptController"
+
+        /** ColorOS 存在的类 */
+        private const val DndAlertHelperClass = "com.oplusos.systemui.notification.helper.DndAlertHelper"
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val OplusPowerNotificationWarningsClass = VariousClass(
@@ -309,11 +314,20 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                             beforeHook {
                                 /** 是否移除 */
-                                if (firstArgs as Int == 7 && prefs.getBoolean(
-                                        REMOVE_CHANGECP_NOTIFY,
-                                        default = false
-                                    )
-                                ) resultNull()
+                                if (firstArgs as Int == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)) resultNull()
+                            }
+                        }
+                    }
+                    /** 移除免打扰通知 */
+                    DndAlertHelperClass.hook {
+                        injectMember {
+                            method {
+                                name = "sendNotificationWithEndtime"
+                                param(LongType)
+                            }
+                            beforeHook {
+                                /** 是否移除 */
+                                if (prefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)) resultNull()
                             }
                         }
                     }
