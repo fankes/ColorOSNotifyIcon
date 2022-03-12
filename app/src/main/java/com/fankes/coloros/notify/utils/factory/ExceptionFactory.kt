@@ -67,6 +67,6 @@ inline fun safeOfNan(result: () -> Int) = safeOf(default = 0, result)
  */
 inline fun <T> safeOf(default: T, result: () -> T) = try {
     result()
-} catch (t: Throwable) {
+} catch (_: Throwable) {
     default
 }
