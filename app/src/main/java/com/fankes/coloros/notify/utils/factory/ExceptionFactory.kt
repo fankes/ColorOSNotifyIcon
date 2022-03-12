@@ -24,6 +24,8 @@
 
 package com.fankes.coloros.notify.utils.factory
 
+import com.highcapable.yukihookapi.hook.log.loggerE
+
 /**
  * 忽略异常返回值
  * @param result 回调 - 如果异常为空
@@ -69,4 +71,13 @@ inline fun <T> safeOf(default: T, result: () -> T) = try {
     result()
 } catch (_: Throwable) {
     default
+}
+
+/**
+ * 忽略异常运行
+ * @param msg 出错输出的消息 - 默认为空
+ * @param block 正常回调
+ */
+inline fun runSafe(msg: String = "", block: () -> Unit) {
+    runCatching(block).onFailure { if (msg.isNotBlank()) loggerE(msg = msg, e = it) }
 }
