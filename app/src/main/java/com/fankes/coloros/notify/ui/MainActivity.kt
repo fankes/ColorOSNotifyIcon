@@ -43,6 +43,7 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
+import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.ui.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.SystemUITool
@@ -98,6 +99,7 @@ class MainActivity : BaseActivity() {
         val notifyIconConfigItem = findViewById<View>(R.id.config_item_notify)
         val devNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_dev_n_enable_switch)
         val crcpNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_chargecp_n_enable_switch)
+        val dndNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_dndalert_n_enable_switch)
         val a12StyleConfigSwitch = findViewById<SwitchCompat>(R.id.a12_style_enable_switch)
         val hideIconInLauncherSwitch = findViewById<SwitchCompat>(R.id.hide_icon_in_launcher_switch)
         val notifyIconFixSwitch = findViewById<SwitchCompat>(R.id.notify_icon_fix_switch)
@@ -110,6 +112,7 @@ class MainActivity : BaseActivity() {
         notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
         devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
         crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)
+        dndNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)
         a12StyleConfigSwitch.isChecked = modulePrefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
         moduleEnableSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         moduleEnableLogSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE_LOG, default = false)
@@ -152,6 +155,11 @@ class MainActivity : BaseActivity() {
         crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
+            SystemUITool.showNeedRestartSnake(context = this)
+        }
+        dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
+            if (!btn.isPressed) return@setOnCheckedChangeListener
+            modulePrefs.putBoolean(REMOVE_DNDALERT_NOTIFY, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
         a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
