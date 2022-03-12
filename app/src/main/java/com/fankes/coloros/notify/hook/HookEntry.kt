@@ -89,11 +89,17 @@ class HookEntry : YukiHookXposedInitProxy {
         /** ColorOS 存在的类 - 旧版本不存在 */
         private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
 
-        /** ColorOS 存在的类 */
-        private const val SystemPromptControllerClass = "com.oplusos.systemui.statusbar.policy.SystemPromptController"
+        /** 根据多个版本存在不同的包名相同的类 */
+        private val SystemPromptControllerClass = VariousClass(
+            "com.oplusos.systemui.statusbar.policy.SystemPromptController",
+            "com.coloros.systemui.statusbar.policy.SystemPromptController"
+        )
 
-        /** ColorOS 存在的类 */
-        private const val DndAlertHelperClass = "com.oplusos.systemui.notification.helper.DndAlertHelper"
+        /** 根据多个版本存在不同的包名相同的类 */
+        private val DndAlertHelperClass = VariousClass(
+            "com.oplusos.systemui.notification.helper.DndAlertHelper",
+            "com.coloros.systemui.notification.helper.DndAlertHelper"
+        )
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val OplusPowerNotificationWarningsClass = VariousClass(
