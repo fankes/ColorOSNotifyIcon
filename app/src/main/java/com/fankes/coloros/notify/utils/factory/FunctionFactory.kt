@@ -269,7 +269,7 @@ fun Context.openBrowser(url: String, packageName: String = "") = runCatching {
  * 复制到剪贴板
  * @param content 要复制的文本
  */
-fun Context.copyToClipboard(content: String) = runCatching {
+fun Context.copyToClipboard(content: String) = runSafe {
     (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).apply {
         setPrimaryClip(ClipData.newPlainText(null, content))
         (primaryClip?.getItemAt(0)?.text ?: "").also {
