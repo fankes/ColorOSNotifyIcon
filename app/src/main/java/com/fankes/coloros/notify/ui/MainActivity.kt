@@ -108,7 +108,6 @@ class MainActivity : BaseActivity() {
         devNotifyConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         a12StyleConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         notifyIconConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        moduleEnableLogSwitch.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
         devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
         crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)
