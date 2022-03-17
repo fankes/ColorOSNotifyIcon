@@ -278,19 +278,12 @@ class HookEntry : YukiHookXposedInitProxy {
         }
     }
 
-    override fun onHook() {
-        runConfig()
-        runHook()
-    }
-
-    /** 配置 Hook */
-    private fun runConfig() = configs {
+    override fun onInit() = configs {
         debugTag = "ColorOSNotify"
         isDebug = false
     }
 
-    /** 开始 Hook */
-    private fun runHook() = encase {
+    override fun onHook() = encase {
         loadApp(SYSTEMUI_PACKAGE_NAME) {
             when {
                 /** 不是 ColorOS 系统停止 Hook */
@@ -345,7 +338,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                 param(ImageViewClass, OplusContrastColorUtilClass.clazz)
                             }
                             replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
-                        }.ignoredHookingFailure()
+                        }.ignoredNoSuchMemberFailure()
                     }
                     /** 替换状态栏图标 */
                     IconManagerClass.hook {
