@@ -44,6 +44,7 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
+import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.SystemUITool
@@ -79,6 +80,16 @@ class MainActivity : BaseActivity() {
                 findViewById<LinearLayout>(R.id.main_lin_status).setBackgroundResource(R.drawable.bg_green_round)
                 findViewById<ImageFilterView>(R.id.main_img_status).setImageResource(R.mipmap.ic_success)
                 findViewById<TextView>(R.id.main_text_status).text = "模块已激活"
+                if (IconPackParams(context = this).iconDatas.isEmpty()
+                    && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
+                ) showDialog {
+                    title = "配置通知图标优化名单"
+                    msg = "模块需要获取在线规则以更新“通知图标优化名单”，它现在是空的，这看起来是你第一次使用模块，请首先进行配置才可以使用相关功能。\n" +
+                            "你可以随时在本页面下方找到“配置通知图标优化名单”手动前往。"
+                    confirmButton(text = "前往") { startActivity(Intent(this@MainActivity, ConfigureActivity::class.java)) }
+                    cancelButton()
+                    noCancelable()
+                }
             }
             else ->
                 showDialog {
