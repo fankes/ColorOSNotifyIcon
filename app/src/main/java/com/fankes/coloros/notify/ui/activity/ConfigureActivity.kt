@@ -22,7 +22,7 @@
  */
 @file:Suppress("SetTextI18n", "InflateParams", "DEPRECATION")
 
-package com.fankes.coloros.notify.ui
+package com.fankes.coloros.notify.ui.activity
 
 import android.app.ProgressDialog
 import android.os.Bundle
@@ -47,11 +47,11 @@ import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.hook.factory.putAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.putAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
-import com.fankes.coloros.notify.ui.base.BaseActivity
+import com.fankes.coloros.notify.ui.activity.base.BaseActivity
+import com.fankes.coloros.notify.ui.view.MaterialSwitch
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.ClientRequestTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
-import com.fankes.coloros.notify.view.MaterialSwitch
 import com.google.android.material.radiobutton.MaterialRadioButton
 import com.google.android.material.textfield.TextInputEditText
 import com.highcapable.yukihookapi.hook.factory.modulePrefs

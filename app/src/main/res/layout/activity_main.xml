@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/colorThemeBackground"
     android:orientation="vertical"
-    tools:context=".ui.MainActivity"
+    tools:context=".ui.activity.MainActivity"
     tools:ignore="HardcodedText,UseCompoundDrawables,ContentDescription">
 
     <LinearLayout
@@ -171,7 +171,7 @@
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp">
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/module_enable_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
@@ -180,7 +180,7 @@
                     android:textColor="@color/colorTextGray"
                     android:textSize="15sp" />
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/module_enable_log_switch"
                     android:layout_width="match_parent"
                     android:layout_height="35dp"
@@ -215,7 +215,7 @@
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp">
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/remove_dev_n_enable_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
@@ -234,7 +234,7 @@
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/remove_chargecp_n_enable_switch"
                     android:layout_width="match_parent"
                     android:layout_height="35dp"
@@ -253,7 +253,7 @@
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/remove_dndalert_n_enable_switch"
                     android:layout_width="match_parent"
                     android:layout_height="35dp"
@@ -288,7 +288,7 @@
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp">
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/a12_style_enable_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
@@ -324,7 +324,7 @@
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp">
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/notify_icon_fix_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -385,7 +385,7 @@
                 android:paddingLeft="15dp"
                 android:paddingRight="15dp">
 
-                <com.fankes.coloros.notify.view.MaterialSwitch
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
                     android:id="@+id/hide_icon_in_launcher_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

@@ -20,7 +20,7 @@
  *
  * This file is Created by fankes on 2022/1/30.
  */
-package com.fankes.coloros.notify.ui.base
+package com.fankes.coloros.notify.ui.activity.base
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

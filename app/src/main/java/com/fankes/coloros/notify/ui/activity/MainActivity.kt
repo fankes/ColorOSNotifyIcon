@@ -22,7 +22,7 @@
  */
 @file:Suppress("SetTextI18n")
 
-package com.fankes.coloros.notify.ui
+package com.fankes.coloros.notify.ui.activity
 
 import android.content.ComponentName
 import android.content.Intent
@@ -45,7 +45,7 @@ import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.param.IconPackParams
-import com.fankes.coloros.notify.ui.base.BaseActivity
+import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
