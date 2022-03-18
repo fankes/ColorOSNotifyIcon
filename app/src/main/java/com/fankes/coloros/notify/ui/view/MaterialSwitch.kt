@@ -22,7 +22,7 @@
  */
 @file:Suppress("SameParameterValue")
 
-package com.fankes.coloros.notify.view
+package com.fankes.coloros.notify.ui.view
 
 import android.content.Context
 import android.content.res.ColorStateList
