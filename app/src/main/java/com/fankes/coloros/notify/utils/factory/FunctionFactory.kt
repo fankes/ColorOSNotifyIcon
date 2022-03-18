@@ -145,17 +145,18 @@ val Context.versionName get() = packageInfo.versionName ?: ""
 val Context.versionCode get() = packageInfo.versionCode
 
 /**
- * dp 转换为 px
- * @return [Int]
- */
-val Number.dp get() = (toFloat() * appContext.resources.displayMetrics.density).toInt()
-
-/**
- * dp 转换为 px
+ * dp 转换为 pxInt
  * @param context 使用的实例
  * @return [Int]
  */
-fun Number.dp(context: Context) = (toFloat() * context.resources.displayMetrics.density).toInt()
+fun Number.dp(context: Context) = dpFloat(context).toInt()
+
+/**
+ * dp 转换为 pxFloat
+ * @param context 使用的实例
+ * @return [Float]
+ */
+fun Number.dpFloat(context: Context) = toFloat() * context.resources.displayMetrics.density
 
 /**
  * Base64 加密
