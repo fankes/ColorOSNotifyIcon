@@ -25,7 +25,6 @@
 package com.fankes.coloros.notify.utils.factory
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -36,11 +35,11 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.util.Base64
 import android.widget.Toast
+import androidx.core.app.NotificationManagerCompat
 import com.fankes.coloros.notify.application.CNNApplication.Companion.appContext
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.yukihookapi.hook.factory.classOf
@@ -145,6 +144,12 @@ val Context.versionName get() = packageInfo.versionName ?: ""
 val Context.versionCode get() = packageInfo.versionCode
 
 /**
+ * 是否关闭了通知权限
+ * @return [Boolean]
+ */
+val isNotNoificationEnabled get() = !NotificationManagerCompat.from(appContext).areNotificationsEnabled()
+
+/**
  * dp 转换为 pxInt
  * @param context 使用的实例
  * @return [Int]
@@ -157,6 +162,18 @@ fun Number.dp(context: Context) = dpFloat(context).toInt()
  * @return [Float]
  */
 fun Number.dpFloat(context: Context) = toFloat() * context.resources.displayMetrics.density
+
+/**
+ * 是否为白色
+ * @return [Boolean]
+ */
+val Int.isWhite
+    get() = safeOfTrue {
+        val r = this and 0xff0000 shr 16
+        val g = this and 0x00ff00 shr 8
+        val b = this and 0x0000ff
+        (0.2126 * r + 0.7152 * g + 0.0722 * b) >= 128
+    }
 
 /**
  * Base64 加密
@@ -194,18 +211,6 @@ val ByteArray.bitmap: Bitmap get() = BitmapFactory.decodeByteArray(this, 0, size
 val String.bitmap: Bitmap get() = unbase64.bitmap
 
 /**
- * 设置对话框默认风格
- * @param context 使用的实例
- */
-fun AlertDialog.setDefaultStyle(context: Context) = window?.setBackgroundDrawable(GradientDrawable(
-    GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.WHITE, Color.WHITE)
-).apply {
-    shape = GradientDrawable.RECTANGLE
-    gradientType = GradientDrawable.LINEAR_GRADIENT
-    cornerRadius = 15.dp(context).toFloat()
-})
-
-/**
  * 获取系统 Prop 值
  * @param key Key
  * @param default 默认值
@@ -234,6 +239,13 @@ fun execShellSu(cmd: String) = safeOfNothing {
  * @param msg 提示内容
  */
 fun toast(msg: String) = Toast.makeText(appContext, msg, Toast.LENGTH_SHORT).show()
+
+/**
+ * 跳转到指定页面
+ *
+ * [T] 为指定的 [Activity]
+ */
+inline fun <reified T : Activity> Context.navigate() = startActivity(Intent(this, T::class.java))
 
 /**
  * 弹出 [Snackbar]

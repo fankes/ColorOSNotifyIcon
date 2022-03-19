@@ -24,18 +24,15 @@
 
 package com.fankes.coloros.notify.ui.activity
 
+import android.app.Notification
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Bundle
-import android.view.View
-import android.widget.LinearLayout
-import android.widget.TextView
-import androidx.appcompat.widget.SwitchCompat
-import androidx.constraintlayout.utils.widget.ImageFilterView
+import android.provider.Settings
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
+import com.fankes.coloros.notify.databinding.ActivityMainBinding
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_HIDE_ICON
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
@@ -51,7 +48,7 @@ import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
 import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 
-class MainActivity : BaseActivity() {
+class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     companion object {
 
@@ -59,12 +56,10 @@ class MainActivity : BaseActivity() {
         private const val moduleVersion = BuildConfig.VERSION_NAME
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    override fun onCreate() {
         /** 设置文本 */
-        findViewById<TextView>(R.id.main_text_version).text = "模块版本：$moduleVersion"
-        findViewById<TextView>(R.id.main_text_coloros_version).text = "系统版本：$colorOSVersion"
+        binding.mainTextVersion.text = "模块版本：$moduleVersion"
+        binding.mainTextColorOsVersion.text = "系统版本：$colorOSVersion"
         when {
             /** 判断是否为 ColorOS 系统 */
             isNotColorOS ->
@@ -77,19 +72,36 @@ class MainActivity : BaseActivity() {
                 }
             /** 判断是否 Hook */
             YukiHookModuleStatus.isActive() -> {
-                findViewById<LinearLayout>(R.id.main_lin_status).setBackgroundResource(R.drawable.bg_green_round)
-                findViewById<ImageFilterView>(R.id.main_img_status).setImageResource(R.mipmap.ic_success)
-                findViewById<TextView>(R.id.main_text_status).text = "模块已激活"
+                binding.mainLinStatus.setBackgroundResource(R.drawable.bg_green_round)
+                binding.mainImgStatus.setImageResource(R.mipmap.ic_success)
+                binding.mainTextStatus.text = "模块已激活"
                 if (IconPackParams(context = this).iconDatas.isEmpty()
                     && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
                 ) showDialog {
                     title = "配置通知图标优化名单"
                     msg = "模块需要获取在线规则以更新“通知图标优化名单”，它现在是空的，这看起来是你第一次使用模块，请首先进行配置才可以使用相关功能。\n" +
                             "你可以随时在本页面下方找到“配置通知图标优化名单”手动前往。"
-                    confirmButton(text = "前往") { startActivity(Intent(this@MainActivity, ConfigureActivity::class.java)) }
+                    confirmButton(text = "前往") { navigate<ConfigureActivity>() }
                     cancelButton()
                     noCancelable()
                 }
+                if (isNotNoificationEnabled && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true))
+                    showDialog {
+                        title = "模块的通知权限已关闭"
+                        msg = "请开启通知权限，以确保你能收到通知优化图标在线规则的更新。"
+                        confirmButton {
+                            runCatching {
+                                Intent().also { intent ->
+                                    intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                    intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                    intent.putExtra(Notification.EXTRA_CHANNEL_ID, applicationInfo.uid)
+                                    startActivity(intent)
+                                }
+                            }.onFailure { snake(msg = "跳转通知设置失败") }
+                        }
+                        cancelButton()
+                        noCancelable()
+                    }
             }
             else ->
                 showDialog {
@@ -102,47 +114,34 @@ class MainActivity : BaseActivity() {
                     noCancelable()
                 }
         }
-        /** 初始化 View */
-        val moduleEnableSwitch = findViewById<SwitchCompat>(R.id.module_enable_switch)
-        val moduleEnableLogSwitch = findViewById<SwitchCompat>(R.id.module_enable_log_switch)
-        val devNotifyConfigItem = findViewById<View>(R.id.config_item_dev)
-        val a12StyleConfigItem = findViewById<View>(R.id.config_item_a12)
-        val notifyIconConfigItem = findViewById<View>(R.id.config_item_notify)
-        val devNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_dev_n_enable_switch)
-        val crcpNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_chargecp_n_enable_switch)
-        val dndNotifyConfigSwitch = findViewById<SwitchCompat>(R.id.remove_dndalert_n_enable_switch)
-        val a12StyleConfigSwitch = findViewById<SwitchCompat>(R.id.a12_style_enable_switch)
-        val hideIconInLauncherSwitch = findViewById<SwitchCompat>(R.id.hide_icon_in_launcher_switch)
-        val notifyIconFixSwitch = findViewById<SwitchCompat>(R.id.notify_icon_fix_switch)
-        val notifyIconFixButton = findViewById<View>(R.id.config_notify_app_button)
         /** 获取 Sp 存储的信息 */
-        devNotifyConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        a12StyleConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        notifyIconConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-        devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
-        crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)
-        dndNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)
-        a12StyleConfigSwitch.isChecked = modulePrefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
-        moduleEnableSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        moduleEnableLogSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE_LOG, default = false)
-        hideIconInLauncherSwitch.isChecked = modulePrefs.getBoolean(ENABLE_HIDE_ICON)
-        notifyIconFixSwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-        moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.devNotifyConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
+        binding.a12StyleConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
+        binding.notifyIconConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
+        binding.notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
+        binding.devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
+        binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)
+        binding.dndNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)
+        binding.a12StyleConfigSwitch.isChecked = modulePrefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
+        binding.moduleEnableSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
+        binding.moduleEnableLogSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE_LOG, default = false)
+        binding.hideIconInLauncherSwitch.isChecked = modulePrefs.getBoolean(ENABLE_HIDE_ICON)
+        binding.notifyIconFixSwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
+        binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_MODULE, b)
-            moduleEnableLogSwitch.isVisible = b
-            notifyIconConfigItem.isVisible = b
-            devNotifyConfigItem.isVisible = b
-            a12StyleConfigItem.isVisible = b
+            binding.moduleEnableLogSwitch.isVisible = b
+            binding.notifyIconConfigItem.isVisible = b
+            binding.devNotifyConfigItem.isVisible = b
+            binding.a12StyleConfigItem.isVisible = b
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        moduleEnableLogSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.moduleEnableLogSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_MODULE_LOG, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_HIDE_ICON, b)
             packageManager.setComponentEnabledSetting(
@@ -151,42 +150,42 @@ class MainActivity : BaseActivity() {
                 PackageManager.DONT_KILL_APP
             )
         }
-        notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX, b)
-            notifyIconFixButton.isVisible = b
+            binding.notifyIconFixButton.isVisible = b
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DEV_NOTIFY, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DNDALERT_NOTIFY, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
-        a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_ANDROID12_STYLE, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
         /** 通知图标优化名单按钮点击事件 */
-        notifyIconFixButton.setOnClickListener { startActivity(Intent(this, ConfigureActivity::class.java)) }
+        binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 重启按钮点击事件 */
-        findViewById<View>(R.id.title_restart_icon).setOnClickListener { SystemUITool.restartSystemUI(context = this) }
+        binding.titleRestartIcon.setOnClickListener { SystemUITool.restartSystemUI(context = this) }
         /** 项目地址按钮点击事件 */
-        findViewById<View>(R.id.title_github_icon).setOnClickListener {
+        binding.titleGithubIcon.setOnClickListener {
             openBrowser(url = "https://github.com/fankes/ColorOSNotifyIcon")
         }
         /** 恰饭！ */
-        findViewById<View>(R.id.link_with_follow_me).setOnClickListener {
+        binding.linkWithFollowMe.setOnClickListener {
             openBrowser(url = "https://www.coolapk.com/u/876977", packageName = "com.coolapk.market")
         }
     }
