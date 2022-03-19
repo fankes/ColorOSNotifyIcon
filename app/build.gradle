@@ -25,12 +25,20 @@ android {
         versionCode rootProject.ext.appVersionCode
         versionName rootProject.ext.appVersionName
 
+        kotlinOptions {
+            freeCompilerArgs = [
+                    '-Xno-param-assertions',
+                    '-Xno-call-assertions',
+                    '-Xno-receiver-assertions'
+            ]
+        }
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -41,6 +49,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding true
     }
 }
 

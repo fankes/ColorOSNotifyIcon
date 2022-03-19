@@ -102,7 +102,7 @@
                 android:textSize="13sp" />
 
             <TextView
-                android:id="@+id/main_text_coloros_version"
+                android:id="@+id/main_text_color_os_version"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:alpha="0.8"
@@ -201,7 +201,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/config_item_dev"
+                android:id="@+id/dev_notify_config_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
@@ -216,7 +216,7 @@
                 android:paddingRight="15dp">
 
                 <com.fankes.coloros.notify.ui.view.MaterialSwitch
-                    android:id="@+id/remove_dev_n_enable_switch"
+                    android:id="@+id/dev_notify_config_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="5dp"
@@ -235,7 +235,7 @@
                     android:textSize="12sp" />
 
                 <com.fankes.coloros.notify.ui.view.MaterialSwitch
-                    android:id="@+id/remove_chargecp_n_enable_switch"
+                    android:id="@+id/crcp_notify_config_switch"
                     android:layout_width="match_parent"
                     android:layout_height="35dp"
                     android:layout_marginBottom="5dp"
@@ -254,7 +254,7 @@
                     android:textSize="12sp" />
 
                 <com.fankes.coloros.notify.ui.view.MaterialSwitch
-                    android:id="@+id/remove_dndalert_n_enable_switch"
+                    android:id="@+id/dnd_notify_config_switch"
                     android:layout_width="match_parent"
                     android:layout_height="35dp"
                     android:layout_marginBottom="5dp"
@@ -274,7 +274,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/config_item_a12"
+                android:id="@+id/a12_style_config_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
@@ -289,7 +289,7 @@
                 android:paddingRight="15dp">
 
                 <com.fankes.coloros.notify.ui.view.MaterialSwitch
-                    android:id="@+id/a12_style_enable_switch"
+                    android:id="@+id/a12_style_config_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="5dp"
@@ -310,7 +310,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/config_item_notify"
+                android:id="@+id/notify_icon_config_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
@@ -335,7 +335,7 @@
                     android:textSize="15sp" />
 
                 <TextView
-                    android:id="@+id/config_notify_app_button"
+                    android:id="@+id/notify_icon_fix_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="10dp"
