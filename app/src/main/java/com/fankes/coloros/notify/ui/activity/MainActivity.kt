@@ -45,8 +45,8 @@ import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.highcapable.yukihookapi.hook.factory.isXposedModuleActive
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
-import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
@@ -71,7 +71,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     noCancelable()
                 }
             /** 判断是否 Hook */
-            YukiHookModuleStatus.isActive() -> {
+            isXposedModuleActive -> {
                 binding.mainLinStatus.setBackgroundResource(R.drawable.bg_green_round)
                 binding.mainImgStatus.setImageResource(R.mipmap.ic_success)
                 binding.mainTextStatus.text = "模块已激活"
