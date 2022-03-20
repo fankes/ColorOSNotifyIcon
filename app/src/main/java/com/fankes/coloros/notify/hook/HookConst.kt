@@ -29,6 +29,7 @@ object HookConst {
     const val ENABLE_HIDE_ICON = "_hide_icon"
     const val ENABLE_ANDROID12_STYLE = "_notify_android12_style"
     const val ENABLE_NOTIFY_ICON_FIX = "_notify_icon_fix"
+    const val ENABLE_NOTIFY_ICON_FIX_NOTIFY = "_notify_icon_fix_notify"
     const val REMOVE_DEV_NOTIFY = "_remove_dev_notify"
     const val REMOVE_CHANGECP_NOTIFY = "_remove_charge_complete_notify"
     const val REMOVE_DNDALERT_NOTIFY = "_remove_dndalert_notify"

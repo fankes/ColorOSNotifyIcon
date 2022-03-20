@@ -38,6 +38,7 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_HIDE_ICON
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
+import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
@@ -128,6 +129,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.a12StyleConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         binding.notifyIconConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
         binding.notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
+        binding.notifyIconFixNotifyItem.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
         binding.devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
         binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)
         binding.dndNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)
@@ -136,6 +138,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.moduleEnableLogSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE_LOG, default = false)
         binding.hideIconInLauncherSwitch.isChecked = modulePrefs.getBoolean(ENABLE_HIDE_ICON)
         binding.notifyIconFixSwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
+        binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_MODULE, b)
@@ -163,6 +166,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
+            binding.notifyIconFixNotifyItem.isVisible = b
+            SystemUITool.showNeedRestartSnake(context = this)
+        }
+        binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
+            if (!btn.isPressed) return@setOnCheckedChangeListener
+            modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
         binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
