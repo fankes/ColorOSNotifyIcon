@@ -50,7 +50,7 @@
 
         <activity
             android:name=".ui.activity.ConfigureActivity"
-            android:exported="false"
+            android:exported="true"
             android:screenOrientation="behind" />
     </application>
 </manifest>

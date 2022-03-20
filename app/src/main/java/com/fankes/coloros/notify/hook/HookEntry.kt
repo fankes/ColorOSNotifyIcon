@@ -23,6 +23,7 @@
 package com.fankes.coloros.notify.hook
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -36,6 +37,7 @@ import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
+import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
@@ -45,6 +47,7 @@ import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
 import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.factory.configs
@@ -54,10 +57,7 @@ import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.log.loggerD
 import com.highcapable.yukihookapi.hook.log.loggerW
 import com.highcapable.yukihookapi.hook.param.PackageParam
-import com.highcapable.yukihookapi.hook.type.android.ContextClass
-import com.highcapable.yukihookapi.hook.type.android.DrawableClass
-import com.highcapable.yukihookapi.hook.type.android.IconClass
-import com.highcapable.yukihookapi.hook.type.android.ImageViewClass
+import com.highcapable.yukihookapi.hook.type.android.*
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.highcapable.yukihookapi.hook.type.java.LongType
@@ -88,6 +88,9 @@ class HookEntry : YukiHookXposedInitProxy {
 
         /** ColorOS 存在的类 - 旧版本不存在 */
         private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
+
+        /** 原生存在的类 */
+        private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val SystemPromptControllerClass = VariousClass(
@@ -128,15 +131,6 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /** 缓存的通知优化图标数组 */
     private var iconDatas = ArrayList<IconDataBean>()
-
-    /**
-     * 获取推送通知的应用名称
-     * @param packageName APP 包名
-     * @return [String]
-     */
-    private fun Context.findAppName(packageName: String) = safeOf(default = "<unknown>") {
-        packageManager.getPackageInfo(packageName, 0).applicationInfo.loadLabel(packageManager)
-    }
 
     /**
      * 打印日志
@@ -400,6 +394,38 @@ class HookEntry : YukiHookXposedInitProxy {
                                                 }
                                             }
                                     }
+                            }
+                        }
+                    }
+                    /** 发送适配新的 APP 图标通知 */
+                    PluginManagerImplClass.hook {
+                        injectMember {
+                            method {
+                                name = "onReceive"
+                                param(ContextClass, IntentClass)
+                            }
+                            afterHook {
+                                if (prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
+                                    prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
+                                ) (lastArgs as? Intent)?.also {
+                                    if (!it.action.equals(Intent.ACTION_PACKAGE_REPLACED) &&
+                                        it.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+                                    ) return@also
+                                    when (it.action) {
+                                        Intent.ACTION_PACKAGE_ADDED ->
+                                            it.data?.schemeSpecificPart?.also { newPkgName ->
+                                                if (iconDatas.takeIf { e -> e.isNotEmpty() }
+                                                        ?.filter { e -> e.packageName == newPkgName }
+                                                        .isNullOrEmpty()
+                                                ) IconAdaptationTool.pushNewAppSupportNotify(firstArgs as Context, newPkgName)
+                                            }
+                                        Intent.ACTION_PACKAGE_REMOVED ->
+                                            IconAdaptationTool.removeNewAppSupportNotify(
+                                                firstArgs as Context,
+                                                packageName = it.data?.schemeSpecificPart ?: ""
+                                            )
+                                    }
+                                }
                             }
                         }
                     }
