@@ -44,6 +44,7 @@ import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.factory.isXposedModuleActive
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
@@ -57,6 +58,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     override fun onCreate() {
+        /** 检查更新 */
+        GithubReleaseTool.checkingForUpdate(context = this, moduleVersion) { version, function ->
+            binding.mainTextReleaseVersion.apply {
+                text = "点击更新 $version"
+                isVisible = true
+                setOnClickListener { function() }
+            }
+        }
         /** 设置文本 */
         binding.mainTextVersion.text = "模块版本：$moduleVersion"
         binding.mainTextColorOsVersion.text = "系统版本：$colorOSVersion"
@@ -181,9 +190,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         /** 重启按钮点击事件 */
         binding.titleRestartIcon.setOnClickListener { SystemUITool.restartSystemUI(context = this) }
         /** 项目地址按钮点击事件 */
-        binding.titleGithubIcon.setOnClickListener {
-            openBrowser(url = "https://github.com/fankes/ColorOSNotifyIcon")
-        }
+        binding.titleGithubIcon.setOnClickListener { openBrowser(url = "https://github.com/fankes/ColorOSNotifyIcon") }
         /** 恰饭！ */
         binding.linkWithFollowMe.setOnClickListener {
             openBrowser(url = "https://www.coolapk.com/u/876977", packageName = "com.coolapk.market")
