@@ -3,8 +3,8 @@
 [![Blank](https://img.shields.io/badge/build-pending-dbab09)](https://github.com/fankes/ColorOSNotifyIcon)
 [![Blank](https://img.shields.io/badge/license-AGPL3.0-blue)](https://github.com/fankes/ColorOSNotifyIcon/blob/master/LICENSE)
 [![Blank](https://img.shields.io/badge/version-v1.36-green)](https://github.com/fankes/ColorOSNotifyIcon/releases)
-[![Blank](https://img.shields.io/github/downloads/fankes/MIUINativeNotifyIcon/total?label=Release)](https://github.com/fankes/ColorOSNotifyIcon/releases)
-[![Blank](https://img.shields.io/github/downloads/Xposed-Modules-Repo/com.fankes.miui.notify/total?label=LSPosed%20Repo&logo=Android&style=flat&labelColor=F48FB1&logoColor=ffffff)](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)
+[![Blank](https://img.shields.io/github/downloads/fankes/ColorOSNotifyIcon/total?label=Release)](https://github.com/fankes/ColorOSNotifyIcon/releases)
+[![Blank](https://img.shields.io/github/downloads/Xposed-Modules-Repo/com.fankes.coloros.notify/total?label=LSPosed%20Repo&logo=Android&style=flat&labelColor=F48FB1&logoColor=ffffff)](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)
 [![Telegram](https://img.shields.io/static/v1?label=Telegram&message=交流讨论&color=0088cc)](https://t.me/XiaofangInternet)
 <br/><br/>
 <img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png" width = "100" height = "100"/>
