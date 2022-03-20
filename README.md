@@ -27,7 +27,7 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 - 本模块完全开源免费，如果好用你可以打赏支持开发，但是请不要用于非法用途。
 - 本模块发布地址仅有 [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)、
   [Release](https://github.com/fankes/ColorOSNotifyIcon/releases)
-  及[蓝奏云](https://fankes.lanzouy.com/b030rvjyf)，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
+  及 [蓝奏云](https://fankes.lanzouy.com/b030rvjyf)，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
 
 # 贡献通知图标优化名单
 
