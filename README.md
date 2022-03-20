@@ -18,7 +18,7 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 
 # 适配说明
 
-- 此模块仅支持 LSPosed(作用域“系统界面”)、~~EdXposed(随时停止支持)~~、不支持太极无极
+- 此模块仅支持 <b>LSPosed</b>(作用域“系统界面”)、<b>~~EdXposed(随时停止支持)~~</b>、不支持<b>太极、无极</b>
 - 目前仅在 ColorOS 12 for OnePlus 上测试通过，如有问题请提交 `issues`
 - 建议在不低于 ColorOS 11 的版本上使用
 
