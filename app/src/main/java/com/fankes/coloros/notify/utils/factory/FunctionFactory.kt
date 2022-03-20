@@ -53,6 +53,7 @@ import com.highcapable.yukihookapi.hook.type.java.StringType
 import com.topjohnwu.superuser.Shell
 import java.io.ByteArrayOutputStream
 
+
 /**
  * 系统深色模式是否开启
  * @return [Boolean] 是否开启
@@ -101,6 +102,29 @@ val isColorOS by lazy { ("oppo.R").hasClass || ("com.color.os.ColorBuild").hasCl
  * @return [Boolean] 是否符合条件
  */
 inline val isNotColorOS get() = !isColorOS
+
+/**
+ * 当前设备是否为 RealmeUI
+ * @return [Boolean] 是否符合条件
+ */
+val isRealmeUI
+    get() = safeOfFalse {
+        val query = appContext.contentResolver.query(
+            Uri.parse("content://com.oplus.customize.coreapp.configmanager.configprovider.AppFeatureProvider")
+                .buildUpon()
+                .appendPath("app_feature")
+                .build(), null, "featurename=?", arrayOf("com.android.launcher.device_rm"), null
+        )
+        val isExist = query != null && query.count > 0
+        query?.close()
+        isExist
+    }
+
+/**
+ * 获取 ColorOS 完整版本
+ * @return [String]
+ */
+val colorOSFullVersion get() = "${if (isRealmeUI) "RealmeUI" else "ColorOS"} $colorOSVersion"
 
 /**
  * 获取 ColorOS 版本

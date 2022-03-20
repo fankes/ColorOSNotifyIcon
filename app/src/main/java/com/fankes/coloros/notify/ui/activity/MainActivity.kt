@@ -68,7 +68,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         /** 设置文本 */
         binding.mainTextVersion.text = "模块版本：$moduleVersion"
-        binding.mainTextColorOsVersion.text = "系统版本：$colorOSVersion"
+        binding.mainTextColorOsVersion.text = "系统版本：$colorOSFullVersion"
         when {
             /** 判断是否为 ColorOS 系统 */
             isNotColorOS ->
