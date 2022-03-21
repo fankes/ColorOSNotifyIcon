@@ -299,7 +299,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="5dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
                     android:text="每次重新开机后只要开发者选项开启就会推送警告通知，开启后将直接移除这个“你在教我做事”的通知功能。"
@@ -318,7 +318,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="5dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
                     android:text="充电完成后总是会推送一条通知，有时候甚至还不是静音状态，开启后将直接移除这个“你在教我做事”的通知功能。"
@@ -484,7 +484,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
                     android:layout_marginRight="5dp"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="5dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
                     android:text="此选项默认开启，开启后将对优化名单内的 APP 通知小图标使用单色调进行修复，特别是通过系统级别推送的通知，它们始终是 APP 默认图标(彩色的 APP 图标)，修复后使得它们的图标看起来更加符合 Android 原生的统一规范。"
