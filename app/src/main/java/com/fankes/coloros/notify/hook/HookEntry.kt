@@ -332,7 +332,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                 param(ImageViewClass, OplusContrastColorUtilClass.clazz)
                             }
                             replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
-                        }.ignoredNoSuchMemberFailure()
+                        }.ignoredHookingFailure()
                     }
                     /** 替换状态栏图标 */
                     IconManagerClass.hook {
