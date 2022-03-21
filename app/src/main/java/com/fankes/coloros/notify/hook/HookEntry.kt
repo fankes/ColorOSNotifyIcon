@@ -111,6 +111,12 @@ class HookEntry : YukiHookXposedInitProxy {
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
+        private val AbstractReceiverClass = VariousClass(
+            "com.oplusos.systemui.common.receiver.AbstractReceiver",
+            "com.coloros.systemui.common.receiver.AbstractReceiver"
+        )
+
+        /** 根据多个版本存在不同的包名相同的类 */
         private val ExpandableNotificationRowClass = VariousClass(
             "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.ExpandableNotificationRow",
             "$SYSTEMUI_PACKAGE_NAME.statusbar.ExpandableNotificationRow"
@@ -426,6 +432,19 @@ class HookEntry : YukiHookXposedInitProxy {
                                             )
                                     }
                                 }
+                            }
+                        }
+                    }
+                    /** 自动检查通知优化图标更新的注入监听 */
+                    AbstractReceiverClass.hook {
+                        injectMember {
+                            method {
+                                name = "onReceive"
+                                param(ContextClass, IntentClass)
+                            }
+                            afterHook {
+                                // TODO 待实现
+                                loggerD(msg = "当前时间：${System.currentTimeMillis()}")
                             }
                         }
                     }
