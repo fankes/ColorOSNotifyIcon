@@ -307,7 +307,7 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                             beforeHook {
                                 /** 是否移除 */
-                                if (firstArgs as Int == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY, default = false)) resultNull()
+                                if (firstArgs as Int == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY)) resultNull()
                             }
                         }
                     }
@@ -320,7 +320,7 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                             beforeHook {
                                 /** 是否移除 */
-                                if (prefs.getBoolean(REMOVE_DNDALERT_NOTIFY, default = false)) resultNull()
+                                if (prefs.getBoolean(REMOVE_DNDALERT_NOTIFY)) resultNull()
                             }
                         }
                     }
