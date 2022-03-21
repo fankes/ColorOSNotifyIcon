@@ -32,7 +32,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
-import com.fankes.coloros.notify.BuildConfig
+import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.HookEntry
 import com.fankes.coloros.notify.utils.factory.bitmap
 import com.fankes.coloros.notify.utils.factory.findAppIcon
@@ -45,9 +45,6 @@ import com.fankes.coloros.notify.utils.factory.runInSafe
  * 这个类需要在 [HookEntry] 中调用
  */
 object IconAdaptationTool {
-
-    /** 当前模块的包名 */
-    private const val PACKAGE_NAME = BuildConfig.APPLICATION_ID
 
     /**
      * 使用的小图标
@@ -103,8 +100,8 @@ object IconAdaptationTool {
                         context, packageName.hashCode(),
                         Intent().apply {
                             component = ComponentName(
-                                PACKAGE_NAME,
-                                "$PACKAGE_NAME.ui.activity.ConfigureActivity"
+                                MODULE_PACKAGE_NAME,
+                                "$MODULE_PACKAGE_NAME.ui.activity.ConfigureActivity"
                             )
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         }.apply {

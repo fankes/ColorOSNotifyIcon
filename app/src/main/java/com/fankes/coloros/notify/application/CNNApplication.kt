@@ -27,11 +27,15 @@ package com.fankes.coloros.notify.application
 import android.app.Application
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import com.fankes.coloros.notify.BuildConfig
 import me.weishu.reflection.Reflection
 
 class CNNApplication : Application() {
 
     companion object {
+
+        /** 当前模块的包名 */
+        const val MODULE_PACKAGE_NAME = BuildConfig.APPLICATION_ID
 
         /** 全局静态实例 */
         private var context: CNNApplication? = null

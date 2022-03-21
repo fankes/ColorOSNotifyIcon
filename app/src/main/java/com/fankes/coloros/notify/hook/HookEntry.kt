@@ -32,6 +32,7 @@ import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
+import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
@@ -48,6 +49,7 @@ import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
+import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.factory.configs
@@ -278,6 +280,11 @@ class HookEntry : YukiHookXposedInitProxy {
         }
     }
 
+    /** 缓存图标数据 */
+    private fun PackageParam.cachingIconDatas() {
+        iconDatas = IconPackParams(param = this).iconDatas
+    }
+
     override fun onInit() = configs {
         debugTag = "ColorOSNotify"
         isDebug = false
@@ -293,7 +300,7 @@ class HookEntry : YukiHookXposedInitProxy {
                 /** 开始 Hook */
                 else -> {
                     /** 缓存图标数据 */
-                    iconDatas = IconPackParams(param = this).iconDatas
+                    cachingIconDatas()
                     /** 移除开发者警告通知 */
                     SystemPromptControllerClass.hook {
                         injectMember {
@@ -365,7 +372,12 @@ class HookEntry : YukiHookXposedInitProxy {
                                                             packageName = nf.packageName,
                                                             drawable = iconDrawable
                                                         )
-                                                    )
+                                                    ).apply {
+                                                        /** 刷新图标缓存 */
+                                                        if (nf.packageName == MODULE_PACKAGE_NAME &&
+                                                            nf.notification.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
+                                                        ) cachingIconDatas()
+                                                    }
                                                 )
                                             }
                                         }
@@ -398,6 +410,10 @@ class HookEntry : YukiHookXposedInitProxy {
                                                         iconView = this
                                                     )
                                                 }
+                                                /** 刷新图标缓存 */
+                                                if (context.packageName == MODULE_PACKAGE_NAME &&
+                                                    nf.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
+                                                ) cachingIconDatas()
                                             }
                                     }
                             }
