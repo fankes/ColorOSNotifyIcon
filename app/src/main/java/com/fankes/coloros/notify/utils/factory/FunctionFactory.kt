@@ -125,7 +125,7 @@ val isRealmeUI
  * 获取 ColorOS 完整版本
  * @return [String]
  */
-val colorOSFullVersion get() = "${if (isRealmeUI) "RealmeUI" else "ColorOS"} $colorOSVersion"
+val colorOSFullVersion get() = "${if (isRealmeUI) "RealmeUI " else ""}$colorOSVersion"
 
 /**
  * 获取 ColorOS 版本
