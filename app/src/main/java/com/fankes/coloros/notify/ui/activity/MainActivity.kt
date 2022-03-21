@@ -56,6 +56,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
         /** 模块版本 */
         private const val moduleVersion = BuildConfig.VERSION_NAME
+
+        /** 预发布的版本标识 */
+        private const val pendingFlag = "[pending]"
     }
 
     override fun onCreate() {
@@ -68,7 +71,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             }
         }
         /** 设置文本 */
-        binding.mainTextVersion.text = "模块版本：$moduleVersion"
+        binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
         binding.mainTextColorOsVersion.text = "系统版本：$colorOSFullVersion"
         when {
             /** 判断是否为 ColorOS 系统 */
