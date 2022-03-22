@@ -367,7 +367,8 @@ object IconRuleManagerTool {
     private fun pushWithRefresh(context: Context) {
         if (context !is AppCompatActivity) return
         SystemUITool.showNeedUpdateApplySnake(context)
-        pushNotify(appContext, title = "更新完成", msg = "部分通知图标需要重启系统界面生效", isAction = false)
+        /** 发送通知提醒宿主更新图标缓存 */
+        pushNotify(appContext, title = "请稍后", msg = "正在动态刷新通知图标改变", isAction = false)
         /** 刷新成功后取消通知 */
         Handler().postDelayed({ context.getSystemService<NotificationManager>()?.cancel(1) }, 1500)
     }
@@ -404,7 +405,7 @@ object IconRuleManagerTool {
                     setContentText(msg)
                     color = OS_COLOR.toInt()
                     setAutoCancel(true)
-                    setSmallIcon(R.drawable.ic_nf_icon_update)
+                    setSmallIcon(if (isAction) R.drawable.ic_nf_icon_update else R.drawable.ic_nf_icon_refresh)
                     setSound(null)
                     setDefaults(NotificationCompat.DEFAULT_ALL)
                     if (isAction) setContentIntent(
