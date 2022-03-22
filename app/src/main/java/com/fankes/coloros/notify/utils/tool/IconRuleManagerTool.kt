@@ -105,24 +105,26 @@ object IconRuleManagerTool {
                     diaSfRd3.isChecked = false
                     diaSfTextLin.isVisible = false
                     sourceType = TYPE_SOURCE_SYNC_WAY_1
-                    context.modulePrefs.putInt(SOURCE_SYNC_WAY, TYPE_SOURCE_SYNC_WAY_1)
                 }
                 diaSfRd2.setOnClickListener {
                     diaSfRd1.isChecked = false
                     diaSfRd3.isChecked = false
                     diaSfTextLin.isVisible = false
                     sourceType = TYPE_SOURCE_SYNC_WAY_2
-                    context.modulePrefs.putInt(SOURCE_SYNC_WAY, TYPE_SOURCE_SYNC_WAY_2)
                 }
                 diaSfRd3.setOnClickListener {
                     diaSfRd1.isChecked = false
                     diaSfRd2.isChecked = false
                     diaSfTextLin.isVisible = true
                     sourceType = TYPE_SOURCE_SYNC_WAY_3
-                    context.modulePrefs.putInt(SOURCE_SYNC_WAY, TYPE_SOURCE_SYNC_WAY_3)
                 }
             }
-            confirmButton { sync(context, it) }
+            confirmButton {
+                sync(context) {
+                    context.modulePrefs.putInt(SOURCE_SYNC_WAY, sourceType)
+                    it()
+                }
+            }
             cancelButton()
             neutralButton(text = "自定义规则") {
                 context.showDialog {
