@@ -120,7 +120,7 @@ object IconRuleManagerTool {
                 }
             }
             confirmButton {
-                sync(context) {
+                sync(context, sourceType, customUrl) {
                     context.modulePrefs.putInt(SOURCE_SYNC_WAY, sourceType)
                     it()
                 }
@@ -174,11 +174,16 @@ object IconRuleManagerTool {
     /**
      * 从在线地址同步规则
      * @param context 实例
+     * @param sourceType 同步地址类型
+     * @param customUrl 自定义同步地址
      * @param it 成功后回调
      */
-    fun sync(context: Context, it: () -> Unit) {
-        val sourceType = context.modulePrefs.getInt(SOURCE_SYNC_WAY, TYPE_SOURCE_SYNC_WAY_1)
-        val customUrl = context.modulePrefs.getString(SOURCE_SYNC_WAY_CUSTOM_URL)
+    fun sync(
+        context: Context,
+        sourceType: Int = context.modulePrefs.getInt(SOURCE_SYNC_WAY, TYPE_SOURCE_SYNC_WAY_1),
+        customUrl: String = context.modulePrefs.getString(SOURCE_SYNC_WAY_CUSTOM_URL),
+        it: () -> Unit
+    ) {
         when (sourceType) {
             TYPE_SOURCE_SYNC_WAY_1 ->
                 onRefreshing(context, url = "https://raw.fastgit.org/fankes/AndroidNotifyIconAdapt/main", it)
