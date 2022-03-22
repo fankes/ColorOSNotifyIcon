@@ -142,11 +142,12 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /**
      * 是否启用通知图标优化功能
+     * @param isHooking 是否判断启用通知功能 - 默认：是
      * @return [Boolean]
      */
-    private val PackageParam.isEnableHookColorNotifyIcon
-        get() = prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
-                prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
+    private fun PackageParam.isEnableHookColorNotifyIcon(isHooking: Boolean = true) =
+        prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
+                (if (isHooking) prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true) else true)
 
     /**
      * 打印日志
@@ -294,7 +295,7 @@ class HookEntry : YukiHookXposedInitProxy {
         IconPackParams(param = this).iconDatas.apply {
             when {
                 isNotEmpty() -> forEach { iconDatas.add(it) }
-                isEmpty() && isEnableHookColorNotifyIcon -> loggerW(msg = "NotifyIconSupportData is empty!")
+                isEmpty() && isEnableHookColorNotifyIcon(isHooking = false) -> loggerW(msg = "NotifyIconSupportData is empty!")
             }
         }
     }
@@ -441,7 +442,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                 param(ContextClass, IntentClass)
                             }
                             afterHook {
-                                if (isEnableHookColorNotifyIcon) (lastArgs as? Intent)?.also {
+                                if (isEnableHookColorNotifyIcon()) (lastArgs as? Intent)?.also {
                                     if (!it.action.equals(Intent.ACTION_PACKAGE_REPLACED) &&
                                         it.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                                     ) return@also
