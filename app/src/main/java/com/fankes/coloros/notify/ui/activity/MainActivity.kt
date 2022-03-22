@@ -170,32 +170,32 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
             binding.notifyIconFixNotifyItem.isVisible = b
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DEV_NOTIFY, b)
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         binding.crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         binding.dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DNDALERT_NOTIFY, b)
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         binding.a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_ANDROID12_STYLE, b)
-            SystemUITool.showNeedRestartSnake(context = this)
+            SystemUITool.refreshSystemUI(context = this)
         }
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }

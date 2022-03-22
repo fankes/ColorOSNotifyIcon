@@ -141,6 +141,12 @@ class HookEntry : YukiHookXposedInitProxy {
     /** 缓存的通知优化图标数组 */
     private var iconDatas = ArrayList<IconDataBean>()
 
+    /** 缓存的状态栏小图标实例 */
+    private var statusBarIconViews = HashSet<ImageView>()
+
+    /** 缓存的通知小图标包装纸实例 */
+    private var notificationViewWrappers = HashSet<Any>()
+
     /**
      * 是否启用通知图标优化功能
      * @param isHooking 是否判断启用通知功能 - 默认：是
@@ -170,6 +176,16 @@ class HookEntry : YukiHookXposedInitProxy {
                     "custom [$isCustom] " +
                     "grayscale [$isGrayscale]"
         )
+    }
+
+    /** 刷新状态栏小图标 */
+    private fun PackageParam.refreshStatusBarIcons() = runInSafe {
+        // TODO
+    }
+
+    /** 刷新通知小图标 */
+    private fun PackageParam.refreshNotificationIcons() = runInSafe {
+        // TODO
     }
 
     /**
@@ -301,6 +317,14 @@ class HookEntry : YukiHookXposedInitProxy {
         }
     }
 
+    /** 刷新缓存数据 */
+    private fun PackageParam.recachingPrefs() {
+        prefs.clearCache()
+        cachingIconDatas()
+        refreshStatusBarIcons()
+        refreshNotificationIcons()
+    }
+
     override fun onInit() = configs {
         debugTag = "ColorOSNotify"
         isDebug = false
@@ -387,10 +411,10 @@ class HookEntry : YukiHookXposedInitProxy {
                                                         name = "icon"
                                                         type = IconClass
                                                     }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
-                                                    /** 刷新图标缓存 */
+                                                    /** 刷新缓存 */
                                                     if (nf.packageName == MODULE_PACKAGE_NAME &&
                                                         nf.notification.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
-                                                    ) cachingIconDatas()
+                                                    ) recachingPrefs()
                                                 }
                                             }
                                         }
@@ -423,10 +447,6 @@ class HookEntry : YukiHookXposedInitProxy {
                                                         iconView = this
                                                     )
                                                 }
-                                                /** 刷新图标缓存 */
-                                                if (context.packageName == MODULE_PACKAGE_NAME &&
-                                                    nf.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
-                                                ) cachingIconDatas()
                                             }
                                     }
                             }
