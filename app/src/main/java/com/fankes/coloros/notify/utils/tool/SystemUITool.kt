@@ -39,7 +39,8 @@ object SystemUITool {
     fun restartSystemUI(context: Context) =
         context.showDialog {
             title = "重启系统界面"
-            msg = "你确定要立即重启系统界面吗？"
+            msg = "你确定要立即重启系统界面吗？\n\n" +
+                    "部分 MIUI 系统使用了状态栏主题可能会发生主题失效的情况，这种情况请再重启一次即可。"
             confirmButton {
                 execShellSu(cmd = "pgrep systemui").also { pid ->
                     if (pid.isNotBlank())
@@ -49,6 +50,12 @@ object SystemUITool {
             }
             cancelButton()
         }
+
+    /**
+     * 刷新系统界面状态栏与通知图标
+     * @param context 实例
+     */
+    fun refreshSystemUI(context: Context) = IconRuleManagerTool.refreshSystemUI(context)
 
     /**
      * 显示需要重启系统界面的 [Snackbar]
@@ -67,6 +74,6 @@ object SystemUITool {
         if (isXposedModuleActive)
             if (isNotNoificationEnabled)
                 context.snake(msg = "无通知权限，请重启系统界面使更改生效", actionText = "立即重启") { restartSystemUI(context) }
-            else context.snake(msg = "数据已更新，已推送的通知将在下次生效", actionText = "立即重启") { restartSystemUI(context) }
+            else context.snake(msg = "通知图标优化名单已完成同步")
         else context.snake(msg = "模块没有激活，更改不会生效")
 }
