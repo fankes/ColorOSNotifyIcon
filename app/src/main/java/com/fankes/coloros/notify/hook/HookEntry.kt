@@ -141,6 +141,14 @@ class HookEntry : YukiHookXposedInitProxy {
     private var iconDatas = ArrayList<IconDataBean>()
 
     /**
+     * 是否启用忽略彩色图标和启用通知图标优化功能
+     * @return [Boolean]
+     */
+    private val PackageParam.isEnableHookColorNotifyIcon
+        get() = prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
+                prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
+
+    /**
      * 打印日志
      * @param tag 标识
      * @param context 实例
@@ -282,7 +290,13 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /** 缓存图标数据 */
     private fun PackageParam.cachingIconDatas() {
-        iconDatas = IconPackParams(param = this).iconDatas
+        iconDatas.clear()
+        IconPackParams(param = this).iconDatas.apply {
+            when {
+                isNotEmpty() -> forEach { iconDatas.add(it) }
+                isEmpty() && isEnableHookColorNotifyIcon -> loggerW(msg = "NotifyIconSupportData is empty!")
+            }
+        }
     }
 
     override fun onInit() = configs {
@@ -427,9 +441,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                 param(ContextClass, IntentClass)
                             }
                             afterHook {
-                                if (prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
-                                    prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
-                                ) (lastArgs as? Intent)?.also {
+                                if (isEnableHookColorNotifyIcon) (lastArgs as? Intent)?.also {
                                     if (!it.action.equals(Intent.ACTION_PACKAGE_REPLACED) &&
                                         it.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                                     ) return@also
@@ -451,7 +463,7 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                         }
                     }
-                    /** 自动检查通知优化图标更新的注入监听 */
+                    /** 自动检查通知图标优化更新的注入监听 */
                     AbstractReceiverClass.hook {
                         injectMember {
                             method {
