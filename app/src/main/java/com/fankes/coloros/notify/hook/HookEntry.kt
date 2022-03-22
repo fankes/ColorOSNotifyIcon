@@ -84,6 +84,9 @@ class HookEntry : YukiHookXposedInitProxy {
         private const val StatusBarIconClass = "com.android.internal.statusbar.StatusBarIcon"
 
         /** 原生存在的类 */
+        private const val StatusBarIconViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.StatusBarIconView"
+
+        /** 原生存在的类 */
         private const val IconBuilderClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconBuilder"
 
         /** 原生存在的类 */
@@ -180,7 +183,29 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /** 刷新状态栏小图标 */
     private fun PackageParam.refreshStatusBarIcons() = runInSafe {
-        // TODO
+        val unknown = StatusBarIconViewClass.clazz.field { name = "mIcon" }
+        val iconScaleField = StatusBarIconViewClass.clazz.field { name = "mIconScale" }
+        val methodUnused = StatusBarIconViewClass.clazz.method { name = "maybeUpdateIconScaleDimens" }
+        StatusBarIconViewClass.clazz.field { name = "mNotification" }.also { result ->
+            statusBarIconViews.takeIf { it.isNotEmpty() }?.forEach {
+                /** 得到通知实例 */
+                val nf = result.of<StatusBarNotification>(it) ?: return
+                val base = nf.notification.smallIcon.loadDrawable(it.context)
+
+                /** 刷新状态栏图标 */
+                val icon = compatStatusIcon(
+                    context = it.context,
+                    isGrayscaleIcon = isGrayscaleIcon(it.context, base),
+                    packageName = nf.packageName,
+                    drawable = base
+                )
+                /** 移除诡异的间距 FIXME 间距总是有问题不知道为什么 */
+                methodUnused.get(it).call()
+                // FIXME ignored this mabe bugss --> iconScaleField.get(it).set(if (icon.second) 0.75f else 0.68f)
+                it.setImageDrawable(icon.first)
+                it.invalidate()
+            }
+        }
     }
 
     /** 刷新通知小图标 */
@@ -420,6 +445,16 @@ class HookEntry : YukiHookXposedInitProxy {
                                         }
                                     }
                             }
+                        }
+                    }
+                    /** 得到状态栏图标实例 */
+                    StatusBarIconViewClass.hook {
+                        injectMember {
+                            method {
+                                name = "setNotification"
+                                param(StatusBarNotificationClass)
+                            }
+                            afterHook { if (firstArgs != null) statusBarIconViews.add(instance()) }
                         }
                     }
                     /** 替换通知图标和样式 */
