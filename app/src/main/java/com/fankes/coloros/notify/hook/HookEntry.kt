@@ -141,7 +141,7 @@ class HookEntry : YukiHookXposedInitProxy {
     private var iconDatas = ArrayList<IconDataBean>()
 
     /**
-     * 是否启用忽略彩色图标和启用通知图标优化功能
+     * 是否启用通知图标优化功能
      * @return [Boolean]
      */
     private val PackageParam.isEnableHookColorNotifyIcon
