@@ -91,10 +91,7 @@ object IconRuleManagerTool {
                         setText(customUrl)
                         setSelection(customUrl.length)
                     }
-                    doOnTextChanged { text, _, _, _ ->
-                        customUrl = text.toString()
-                        context.modulePrefs.putString(SOURCE_SYNC_WAY_CUSTOM_URL, text.toString())
-                    }
+                    doOnTextChanged { text, _, _, _ -> customUrl = text.toString() }
                 }
                 diaSfTextLin.isVisible = sourceType == TYPE_SOURCE_SYNC_WAY_3
                 diaSfRd1.isChecked = sourceType == TYPE_SOURCE_SYNC_WAY_1
@@ -120,10 +117,9 @@ object IconRuleManagerTool {
                 }
             }
             confirmButton {
-                sync(context, sourceType, customUrl) {
-                    context.modulePrefs.putInt(SOURCE_SYNC_WAY, sourceType)
-                    it()
-                }
+                context.modulePrefs.putInt(SOURCE_SYNC_WAY, sourceType)
+                context.modulePrefs.putString(SOURCE_SYNC_WAY_CUSTOM_URL, customUrl)
+                sync(context, sourceType, customUrl, it)
             }
             cancelButton()
             neutralButton(text = "自定义规则") {
