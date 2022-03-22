@@ -26,6 +26,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
@@ -223,13 +224,13 @@ class HookEntry : YukiHookXposedInitProxy {
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
      * @param drawable 原始图标
-     * @return [Bitmap]
+     * @return [Pair] - ([Drawable] 图标,[Boolean] 是否替换)
      */
     private fun PackageParam.compatStatusIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String, drawable: Drawable) =
         compatCustomIcon(isGrayscaleIcon, packageName).first.also {
             /** 打印日志 */
             printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
-        } ?: drawable.toBitmap()
+        }?.let { Pair(BitmapDrawable(context.resources, it), true) } ?: Pair(drawable, false)
 
     /**
      * 自动适配通知栏小图标
@@ -376,24 +377,21 @@ class HookEntry : YukiHookXposedInitProxy {
                                             name = "getSbn"
                                         }.get(firstArgs).invoke<StatusBarNotification>()?.also { nf ->
                                             nf.notification.smallIcon.loadDrawable(context).also { iconDrawable ->
-                                                StatusBarIconClass.clazz.field {
-                                                    name = "icon"
-                                                    type = IconClass
-                                                }.get(result).set(
-                                                    Icon.createWithBitmap(
-                                                        compatStatusIcon(
-                                                            context = context,
-                                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                                            packageName = nf.packageName,
-                                                            drawable = iconDrawable
-                                                        )
-                                                    ).apply {
-                                                        /** 刷新图标缓存 */
-                                                        if (nf.packageName == MODULE_PACKAGE_NAME &&
-                                                            nf.notification.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
-                                                        ) cachingIconDatas()
-                                                    }
-                                                )
+                                                compatStatusIcon(
+                                                    context = context,
+                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                    packageName = nf.packageName,
+                                                    drawable = iconDrawable
+                                                ).also { pair ->
+                                                    if (pair.second) StatusBarIconClass.clazz.field {
+                                                        name = "icon"
+                                                        type = IconClass
+                                                    }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
+                                                    /** 刷新图标缓存 */
+                                                    if (nf.packageName == MODULE_PACKAGE_NAME &&
+                                                        nf.notification.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
+                                                    ) cachingIconDatas()
+                                                }
                                             }
                                         }
                                     }
