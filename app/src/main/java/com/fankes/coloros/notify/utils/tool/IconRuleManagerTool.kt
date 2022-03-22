@@ -174,8 +174,8 @@ object IconRuleManagerTool {
     /**
      * 从在线地址同步规则
      * @param context 实例
-     * @param sourceType 同步地址类型
-     * @param customUrl 自定义同步地址
+     * @param sourceType 同步地址类型 - 默认自动获取已存储的键值
+     * @param customUrl 自定义同步地址 - 默认自动获取已存储的键值
      * @param it 成功后回调
      */
     fun sync(
