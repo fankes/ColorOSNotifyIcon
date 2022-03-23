@@ -27,6 +27,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
@@ -34,6 +35,7 @@ import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
 import android.util.ArraySet
 import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
@@ -280,13 +282,6 @@ class HookEntry : YukiHookXposedInitProxy {
         }
 
     /**
-     * 处理为圆角图标
-     * @return [Drawable]
-     */
-    private fun Drawable.rounded(context: Context) =
-        safeOf(default = this) { BitmapDrawable(context.resources, toBitmap().round(20.dpFloat(context))) }
-
-    /**
      * 自动适配状态栏、通知栏自定义小图标
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
@@ -345,6 +340,8 @@ class HookEntry : YukiHookXposedInitProxy {
         compatCustomIcon(isGrayscaleIcon, packageName).also { customPair ->
             when {
                 customPair.first != null || isGrayscaleIcon -> iconView.apply {
+                    /** 设置不要裁切到边界 */
+                    clipToOutline = false
                     /** 重新设置图标 */
                     setImageBitmap(customPair.first ?: drawable.toBitmap())
 
@@ -380,7 +377,18 @@ class HookEntry : YukiHookXposedInitProxy {
                 }
                 else -> iconView.apply {
                     /** 重新设置图标 */
-                    setImageDrawable(drawable.rounded(context))
+                    setImageDrawable(drawable)
+                    /** 设置裁切到边界 */
+                    clipToOutline = true
+                    /** 设置一个圆角轮廓裁切 */
+                    outlineProvider = object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, out: Outline) {
+                            out.setRoundRect(
+                                0, 0,
+                                view.width, view.height, 3.dpFloat(context)
+                            )
+                        }
+                    }
                     /** 清除图标间距 */
                     setPadding(0, 0, 0, 0)
                     /** 清除背景 */
