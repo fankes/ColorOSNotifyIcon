@@ -24,11 +24,12 @@
 
 package com.fankes.coloros.notify.ui.activity
 
-import android.content.ComponentName
+import android.content.*
 import android.content.pm.PackageManager
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
+import com.fankes.coloros.notify.const.Const
 import com.fankes.coloros.notify.databinding.ActivityMainBinding
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_HIDE_ICON
@@ -46,6 +47,7 @@ import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.factory.isXposedModuleActive
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
+import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
@@ -57,6 +59,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         /** 预发布的版本标识 */
         private const val pendingFlag = "[pending]"
     }
+
+    /** 模块是否激活 */
+    private var isModuleAction = false
+
+    /** 模块是否有效 */
+    private var isModuleValied = false
 
     override fun onCreate() {
         /** 检查更新 */
@@ -82,9 +90,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             /** 判断是否 Hook */
             isXposedModuleActive -> {
-                binding.mainLinStatus.setBackgroundResource(R.drawable.bg_green_round)
-                binding.mainImgStatus.setImageResource(R.mipmap.ic_success)
-                binding.mainTextStatus.text = "模块已激活"
                 if (IconPackParams(context = this).iconDatas.isEmpty()
                     && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
                 ) showDialog {
@@ -194,6 +199,64 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         /** 恰饭！ */
         binding.linkWithFollowMe.setOnClickListener {
             openBrowser(url = "https://www.coolapk.com/u/876977", packageName = "com.coolapk.market")
+        }
+        /** 注册广播检查模块激活状态 */
+        registerReceiver(hostReceiver, IntentFilter().apply { addAction(Const.MODULE_HANDLER_RECEIVER) })
+    }
+
+    /** 刷新模块状态 */
+    private fun refreshModuleStatus() {
+        binding.mainLinStatus.setBackgroundResource(
+            when {
+                isXposedModuleActive && (!isModuleAction || !isModuleValied) -> R.drawable.bg_yellow_round
+                isXposedModuleActive -> R.drawable.bg_green_round
+                else -> R.drawable.bg_dark_round
+            }
+        )
+        binding.mainImgStatus.setImageResource(
+            when {
+                isXposedModuleActive -> R.mipmap.ic_success
+                else -> R.mipmap.ic_warn
+            }
+        )
+        binding.mainTextStatus.text =
+            when {
+                isXposedModuleActive && !isModuleAction &&
+                        !modulePrefs.getBoolean(ENABLE_MODULE, default = true) -> "模块已停用"
+                isXposedModuleActive && !isModuleAction -> "模块已激活，请重启系统界面"
+                isXposedModuleActive && !isModuleValied -> "模块已更新，请重启系统界面"
+                isXposedModuleActive -> "模块已激活"
+                else -> "模块未激活"
+            }
+        binding.mainTextApiWay.isVisible = isXposedModuleActive
+        binding.mainTextApiWay.text = "Activate by ${YukiHookModuleStatus.executorName} API ${YukiHookModuleStatus.executorVersion}"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        /** 刷新模块状态 */
+        refreshModuleStatus()
+        /** 发送广播检查模块激活状态 */
+        sendBroadcast(Intent().apply {
+            action = Const.MODULE_CHECKING_RECEIVER
+            putExtra(Const.MODULE_VERSION_VERIFY_TAG, Const.MODULE_VERSION_VERIFY)
+        })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        /** 取消注册广播 */
+        unregisterReceiver(hostReceiver)
+    }
+
+    /** 宿主广播接收器 */
+    private val hostReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                isModuleAction = intent?.getBooleanExtra("isAction", false) ?: false
+                isModuleValied = intent?.getBooleanExtra("isValied", false) ?: false
+                refreshModuleStatus()
+            }
         }
     }
 }

@@ -23,8 +23,10 @@
 package com.fankes.coloros.notify.hook
 
 import android.app.WallpaperManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
@@ -38,8 +40,8 @@ import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
-import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
 import com.fankes.coloros.notify.bean.IconDataBean
+import com.fankes.coloros.notify.const.Const
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
@@ -171,6 +173,32 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /** 仅监听一次主题壁纸颜色变化 */
     private var isWallpaperColorListenerSetUp = false
+
+    /** 是否已经注册广播 */
+    private var isRegisterModuleReceiver = false
+
+    /** 模块广播接收器 */
+    private val moduleReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                context?.sendBroadcast(Intent().apply {
+                    action = Const.MODULE_HANDLER_RECEIVER
+                    putExtra("isAction", true)
+                    putExtra("isValied", intent?.getStringExtra(Const.MODULE_VERSION_VERIFY_TAG) == Const.MODULE_VERSION_VERIFY)
+                })
+            }
+        }
+    }
+
+    /**
+     * 注册模块广播接收器
+     * @param context 实例
+     */
+    private fun registerModuleReceiver(context: Context) {
+        if (isRegisterModuleReceiver) return
+        context.registerReceiver(moduleReceiver, IntentFilter().apply { addAction(Const.MODULE_CHECKING_RECEIVER) })
+        isRegisterModuleReceiver = true
+    }
 
     /**
      * 是否启用通知图标优化功能
@@ -508,7 +536,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                                         type = IconClass
                                                     }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
                                                     /** 刷新缓存 */
-                                                    if (nf.packageName == MODULE_PACKAGE_NAME &&
+                                                    if (nf.packageName == Const.MODULE_PACKAGE_NAME &&
                                                         nf.notification.channelId == IconRuleManagerTool.NOTIFY_CHANNEL
                                                     ) recachingPrefs()
                                                 }
@@ -528,6 +556,7 @@ class HookEntry : YukiHookXposedInitProxy {
                             afterHook {
                                 if (firstArgs != null) instance<ImageView>().also {
                                     registerWallpaperColorChanged(it)
+                                    registerModuleReceiver(it.context)
                                     statusBarIconViews.add(it)
                                 }
                             }
