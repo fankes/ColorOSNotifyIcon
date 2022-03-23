@@ -24,11 +24,8 @@
 
 package com.fankes.coloros.notify.ui.activity
 
-import android.app.Notification
 import android.content.ComponentName
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.provider.Settings
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
@@ -102,16 +99,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     showDialog {
                         title = "模块的通知权限已关闭"
                         msg = "请开启通知权限，以确保你能收到通知优化图标在线规则的更新。"
-                        confirmButton {
-                            runCatching {
-                                Intent().also { intent ->
-                                    intent.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                                    intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-                                    intent.putExtra(Notification.EXTRA_CHANNEL_ID, applicationInfo.uid)
-                                    startActivity(intent)
-                                }
-                            }.onFailure { snake(msg = "跳转通知设置失败") }
-                        }
+                        confirmButton { openNotifySetting() }
                         cancelButton()
                         noCancelable()
                     }
