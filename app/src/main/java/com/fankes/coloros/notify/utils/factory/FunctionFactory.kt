@@ -25,6 +25,8 @@
 package com.fankes.coloros.notify.utils.factory
 
 import android.app.Activity
+import android.app.WallpaperManager
+import android.app.WallpaperManager.FLAG_SYSTEM
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -213,6 +215,17 @@ fun Number.dp(context: Context) = dpFloat(context).toInt()
  * @return [Float]
  */
 fun Number.dpFloat(context: Context) = toFloat() * context.resources.displayMetrics.density
+
+/**
+ * 获取系统壁纸颜色
+ *
+ * 由于 ColorOS 阉割了 [android.R.color.system_accent1_600] 这里取系统壁纸颜色做补偿
+ * @return [Int] 无法获取时返回透明色
+ */
+val Context.wallpaperColor
+    get() = safeOfNan {
+        WallpaperManager.getInstance(this).getWallpaperColors(FLAG_SYSTEM)?.secondaryColor?.toArgb() ?: 0
+    }
 
 /**
  * 是否为白色
