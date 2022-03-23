@@ -27,14 +27,13 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Outline
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
+import android.util.ArraySet
 import android.view.View
-import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
@@ -62,10 +61,12 @@ import com.highcapable.yukihookapi.hook.factory.encase
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.log.loggerD
+import com.highcapable.yukihookapi.hook.log.loggerE
 import com.highcapable.yukihookapi.hook.log.loggerW
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.type.android.*
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
+import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.highcapable.yukihookapi.hook.type.java.LongType
 import com.highcapable.yukihookapi.hook.xposed.proxy.YukiHookXposedInitProxy
@@ -109,6 +110,18 @@ class HookEntry : YukiHookXposedInitProxy {
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
+        private val RoundRectDrawableUtilClass = VariousClass(
+            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil",
+            "com.coloros.systemui.notification.util.RoundRectDrawableUtil"
+        )
+
+        /** 根据多个版本存在不同的包名相同的类 */
+        private val RoundRectDrawableUtil_CompanionClass = VariousClass(
+            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
+            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion"
+        )
+
+        /** 根据多个版本存在不同的包名相同的类 */
         private val DndAlertHelperClass = VariousClass(
             "com.oplusos.systemui.notification.helper.DndAlertHelper",
             "com.coloros.systemui.notification.helper.DndAlertHelper"
@@ -149,7 +162,7 @@ class HookEntry : YukiHookXposedInitProxy {
     private var iconDatas = ArrayList<IconDataBean>()
 
     /** 缓存的状态栏小图标实例 */
-    private var statusBarIconViews = HashSet<ImageView>()
+    private var statusBarIconViews = ArraySet<ImageView>()
 
     /** 缓存的通知小图标包装纸实例 */
     private var notificationViewWrappers = HashSet<Any>()
@@ -195,36 +208,49 @@ class HookEntry : YukiHookXposedInitProxy {
      * @param view 实例
      */
     private fun PackageParam.registerWallpaperColorChanged(view: View) = runInSafe {
-        if (isUpperOfAndroidS && !isWallpaperColorListenerSetUp)
-            WallpaperManager.getInstance(view.context).addOnColorsChangedListener({ _, _ -> refreshNotificationIcons() }, view.handler)
+        if (!isWallpaperColorListenerSetUp && isUpperOfAndroidS) view.apply {
+            WallpaperManager.getInstance(context).addOnColorsChangedListener({ _, _ -> refreshNotificationIcons() }, handler)
+        }
         isWallpaperColorListenerSetUp = true
     }
 
     /** 刷新状态栏小图标 */
     private fun PackageParam.refreshStatusBarIcons() = runInSafe {
-        val unknown = StatusBarIconViewClass.clazz.field { name = "mIcon" }
-        val iconScaleField = StatusBarIconViewClass.clazz.field { name = "mIconScale" }
-        val methodUnused = StatusBarIconViewClass.clazz.method { name = "maybeUpdateIconScaleDimens" }
-        StatusBarIconViewClass.clazz.field { name = "mNotification" }.also { result ->
+        val nfField = StatusBarIconViewClass.clazz.field { name = "mNotification" }
+        val sRadiusField = StatusBarIconViewClass.clazz.field { name = "sIconRadiusFraction" }
+        val sNfSizeField = StatusBarIconViewClass.clazz.field { name = "sNotificationRoundIconSize" }
+        val roundUtil = RoundRectDrawableUtil_CompanionClass.clazz.method {
+            name = "getRoundRectDrawable"
+            param(DrawableClass, FloatType, IntType, IntType, ContextClass)
+        }.onNoSuchMethod { loggerE(msg = "Your system not support \"getRoundRectDrawable\"!", e = it) }
+            .get(RoundRectDrawableUtilClass.clazz.field { name = "Companion" }.get().self)
+        /** 启动一个线程防止卡顿 */
+        Thread {
             statusBarIconViews.takeIf { it.isNotEmpty() }?.forEach {
-                /** 得到通知实例 */
-                val nf = result.of<StatusBarNotification>(it) ?: return
-                val base = nf.notification.smallIcon.loadDrawable(it.context)
+                runInSafe {
+                    /** 得到通知实例 */
+                    val nf = nfField.of<StatusBarNotification>(it) ?: return@Thread
 
-                /** 刷新状态栏图标 */
-                val icon = compatStatusIcon(
-                    context = it.context,
-                    isGrayscaleIcon = isGrayscaleIcon(it.context, base),
-                    packageName = nf.packageName,
-                    drawable = base
-                )
-                /** 移除诡异的间距 FIXME 间距总是有问题不知道为什么 */
-                methodUnused.get(it).call()
-                // FIXME ignored this mabe bugss --> iconScaleField.get(it).set(if (icon.second) 0.75f else 0.68f)
-                it.setImageDrawable(icon.first.rounded(it.context))
-                it.invalidate()
+                    /** 得到原始通知图标 */
+                    val iconDrawable = nf.notification.smallIcon.loadDrawable(it.context)
+                    /** 获取优化后的状态栏通知图标 */
+                    compatStatusIcon(
+                        context = it.context,
+                        isGrayscaleIcon = isGrayscaleIcon(it.context, iconDrawable),
+                        packageName = nf.packageName,
+                        drawable = iconDrawable
+                    ).also { pair ->
+                        /** 得到图标圆角 */
+                        val sRadius = sRadiusField.of<Float>(it)
+
+                        /** 得到缩放大小 */
+                        val sNfSize = sNfSizeField.of<Int>(it)
+                        /** 在主线程设置图标 */
+                        it.post { it.setImageDrawable(roundUtil.invoke(pair.first, sRadius, sNfSize, sNfSize, it.context)) }
+                    }
+                }
             }
-        }
+        }.start()
     }
 
     /** 刷新通知小图标 */
@@ -258,7 +284,7 @@ class HookEntry : YukiHookXposedInitProxy {
      * @return [Drawable]
      */
     private fun Drawable.rounded(context: Context) =
-        safeOf(default = this) { BitmapDrawable(context.resources, toBitmap().round(10.dpFloat(context))) }
+        safeOf(default = this) { BitmapDrawable(context.resources, toBitmap().round(20.dpFloat(context))) }
 
     /**
      * 自动适配状态栏、通知栏自定义小图标
@@ -315,14 +341,13 @@ class HookEntry : YukiHookXposedInitProxy {
         drawable: Drawable,
         iconColor: Int,
         iconView: ImageView
-    ) {
+    ) = runInSafe {
         compatCustomIcon(isGrayscaleIcon, packageName).also { customPair ->
             when {
                 customPair.first != null || isGrayscaleIcon -> iconView.apply {
                     /** 重新设置图标 */
                     setImageBitmap(customPair.first ?: drawable.toBitmap())
-                    /** 设置不要裁切到边界 */
-                    clipToOutline = false
+
                     /** 是否开启 Android 12 风格 */
                     val isA12Style = prefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
 
@@ -341,6 +366,7 @@ class HookEntry : YukiHookXposedInitProxy {
 
                     /** 新版图标着色 */
                     val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: a12Style
+
                     /** 判断风格并开始 Hook */
                     if (isA12Style) {
                         background = DrawableBuilder().rounded().solidColor(newApplyColor).build()
@@ -354,18 +380,7 @@ class HookEntry : YukiHookXposedInitProxy {
                 }
                 else -> iconView.apply {
                     /** 重新设置图标 */
-                    setImageDrawable(drawable)
-                    /** 设置裁切到边界 */
-                    clipToOutline = true
-                    /** 设置一个圆角轮廓裁切 */
-                    outlineProvider = object : ViewOutlineProvider() {
-                        override fun getOutline(view: View, out: Outline) {
-                            out.setRoundRect(
-                                0, 0,
-                                view.width, view.height, 3.dpFloat(context)
-                            )
-                        }
-                    }
+                    setImageDrawable(drawable.rounded(context))
                     /** 清除图标间距 */
                     setPadding(0, 0, 0, 0)
                     /** 清除背景 */
@@ -508,17 +523,6 @@ class HookEntry : YukiHookXposedInitProxy {
                                     statusBarIconViews.add(it)
                                 }
                             }
-                        }
-                        injectMember {
-                            method {
-                                name = "onConfigurationChanged"
-                                param(ConfigurationClass)
-                            }
-                            intercept()
-                        }
-                        injectMember {
-                            method { name = "updateIconScaleForSystemIcons" }
-                            intercept()
                         }
                     }
                     /** 替换通知图标和样式 */
