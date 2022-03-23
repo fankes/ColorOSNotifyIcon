@@ -221,7 +221,7 @@ class HookEntry : YukiHookXposedInitProxy {
                 /** 移除诡异的间距 FIXME 间距总是有问题不知道为什么 */
                 methodUnused.get(it).call()
                 // FIXME ignored this mabe bugss --> iconScaleField.get(it).set(if (icon.second) 0.75f else 0.68f)
-                it.setImageDrawable(icon.first)
+                it.setImageDrawable(icon.first.rounded(it.context))
                 it.invalidate()
             }
         }
@@ -252,6 +252,13 @@ class HookEntry : YukiHookXposedInitProxy {
                 param(ContextClass)
             }.get().invoke(context)).invoke<Boolean>(drawable) ?: false
         }
+
+    /**
+     * 处理为圆角图标
+     * @return [Drawable]
+     */
+    private fun Drawable.rounded(context: Context) =
+        safeOf(default = this) { BitmapDrawable(context.resources, toBitmap().round(10.dpFloat(context))) }
 
     /**
      * 自动适配状态栏、通知栏自定义小图标
