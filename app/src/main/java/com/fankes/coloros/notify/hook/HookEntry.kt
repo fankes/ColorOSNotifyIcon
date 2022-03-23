@@ -22,15 +22,19 @@
  */
 package com.fankes.coloros.notify.hook
 
+import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Outline
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
+import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.application.CNNApplication.Companion.MODULE_PACKAGE_NAME
@@ -150,6 +154,9 @@ class HookEntry : YukiHookXposedInitProxy {
     /** 缓存的通知小图标包装纸实例 */
     private var notificationViewWrappers = HashSet<Any>()
 
+    /** 仅监听一次主题壁纸颜色变化 */
+    private var isWallpaperColorListenerSetUp = false
+
     /**
      * 是否启用通知图标优化功能
      * @param isHooking 是否判断启用通知功能 - 默认：是
@@ -181,6 +188,18 @@ class HookEntry : YukiHookXposedInitProxy {
         )
     }
 
+    /**
+     * 注册主题壁纸改变颜色监听
+     *
+     *  - 仅限在 Android 12 上注册
+     * @param view 实例
+     */
+    private fun PackageParam.registerWallpaperColorChanged(view: View) = runInSafe {
+        if (isUpperOfAndroidS && !isWallpaperColorListenerSetUp)
+            WallpaperManager.getInstance(view.context).addOnColorsChangedListener({ _, _ -> refreshNotificationIcons() }, view.handler)
+        isWallpaperColorListenerSetUp = true
+    }
+
     /** 刷新状态栏小图标 */
     private fun PackageParam.refreshStatusBarIcons() = runInSafe {
         val unknown = StatusBarIconViewClass.clazz.field { name = "mIcon" }
@@ -210,7 +229,9 @@ class HookEntry : YukiHookXposedInitProxy {
 
     /** 刷新通知小图标 */
     private fun PackageParam.refreshNotificationIcons() = runInSafe {
-        // TODO
+        NotificationHeaderViewWrapperClass.clazz.method { name = "resolveHeaderViews" }.also { result ->
+            notificationViewWrappers.takeIf { it.isNotEmpty() }?.forEach { result.get(it).call() }
+        }
     }
 
     /**
@@ -291,7 +312,10 @@ class HookEntry : YukiHookXposedInitProxy {
         compatCustomIcon(isGrayscaleIcon, packageName).also { customPair ->
             when {
                 customPair.first != null || isGrayscaleIcon -> iconView.apply {
+                    /** 重新设置图标 */
                     setImageBitmap(customPair.first ?: drawable.toBitmap())
+                    /** 设置不要裁切到边界 */
+                    clipToOutline = false
                     /** 是否开启 Android 12 风格 */
                     val isA12Style = prefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
 
@@ -301,14 +325,15 @@ class HookEntry : YukiHookXposedInitProxy {
                     /** 新版风格 */
                     val newStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else Color.WHITE).toInt()
 
-                    /** 优化风格 */
-                    val fixStyle = (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
+                    /** 原生着色 */
+                    val a12Style = if (isUpperOfAndroidS) context.wallpaperColor else
+                        (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
 
                     /** 旧版图标着色 */
                     val oldApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
 
                     /** 新版图标着色 */
-                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: fixStyle
+                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: a12Style
                     /** 判断风格并开始 Hook */
                     if (isA12Style) {
                         background = DrawableBuilder().rounded().solidColor(newApplyColor).build()
@@ -321,8 +346,24 @@ class HookEntry : YukiHookXposedInitProxy {
                     }
                 }
                 else -> iconView.apply {
+                    /** 重新设置图标 */
+                    setImageDrawable(drawable)
+                    /** 设置裁切到边界 */
+                    clipToOutline = true
+                    /** 设置一个圆角轮廓裁切 */
+                    outlineProvider = object : ViewOutlineProvider() {
+                        override fun getOutline(view: View, out: Outline) {
+                            out.setRoundRect(
+                                0, 0,
+                                view.width, view.height, 3.dpFloat(context)
+                            )
+                        }
+                    }
+                    /** 清除图标间距 */
                     setPadding(0, 0, 0, 0)
+                    /** 清除背景 */
                     background = null
+                    /** 清除着色 */
                     colorFilter = null
                 }
             }
@@ -454,7 +495,23 @@ class HookEntry : YukiHookXposedInitProxy {
                                 name = "setNotification"
                                 param(StatusBarNotificationClass)
                             }
-                            afterHook { if (firstArgs != null) statusBarIconViews.add(instance()) }
+                            afterHook {
+                                if (firstArgs != null) instance<ImageView>().also {
+                                    registerWallpaperColorChanged(it)
+                                    statusBarIconViews.add(it)
+                                }
+                            }
+                        }
+                        injectMember {
+                            method {
+                                name = "onConfigurationChanged"
+                                param(ConfigurationClass)
+                            }
+                            intercept()
+                        }
+                        injectMember {
+                            method { name = "updateIconScaleForSystemIcons" }
+                            intercept()
                         }
                     }
                     /** 替换通知图标和样式 */
@@ -485,6 +542,11 @@ class HookEntry : YukiHookXposedInitProxy {
                                             }
                                     }
                             }
+                        }
+                        /** 记录实例 */
+                        injectMember {
+                            constructor { param(ContextClass, ViewClass, ExpandableNotificationRowClass.clazz) }
+                            afterHook { notificationViewWrappers.add(instance) }
                         }
                     }
                     /** 发送适配新的 APP 图标通知 */
