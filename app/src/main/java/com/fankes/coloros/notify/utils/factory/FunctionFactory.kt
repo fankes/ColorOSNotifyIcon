@@ -137,7 +137,7 @@ val colorOSVersion
     get() = safeOf(default = "无法获取") {
         (classOf(name = "com.oplus.os.OplusBuild").let {
             it.field { name = "VERSIONS" }.ignoredError().of<Array<String>>()
-                ?.get((it.method { name = "getOplusOSVERSION" }.ignoredError().get().invoke<Int>() ?: 23) - 1)
+                ?.get(it.method { name = "getOplusOSVERSION" }.ignoredError().get().callInt() - 1)
         } ?: findPropString(
             key = "ro.system.build.fingerprint", default = "无法获取"
         ).split("ssi:")[1].split("/")[0].trim()) + " ${Build.DISPLAY}"

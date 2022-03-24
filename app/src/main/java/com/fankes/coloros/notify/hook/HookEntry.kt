@@ -271,10 +271,10 @@ class HookEntry : YukiHookXposedInitProxy {
                         drawable = iconDrawable
                     ).also { pair ->
                         /** 得到图标圆角 */
-                        val sRadius = sRadiusField.of<Float>(it)
+                        val sRadius = sRadiusField.ofFloat(it)
 
                         /** 得到缩放大小 */
-                        val sNfSize = sNfSizeField.of<Int>(it)
+                        val sNfSize = sNfSizeField.ofInt(it)
                         /** 在主线程设置图标 */
                         it.post { it.setImageDrawable(roundUtil.invoke(pair.first, sRadius, sNfSize, sNfSize, it.context)) }
                     }
@@ -306,7 +306,7 @@ class HookEntry : YukiHookXposedInitProxy {
             }.get(it.method {
                 name = "getInstance"
                 param(ContextClass)
-            }.get().invoke(context)).invoke<Boolean>(drawable) ?: false
+            }.get().invoke(context)).callBoolean(drawable)
         }
 
     /**
