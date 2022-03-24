@@ -182,7 +182,7 @@ class HookEntry : YukiHookXposedInitProxy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 context?.sendBroadcast(Intent().apply {
-                    action = Const.MODULE_HANDLER_RECEIVER
+                    action = Const.MODULE_HANDLER_RECEIVER_TAG
                     putExtra("isAction", true)
                     putExtra("isValied", intent?.getStringExtra(Const.MODULE_VERSION_VERIFY_TAG) == Const.MODULE_VERSION_VERIFY)
                 })
@@ -196,7 +196,7 @@ class HookEntry : YukiHookXposedInitProxy {
      */
     private fun registerModuleReceiver(context: Context) {
         if (isRegisterModuleReceiver) return
-        context.registerReceiver(moduleReceiver, IntentFilter().apply { addAction(Const.MODULE_CHECKING_RECEIVER) })
+        context.registerReceiver(moduleReceiver, IntentFilter().apply { addAction(Const.MODULE_CHECKING_RECEIVER_TAG) })
         isRegisterModuleReceiver = true
     }
 
