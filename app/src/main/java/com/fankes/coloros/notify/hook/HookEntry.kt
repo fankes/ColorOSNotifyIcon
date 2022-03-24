@@ -484,7 +484,7 @@ class HookEntry : YukiHookXposedInitProxy {
                             }
                             beforeHook {
                                 /** 是否移除 */
-                                if (firstArgs as Int == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY)) resultNull()
+                                if (firstArgs<Int>() == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY)) resultNull()
                             }
                         }
                     }
@@ -508,7 +508,7 @@ class HookEntry : YukiHookXposedInitProxy {
                                 name = "isGrayscaleOplus"
                                 param(ImageViewClass, OplusContrastColorUtilClass.clazz)
                             }
-                            replaceAny { (firstArgs as? ImageView?)?.let { isGrayscaleIcon(it.context, it.drawable) } }
+                            replaceAny { firstArgs<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } }
                         }.ignoredHookingFailure()
                     }
                     /** 替换状态栏图标 */
@@ -615,11 +615,11 @@ class HookEntry : YukiHookXposedInitProxy {
                                                 if (iconDatas.takeIf { e -> e.isNotEmpty() }
                                                         ?.filter { e -> e.packageName == newPkgName }
                                                         .isNullOrEmpty()
-                                                ) IconAdaptationTool.pushNewAppSupportNotify(firstArgs as Context, newPkgName)
+                                                ) IconAdaptationTool.pushNewAppSupportNotify(firstArgs()!!, newPkgName)
                                             }
                                         Intent.ACTION_PACKAGE_REMOVED ->
                                             IconAdaptationTool.removeNewAppSupportNotify(
-                                                firstArgs as Context,
+                                                context = firstArgs()!!,
                                                 packageName = it.data?.schemeSpecificPart ?: ""
                                             )
                                     }
