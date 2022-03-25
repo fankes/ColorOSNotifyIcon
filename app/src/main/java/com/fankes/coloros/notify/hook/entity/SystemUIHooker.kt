@@ -35,7 +35,6 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
-import android.util.ArraySet
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.ImageView
@@ -160,11 +159,14 @@ class SystemUIHooker : YukiBaseHooker() {
         )
     }
 
+    /** 缓存的彩色 APP 图标 */
+    private var appIcons = HashMap<String, Drawable>()
+
     /** 缓存的通知优化图标数组 */
     private var iconDatas = ArrayList<IconDataBean>()
 
     /** 缓存的状态栏小图标实例 */
-    private var statusBarIconViews = ArraySet<ImageView>()
+    private var statusBarIconViews = HashSet<ImageView>()
 
     /** 缓存的通知小图标包装纸实例 */
     private var notificationViewWrappers = HashSet<Any>()
@@ -332,14 +334,13 @@ class SystemUIHooker : YukiBaseHooker() {
      * 适配通知栏、状态栏来自系统推送的彩色 APP 图标
      *
      * 适配第三方图标包对系统包管理器更换图标后的彩色图标
-     * @param context 实例
      * @param iconDrawable 原始图标
      * @return [Drawable] 适配的图标
      */
-    private fun StatusBarNotification.compatPushingIcon(context: Context, iconDrawable: Drawable) = safeOf(iconDrawable) {
+    private fun StatusBarNotification.compatPushingIcon(iconDrawable: Drawable) = safeOf(iconDrawable) {
         /** 给系统推送设置 APP 自己的图标 */
         if (isOplusPush && opPkg.isNotBlank())
-            context.findAppIcon(packageName) ?: iconDrawable
+            appIcons[packageName] ?: iconDrawable
         else iconDrawable
     }
 
@@ -389,7 +390,7 @@ class SystemUIHooker : YukiBaseHooker() {
         /** 打印日志 */
         printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
     }?.let { Pair(BitmapDrawable(context.resources, it), true) }
-        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(context, drawable), !isGrayscaleIcon)
+        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), !isGrayscaleIcon)
 
     /**
      * 自动适配通知栏小图标
@@ -450,7 +451,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 else -> iconView.apply {
                     /** 重新设置图标 */
-                    setImageDrawable(nf.compatPushingIcon(context, drawable))
+                    setImageDrawable(nf.compatPushingIcon(drawable))
                     /** 设置裁切到边界 */
                     clipToOutline = true
                     /** 设置一个圆角轮廓裁切 */
@@ -561,7 +562,10 @@ class SystemUIHooker : YukiBaseHooker() {
                                     compatStatusIcon(
                                         context = context,
                                         nf = nf,
-                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
+                                            /** 缓存第一次的 APP 小图标 */
+                                            if (!it) context.findAppIcon(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
+                                        },
                                         packageName = nf.packageName,
                                         drawable = iconDrawable
                                     ).also { pair ->
