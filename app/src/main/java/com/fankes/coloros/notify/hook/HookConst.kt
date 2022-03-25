@@ -33,7 +33,9 @@ object HookConst {
     const val REMOVE_DEV_NOTIFY = "_remove_dev_notify"
     const val REMOVE_CHANGECP_NOTIFY = "_remove_charge_complete_notify"
     const val REMOVE_DNDALERT_NOTIFY = "_remove_dndalert_notify"
+    const val ENABLE_NOTIFY_ICON_FIX_AUTO = "_enable_notify_icon_fix_auto"
     const val NOTIFY_ICON_DATAS = "_notify_icon_datas"
+    const val NOTIFY_ICON_FIX_AUTO_TIME = "_notify_icon_fix_auto_time"
 
     const val SOURCE_SYNC_WAY = "_rule_source_sync_way"
     const val SOURCE_SYNC_WAY_CUSTOM_URL = "_rule_source_sync_way_custom_url"

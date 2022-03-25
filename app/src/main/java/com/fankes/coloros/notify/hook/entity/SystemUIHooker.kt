@@ -45,7 +45,9 @@ import com.fankes.coloros.notify.hook.HookConst.ANDROID_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
+import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_AUTO
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY
+import com.fankes.coloros.notify.hook.HookConst.NOTIFY_ICON_FIX_AUTO_TIME
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
@@ -698,8 +700,12 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(ContextClass, IntentClass)
                 }
                 afterHook {
-                    // TODO 待实现
-                    loggerD(msg = "当前时间：${System.currentTimeMillis()}")
+                    if (isEnableHookColorNotifyIcon() && prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_AUTO, default = true))
+                        IconAdaptationTool.prepareAutoUpdateIconRule(
+                            context = firstArgs()!!,
+                            // TODO 设置 UI 界面设置定时更新规则
+                            timeSet = prefs.getString(NOTIFY_ICON_FIX_AUTO_TIME, default = "07:00")
+                        )
                 }
             }
         }
