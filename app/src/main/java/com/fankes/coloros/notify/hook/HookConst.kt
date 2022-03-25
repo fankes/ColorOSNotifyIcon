@@ -42,5 +42,6 @@ object HookConst {
     const val TYPE_SOURCE_SYNC_WAY_2 = 2000
     const val TYPE_SOURCE_SYNC_WAY_3 = 3000
 
+    const val ANDROID_PACKAGE_NAME = "android"
     const val SYSTEMUI_PACKAGE_NAME = "com.android.systemui"
 }

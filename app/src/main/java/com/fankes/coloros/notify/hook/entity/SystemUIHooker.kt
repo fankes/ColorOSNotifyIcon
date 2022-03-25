@@ -42,6 +42,7 @@ import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.const.Const
+import com.fankes.coloros.notify.hook.HookConst.ANDROID_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
@@ -330,7 +331,7 @@ class SystemUIHooker : YukiBaseHooker() {
         var customPair: Pair<Bitmap?, Int>? = null
         when {
             /** 替换系统图标为 Android 默认 */
-            (packageName == "android" || packageName == SYSTEMUI_PACKAGE_NAME) && !isGrayscaleIcon ->
+            (packageName == ANDROID_PACKAGE_NAME || packageName == SYSTEMUI_PACKAGE_NAME) && !isGrayscaleIcon ->
                 customPair = Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
             /** 替换自定义通知图标 */
             prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) -> run {
