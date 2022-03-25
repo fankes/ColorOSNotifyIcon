@@ -222,6 +222,12 @@ class SystemUIHooker : YukiBaseHooker() {
                 (if (isHooking) prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true) else true)
 
     /**
+     * 判断通知是否来自系统推送
+     * @return [Boolean]
+     */
+    private val StatusBarNotification.isOplusPush get() = opPkg == ANDROID_PACKAGE_NAME && opPkg != packageName
+
+    /**
      * 打印日志
      * @param tag 标识
      * @param context 实例
@@ -320,6 +326,21 @@ class SystemUIHooker : YukiBaseHooker() {
                 param(ContextClass)
             }.get().invoke(context)).callBoolean(drawable)
         }
+
+    /**
+     * 适配通知栏、状态栏来自系统推送的彩色 APP 图标
+     *
+     * 适配第三方图标包对系统包管理器更换图标后的彩色图标
+     * @param context 实例
+     * @param iconDrawable 原始图标
+     * @return [Drawable] 适配的图标
+     */
+    private fun StatusBarNotification.compatPushingIcon(context: Context, iconDrawable: Drawable) = safeOf(iconDrawable) {
+        /** 给系统推送设置 APP 自己的图标 */
+        if (isOplusPush && opPkg.isNotBlank())
+            context.findAppIcon(packageName) ?: iconDrawable
+        else iconDrawable
+    }
 
     /**
      * 自动适配状态栏、通知栏自定义小图标
