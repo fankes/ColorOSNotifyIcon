@@ -24,12 +24,11 @@
 
 package com.fankes.coloros.notify.ui.activity
 
-import android.content.*
+import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
-import com.fankes.coloros.notify.const.Const
 import com.fankes.coloros.notify.databinding.ActivityMainBinding
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
 import com.fankes.coloros.notify.hook.HookConst.ENABLE_HIDE_ICON
@@ -60,8 +59,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         private const val pendingFlag = "[pending]"
     }
 
-    /** 模块是否激活 */
-    private var isModuleAction = false
+    /** 模块是否可用 */
+    private var isModuleRegular = false
 
     /** 模块是否有效 */
     private var isModuleValied = false
@@ -168,22 +167,22 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this)
+            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DEV_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this)
+            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this)
+            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             modulePrefs.putBoolean(REMOVE_DNDALERT_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this)
+            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
@@ -200,15 +199,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.linkWithFollowMe.setOnClickListener {
             openBrowser(url = "https://www.coolapk.com/u/876977", packageName = "com.coolapk.market")
         }
-        /** 注册广播检查模块激活状态 */
-        registerReceiver(hostReceiver, IntentFilter().apply { addAction(Const.ACTION_MODULE_HANDLER_RECEIVER) })
     }
 
     /** 刷新模块状态 */
     private fun refreshModuleStatus() {
         binding.mainLinStatus.setBackgroundResource(
             when {
-                isXposedModuleActive && (!isModuleAction || !isModuleValied) -> R.drawable.bg_yellow_round
+                isXposedModuleActive && (!isModuleRegular || !isModuleValied) -> R.drawable.bg_yellow_round
                 isXposedModuleActive -> R.drawable.bg_green_round
                 else -> R.drawable.bg_dark_round
             }
@@ -221,9 +218,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         )
         binding.mainTextStatus.text =
             when {
-                isXposedModuleActive && !isModuleAction &&
+                isXposedModuleActive && !isModuleRegular &&
                         !modulePrefs.getBoolean(ENABLE_MODULE, default = true) -> "模块已停用"
-                isXposedModuleActive && !isModuleAction -> "模块已激活，请重启系统界面"
+                isXposedModuleActive && !isModuleRegular -> "模块已激活，请重启系统界面"
                 isXposedModuleActive && !isModuleValied -> "模块已更新，请重启系统界面"
                 isXposedModuleActive -> "模块已激活"
                 else -> "模块未激活"
@@ -237,26 +234,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         /** 刷新模块状态 */
         refreshModuleStatus()
         /** 发送广播检查模块激活状态 */
-        sendBroadcast(Intent().apply {
-            action = Const.ACTION_MODULE_CHECKING_RECEIVER
-            putExtra(Const.MODULE_VERSION_VERIFY_TAG, Const.MODULE_VERSION_VERIFY)
-        })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        /** 取消注册广播 */
-        unregisterReceiver(hostReceiver)
-    }
-
-    /** 宿主广播接收器 */
-    private val hostReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                isModuleAction = intent?.getBooleanExtra("isAction", false) ?: false
-                isModuleValied = intent?.getBooleanExtra("isValied", false) ?: false
-                refreshModuleStatus()
-            }
+        SystemUITool.checkingActivated(context = this) { isRegular, isValied ->
+            isModuleRegular = isRegular
+            isModuleValied = isValied
+            refreshModuleStatus()
         }
     }
 }
