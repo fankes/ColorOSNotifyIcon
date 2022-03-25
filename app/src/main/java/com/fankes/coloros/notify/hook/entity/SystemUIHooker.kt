@@ -284,6 +284,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     /** 获取优化后的状态栏通知图标 */
                     compatStatusIcon(
                         context = it.context,
+                        nf = nf,
                         isGrayscaleIcon = isGrayscaleIcon(it.context, iconDrawable),
                         packageName = nf.packageName,
                         drawable = iconDrawable
@@ -372,19 +373,28 @@ class SystemUIHooker : YukiBaseHooker() {
     /**
      * 自动适配状态栏小图标
      * @param context 实例
+     * @param nf 通知实例
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
      * @param drawable 原始图标
      * @return [Pair] - ([Drawable] 图标,[Boolean] 是否替换)
      */
-    private fun compatStatusIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String, drawable: Drawable) =
-        compatCustomIcon(isGrayscaleIcon, packageName).first.also {
-            /** 打印日志 */
-            printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
-        }?.let { Pair(BitmapDrawable(context.resources, it), true) } ?: Pair(drawable, false)
+    private fun compatStatusIcon(
+        context: Context,
+        nf: StatusBarNotification,
+        isGrayscaleIcon: Boolean,
+        packageName: String,
+        drawable: Drawable
+    ) = compatCustomIcon(isGrayscaleIcon, packageName).first.also {
+        /** 打印日志 */
+        printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
+    }?.let { Pair(BitmapDrawable(context.resources, it), true) }
+        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(context, drawable), !isGrayscaleIcon)
 
     /**
      * 自动适配通知栏小图标
+     * @param context 实例
+     * @param nf 通知实例
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
      * @param drawable 原始图标
@@ -392,6 +402,8 @@ class SystemUIHooker : YukiBaseHooker() {
      * @param iconView 图标 [ImageView]
      */
     private fun compatNotifyIcon(
+        context: Context,
+        nf: StatusBarNotification,
         isGrayscaleIcon: Boolean,
         packageName: String,
         drawable: Drawable,
@@ -438,7 +450,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 else -> iconView.apply {
                     /** 重新设置图标 */
-                    setImageDrawable(drawable)
+                    setImageDrawable(nf.compatPushingIcon(context, drawable))
                     /** 设置裁切到边界 */
                     clipToOutline = true
                     /** 设置一个圆角轮廓裁切 */
@@ -548,6 +560,7 @@ class SystemUIHooker : YukiBaseHooker() {
                                 nf.notification.smallIcon.loadDrawable(context).also { iconDrawable ->
                                     compatStatusIcon(
                                         context = context,
+                                        nf = nf,
                                         isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
                                         packageName = nf.packageName,
                                         drawable = iconDrawable
@@ -598,15 +611,19 @@ class SystemUIHooker : YukiBaseHooker() {
                                     it.javaClass.method {
                                         name = "getSbn"
                                     }.get(it).invoke<StatusBarNotification>()
-                                }?.notification?.also { nf ->
-                                    nf.smallIcon.loadDrawable(context).also { iconDrawable ->
-                                        compatNotifyIcon(
-                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                            packageName = context.packageName,
-                                            drawable = iconDrawable,
-                                            iconColor = nf.color,
-                                            iconView = this
-                                        )
+                                }.also { nf ->
+                                    nf?.notification?.also {
+                                        it.smallIcon.loadDrawable(context).also { iconDrawable ->
+                                            compatNotifyIcon(
+                                                context = context,
+                                                nf = nf,
+                                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                packageName = context.packageName,
+                                                drawable = iconDrawable,
+                                                iconColor = it.color,
+                                                iconView = this
+                                            )
+                                        }
                                     }
                                 }
                         }
