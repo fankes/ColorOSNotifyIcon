@@ -330,8 +330,8 @@ class SystemUIHooker : YukiBaseHooker() {
         var customPair: Pair<Bitmap?, Int>? = null
         when {
             /** 替换系统图标为 Android 默认 */
-            (packageName == "android" || packageName == "com.android.systemui") && !isGrayscaleIcon -> customPair =
-                Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
+            (packageName == "android" || packageName == "com.android.systemui") && !isGrayscaleIcon ->
+                customPair = Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
             /** 替换自定义通知图标 */
             prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) -> run {
                 if (iconDatas.isNotEmpty())
