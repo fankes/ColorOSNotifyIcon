@@ -22,7 +22,7 @@
  */
 package com.fankes.coloros.notify.hook
 
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
+import com.fankes.coloros.notify.data.DataConst
 import com.fankes.coloros.notify.hook.HookConst.SYSTEMUI_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker
 import com.fankes.coloros.notify.utils.factory.isNotColorOS
@@ -46,7 +46,7 @@ class HookEntry : YukiHookXposedInitProxy {
                 /** 不是 ColorOS 系统停止 Hook */
                 isNotColorOS -> loggerW(msg = "Aborted Hook -> This System is not ColorOS")
                 /** Hook 被手动关闭停止 Hook */
-                !prefs.getBoolean(ENABLE_MODULE, default = true) -> loggerW(msg = "Aborted Hook -> Hook Closed")
+                prefs.get(DataConst.ENABLE_MODULE).not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
                 /** 开始 Hook */
                 else -> loadHooker(SystemUIHooker())
             }

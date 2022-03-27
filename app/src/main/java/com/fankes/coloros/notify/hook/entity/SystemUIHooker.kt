@@ -20,6 +20,8 @@
  *
  * This file is Created by fankes on 2022/3/25.
  */
+@file:Suppress("Recycle")
+
 package com.fankes.coloros.notify.hook.entity
 
 import android.app.WallpaperManager
@@ -41,16 +43,8 @@ import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.const.Const
+import com.fankes.coloros.notify.data.DataConst
 import com.fankes.coloros.notify.hook.HookConst.ANDROID_PACKAGE_NAME
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_AUTO
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.NOTIFY_ICON_FIX_AUTO_TIME
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.hook.HookConst.SYSTEMUI_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
@@ -243,8 +237,7 @@ class SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private fun isEnableHookColorNotifyIcon(isHooking: Boolean = true) =
-        prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) &&
-                (if (isHooking) prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true) else true)
+        prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) && (if (isHooking) prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY) else true)
 
     /**
      * 判断通知是否来自系统推送
@@ -267,7 +260,7 @@ class SystemUIHooker : YukiBaseHooker() {
         isCustom: Boolean,
         isGrayscale: Boolean
     ) {
-        if (prefs.getBoolean(ENABLE_MODULE_LOG)) loggerD(
+        if (prefs.get(DataConst.ENABLE_MODULE_LOG)) loggerD(
             msg = "$tag --> [${context.findAppName(packageName)}][$packageName] " +
                     "custom [$isCustom] " +
                     "grayscale [$isGrayscale]"
@@ -281,7 +274,7 @@ class SystemUIHooker : YukiBaseHooker() {
      * @param view 实例
      */
     private fun registerWallpaperColorChanged(view: View) = runInSafe {
-        if (!isWallpaperColorListenerSetUp && isUpperOfAndroidS) view.apply {
+        if (isWallpaperColorListenerSetUp.not() && isUpperOfAndroidS) view.apply {
             WallpaperManager.getInstance(context).addOnColorsChangedListener({ _, _ -> refreshNotificationIcons() }, handler)
         }
         isWallpaperColorListenerSetUp = true
@@ -377,18 +370,17 @@ class SystemUIHooker : YukiBaseHooker() {
         var customPair: Pair<Bitmap?, Int>? = null
         when {
             /** 替换系统图标为 Android 默认 */
-            (packageName == ANDROID_PACKAGE_NAME || packageName == SYSTEMUI_PACKAGE_NAME) && !isGrayscaleIcon ->
+            (packageName == ANDROID_PACKAGE_NAME || packageName == SYSTEMUI_PACKAGE_NAME) && isGrayscaleIcon.not() ->
                 customPair = Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
             /** 替换自定义通知图标 */
-            prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true) -> run {
-                if (iconDatas.isNotEmpty())
-                    iconDatas.forEach {
-                        if (packageName == it.packageName && isAppNotifyHookOf(it)) {
-                            if (!isGrayscaleIcon || isAppNotifyHookAllOf(it))
-                                customPair = Pair(it.iconBitmap, it.iconColor)
-                            return@run
-                        }
+            prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) -> run {
+                iconDatas.takeIf { it.isNotEmpty() }?.forEach {
+                    if (packageName == it.packageName && isAppNotifyHookOf(it)) {
+                        if (isGrayscaleIcon.not() || isAppNotifyHookAllOf(it))
+                            customPair = Pair(it.iconBitmap, it.iconColor)
+                        return@run
                     }
+                }
             }
         }
         return customPair ?: Pair(null, 0)
@@ -413,7 +405,7 @@ class SystemUIHooker : YukiBaseHooker() {
         /** 打印日志 */
         printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
     }?.let { Pair(BitmapDrawable(context.resources, it), true) }
-        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), !isGrayscaleIcon)
+        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
 
     /**
      * 自动适配通知栏小图标
@@ -443,7 +435,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     setImageBitmap(customPair.first ?: drawable.toBitmap())
 
                     /** 是否开启 Android 12 风格 */
-                    val isA12Style = prefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
+                    val isA12Style = prefs.get(DataConst.ENABLE_ANDROID12_STYLE)
 
                     /** 旧版风格 */
                     val oldStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else 0xff707173).toInt()
@@ -532,7 +524,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 method { name = "updateDeveloperMode" }
                 beforeHook {
                     /** 是否移除 */
-                    if (prefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)) resultNull()
+                    if (prefs.get(DataConst.REMOVE_DEV_NOTIFY)) resultNull()
                 }
             }
         }
@@ -545,7 +537,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 beforeHook {
                     /** 是否移除 */
-                    if (firstArgs<Int>() == 7 && prefs.getBoolean(REMOVE_CHANGECP_NOTIFY)) resultNull()
+                    if (args().ofInt() == 7 && prefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)) resultNull()
                 }
             }
         }
@@ -558,7 +550,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 beforeHook {
                     /** 是否移除 */
-                    if (prefs.getBoolean(REMOVE_DNDALERT_NOTIFY)) resultNull()
+                    if (prefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)) resultNull()
                 }
             }
         }
@@ -591,7 +583,8 @@ class SystemUIHooker : YukiBaseHooker() {
                                         nf = nf,
                                         isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
                                             /** 缓存第一次的 APP 小图标 */
-                                            if (!it) context.findAppIcon(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
+                                            if (it.not()) context.findAppIcon(nf.packageName)
+                                                ?.also { e -> appIcons[nf.packageName] = e }
                                         },
                                         packageName = nf.packageName,
                                         drawable = iconDrawable
@@ -671,7 +664,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 afterHook {
                     if (isEnableHookColorNotifyIcon()) (lastArgs as? Intent)?.also {
-                        if (!it.action.equals(Intent.ACTION_PACKAGE_REPLACED) &&
+                        if (it.action.equals(Intent.ACTION_PACKAGE_REPLACED).not() &&
                             it.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                         ) return@also
                         when (it.action) {
@@ -700,11 +693,11 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(ContextClass, IntentClass)
                 }
                 afterHook {
-                    if (isEnableHookColorNotifyIcon() && prefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_AUTO, default = true))
+                    if (isEnableHookColorNotifyIcon() && prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO))
                         IconAdaptationTool.prepareAutoUpdateIconRule(
                             context = firstArgs()!!,
                             // TODO 设置 UI 界面设置定时更新规则
-                            timeSet = prefs.getString(NOTIFY_ICON_FIX_AUTO_TIME, default = "07:00")
+                            timeSet = prefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
                         )
                 }
             }
