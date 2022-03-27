@@ -29,16 +29,8 @@ import android.content.pm.PackageManager
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
+import com.fankes.coloros.notify.data.DataConst
 import com.fankes.coloros.notify.databinding.ActivityMainBinding
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_ANDROID12_STYLE
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_HIDE_ICON
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_MODULE_LOG
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX
-import com.fankes.coloros.notify.hook.HookConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_CHANGECP_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_DEV_NOTIFY
-import com.fankes.coloros.notify.hook.HookConst.REMOVE_DNDALERT_NOTIFY
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
@@ -89,17 +81,16 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             /** 判断是否 Hook */
             isXposedModuleActive -> {
-                if (IconPackParams(context = this).iconDatas.isEmpty()
-                    && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-                ) showDialog {
-                    title = "配置通知图标优化名单"
-                    msg = "模块需要获取在线规则以更新“通知图标优化名单”，它现在是空的，这看起来是你第一次使用模块，请首先进行配置才可以使用相关功能。\n" +
-                            "你可以随时在本页面下方找到“配置通知图标优化名单”手动前往。"
-                    confirmButton(text = "前往") { navigate<ConfigureActivity>() }
-                    cancelButton()
-                    noCancelable()
-                }
-                if (isNotNoificationEnabled && modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true))
+                if (IconPackParams(context = this).iconDatas.isEmpty() && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX))
+                    showDialog {
+                        title = "配置通知图标优化名单"
+                        msg = "模块需要获取在线规则以更新“通知图标优化名单”，它现在是空的，这看起来是你第一次使用模块，请首先进行配置才可以使用相关功能。\n" +
+                                "你可以随时在本页面下方找到“配置通知图标优化名单”手动前往。"
+                        confirmButton(text = "前往") { navigate<ConfigureActivity>() }
+                        cancelButton()
+                        noCancelable()
+                    }
+                if (isNotNoificationEnabled && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX))
                     showDialog {
                         title = "模块的通知权限已关闭"
                         msg = "请开启通知权限，以确保你能收到通知优化图标在线规则的更新。"
@@ -120,23 +111,23 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
         }
         /** 获取 Sp 存储的信息 */
-        binding.devNotifyConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        binding.a12StyleConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        binding.notifyIconConfigItem.isVisible = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        binding.notifyIconFixButton.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-        binding.notifyIconFixNotifyItem.isVisible = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-        binding.devNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DEV_NOTIFY, default = true)
-        binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_CHANGECP_NOTIFY)
-        binding.dndNotifyConfigSwitch.isChecked = modulePrefs.getBoolean(REMOVE_DNDALERT_NOTIFY)
-        binding.a12StyleConfigSwitch.isChecked = modulePrefs.getBoolean(ENABLE_ANDROID12_STYLE, isUpperOfAndroidS)
-        binding.moduleEnableSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE, default = true)
-        binding.moduleEnableLogSwitch.isChecked = modulePrefs.getBoolean(ENABLE_MODULE_LOG)
-        binding.hideIconInLauncherSwitch.isChecked = modulePrefs.getBoolean(ENABLE_HIDE_ICON)
-        binding.notifyIconFixSwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX, default = true)
-        binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.getBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, default = true)
+        binding.devNotifyConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
+        binding.a12StyleConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
+        binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
+        binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
+        binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
+        binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
+        binding.a12StyleConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_ANDROID12_STYLE)
+        binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
+        binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
+        binding.hideIconInLauncherSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_HIDE_ICON)
+        binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_MODULE, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_MODULE, b)
             binding.moduleEnableLogSwitch.isVisible = b
             binding.notifyIconConfigItem.isVisible = b
             binding.devNotifyConfigItem.isVisible = b
@@ -144,13 +135,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             SystemUITool.showNeedRestartSnake(context = this)
         }
         binding.moduleEnableLogSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_MODULE_LOG, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_MODULE_LOG, b)
             SystemUITool.showNeedRestartSnake(context = this)
         }
         binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_HIDE_ICON, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_HIDE_ICON, b)
             packageManager.setComponentEnabledSetting(
                 ComponentName(packageName, "com.fankes.coloros.notify.Home"),
                 if (b) PackageManager.COMPONENT_ENABLED_STATE_DISABLED else PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -158,35 +149,35 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             )
         }
         binding.notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
             binding.notifyIconFixNotifyItem.isVisible = b
             SystemUITool.refreshSystemUI(context = this)
         }
         binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(REMOVE_DEV_NOTIFY, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.REMOVE_DEV_NOTIFY, b)
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(REMOVE_CHANGECP_NOTIFY, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.REMOVE_CHANGECP_NOTIFY, b)
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(REMOVE_DNDALERT_NOTIFY, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.REMOVE_DNDALERT_NOTIFY, b)
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
         binding.a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (!btn.isPressed) return@setOnCheckedChangeListener
-            modulePrefs.putBoolean(ENABLE_ANDROID12_STYLE, b)
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_ANDROID12_STYLE, b)
             SystemUITool.refreshSystemUI(context = this)
         }
         /** 通知图标优化名单按钮点击事件 */
@@ -205,7 +196,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun refreshModuleStatus() {
         binding.mainLinStatus.setBackgroundResource(
             when {
-                isXposedModuleActive && (!isModuleRegular || !isModuleValied) -> R.drawable.bg_yellow_round
+                isXposedModuleActive && (isModuleRegular.not() || isModuleValied.not()) -> R.drawable.bg_yellow_round
                 isXposedModuleActive -> R.drawable.bg_green_round
                 else -> R.drawable.bg_dark_round
             }
@@ -218,10 +209,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         )
         binding.mainTextStatus.text =
             when {
-                isXposedModuleActive && !isModuleRegular &&
-                        !modulePrefs.getBoolean(ENABLE_MODULE, default = true) -> "模块已停用"
-                isXposedModuleActive && !isModuleRegular -> "模块已激活，请重启系统界面"
-                isXposedModuleActive && !isModuleValied -> "模块已更新，请重启系统界面"
+                isXposedModuleActive && isModuleRegular.not() && modulePrefs.get(DataConst.ENABLE_MODULE).not() -> "模块已停用"
+                isXposedModuleActive && isModuleRegular.not() -> "模块已激活，请重启系统界面"
+                isXposedModuleActive && isModuleValied.not() -> "模块已更新，请重启系统界面"
                 isXposedModuleActive -> "模块已激活"
                 else -> "模块未激活"
             }

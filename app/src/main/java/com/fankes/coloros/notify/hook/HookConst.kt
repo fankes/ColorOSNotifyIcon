@@ -24,22 +24,6 @@ package com.fankes.coloros.notify.hook
 
 object HookConst {
 
-    const val ENABLE_MODULE = "_enable_module"
-    const val ENABLE_MODULE_LOG = "_enable_module_log"
-    const val ENABLE_HIDE_ICON = "_hide_icon"
-    const val ENABLE_ANDROID12_STYLE = "_notify_android12_style"
-    const val ENABLE_NOTIFY_ICON_FIX = "_notify_icon_fix"
-    const val ENABLE_NOTIFY_ICON_FIX_NOTIFY = "_notify_icon_fix_notify"
-    const val REMOVE_DEV_NOTIFY = "_remove_dev_notify"
-    const val REMOVE_CHANGECP_NOTIFY = "_remove_charge_complete_notify"
-    const val REMOVE_DNDALERT_NOTIFY = "_remove_dndalert_notify"
-    const val ENABLE_NOTIFY_ICON_FIX_AUTO = "_enable_notify_icon_fix_auto"
-    const val NOTIFY_ICON_DATAS = "_notify_icon_datas"
-    const val NOTIFY_ICON_FIX_AUTO_TIME = "_notify_icon_fix_auto_time"
-
-    const val SOURCE_SYNC_WAY = "_rule_source_sync_way"
-    const val SOURCE_SYNC_WAY_CUSTOM_URL = "_rule_source_sync_way_custom_url"
-
     const val TYPE_SOURCE_SYNC_WAY_1 = 1000
     const val TYPE_SOURCE_SYNC_WAY_2 = 2000
     const val TYPE_SOURCE_SYNC_WAY_3 = 3000
