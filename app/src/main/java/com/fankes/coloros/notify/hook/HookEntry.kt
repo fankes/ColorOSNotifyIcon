@@ -41,15 +41,13 @@ class HookEntry : YukiHookXposedInitProxy {
     }
 
     override fun onHook() = encase {
-        loadApp(SYSTEMUI_PACKAGE_NAME) {
-            when {
-                /** 不是 ColorOS 系统停止 Hook */
-                isNotColorOS -> loggerW(msg = "Aborted Hook -> This System is not ColorOS")
-                /** Hook 被手动关闭停止 Hook */
-                prefs.get(DataConst.ENABLE_MODULE).not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
-                /** 开始 Hook */
-                else -> loadHooker(SystemUIHooker())
-            }
+        when {
+            /** 不是 ColorOS 系统停止 Hook */
+            isNotColorOS -> loggerW(msg = "Aborted Hook -> This System is not ColorOS")
+            /** Hook 被手动关闭停止 Hook */
+            prefs.get(DataConst.ENABLE_MODULE).not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
+            /** 开始 Hook */
+            else -> loadApp(SYSTEMUI_PACKAGE_NAME, SystemUIHooker())
         }
     }
 }
