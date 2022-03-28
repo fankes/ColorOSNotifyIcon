@@ -696,7 +696,6 @@ class SystemUIHooker : YukiBaseHooker() {
                     if (isEnableHookColorNotifyIcon() && prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO))
                         IconAdaptationTool.prepareAutoUpdateIconRule(
                             context = firstArgs()!!,
-                            // TODO 设置 UI 界面设置定时更新规则
                             timeSet = prefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
                         )
                 }
