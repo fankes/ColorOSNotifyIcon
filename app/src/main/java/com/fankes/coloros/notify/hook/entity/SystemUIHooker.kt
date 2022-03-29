@@ -20,8 +20,6 @@
  *
  * This file is Created by fankes on 2022/3/25.
  */
-@file:Suppress("Recycle")
-
 package com.fankes.coloros.notify.hook.entity
 
 import android.app.WallpaperManager
@@ -295,7 +293,7 @@ class SystemUIHooker : YukiBaseHooker() {
             statusBarIconViews.takeIf { it.isNotEmpty() }?.forEach {
                 runInSafe {
                     /** 得到通知实例 */
-                    val nf = nfField.of<StatusBarNotification>(it) ?: return@Thread
+                    val nf = nfField.get(it).cast<StatusBarNotification>() ?: return@Thread
 
                     /** 得到原始通知图标 */
                     val iconDrawable = nf.notification.smallIcon.loadDrawable(it.context)
@@ -308,10 +306,10 @@ class SystemUIHooker : YukiBaseHooker() {
                         drawable = iconDrawable
                     ).also { pair ->
                         /** 得到图标圆角 */
-                        val sRadius = sRadiusField.ofFloat(it)
+                        val sRadius = sRadiusField.get(it).float()
 
                         /** 得到缩放大小 */
-                        val sNfSize = sNfSizeField.ofInt(it)
+                        val sNfSize = sNfSizeField.get(it).int()
                         /** 在主线程设置图标 */
                         it.post { it.setImageDrawable(roundUtil.invoke(pair.first, sRadius, sNfSize, sNfSize, it.context)) }
                     }
@@ -343,7 +341,7 @@ class SystemUIHooker : YukiBaseHooker() {
             }.get(it.method {
                 name = "getInstance"
                 param(ContextClass)
-            }.get().invoke(context)).callBoolean(drawable)
+            }.get().invoke(context)).boolean(drawable)
         }
 
     /**
@@ -537,7 +535,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 beforeHook {
                     /** 是否移除 */
-                    if (args().ofInt() == 7 && prefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)) resultNull()
+                    if (args().int() == 7 && prefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)) resultNull()
                 }
             }
         }
@@ -573,7 +571,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 afterHook {
                     IconBuilderClass.clazz.field { name = "context" }
-                        .of<Context>(field { name = "iconBuilder" }.of(instance))?.also { context ->
+                        .get(field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
                             NotificationEntryClass.clazz.method {
                                 name = "getSbn"
                             }.get(firstArgs).invoke<StatusBarNotification>()?.also { nf ->
@@ -622,7 +620,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 method { name = "resolveHeaderViews" }
                 afterHook {
                     NotificationHeaderViewWrapperClass.clazz
-                        .field { name = "mIcon" }.of<ImageView>(instance)?.apply {
+                        .field { name = "mIcon" }.get(instance).cast<ImageView>()?.apply {
                             ExpandableNotificationRowClass.clazz
                                 .method { name = "getEntry" }
                                 .get(NotificationViewWrapperClass.clazz.field {
