@@ -74,28 +74,28 @@ class SystemUIHooker : YukiBaseHooker() {
         private const val ContrastColorUtilClass = "com.android.internal.util.ContrastColorUtil"
 
         /** 原生存在的类 */
-        private const val NotificationUtilsClass = "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.NotificationUtils"
+        private const val NotificationUtilsClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationUtils"
 
         /** 原生存在的类 */
-        private const val NotificationEntryClass = "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.collection.NotificationEntry"
+        private const val NotificationEntryClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.collection.NotificationEntry"
 
         /** 原生存在的类 */
         private const val StatusBarIconClass = "com.android.internal.statusbar.StatusBarIcon"
 
         /** 原生存在的类 */
-        private const val StatusBarIconViewClass = "${SYSTEMUI_PACKAGE_NAME}.statusbar.StatusBarIconView"
+        private const val StatusBarIconViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.StatusBarIconView"
 
         /** 原生存在的类 */
-        private const val IconBuilderClass = "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.icon.IconBuilder"
+        private const val IconBuilderClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconBuilder"
 
         /** 原生存在的类 */
-        private const val IconManagerClass = "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.icon.IconManager"
+        private const val IconManagerClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconManager"
 
         /** ColorOS 存在的类 - 旧版本不存在 */
         private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
 
         /** 原生存在的类 */
-        private const val PluginManagerImplClass = "${SYSTEMUI_PACKAGE_NAME}.shared.plugins.PluginManagerImpl"
+        private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val SystemPromptControllerClass = VariousClass(
@@ -135,20 +135,20 @@ class SystemUIHooker : YukiBaseHooker() {
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val ExpandableNotificationRowClass = VariousClass(
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.row.ExpandableNotificationRow",
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.ExpandableNotificationRow"
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.ExpandableNotificationRow",
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.ExpandableNotificationRow"
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val NotificationViewWrapperClass = VariousClass(
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.row.wrapper.NotificationViewWrapper",
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.NotificationViewWrapper"
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationViewWrapper",
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationViewWrapper"
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val NotificationHeaderViewWrapperClass = VariousClass(
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
-            "${SYSTEMUI_PACKAGE_NAME}.statusbar.notification.NotificationHeaderViewWrapper"
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationHeaderViewWrapper"
         )
     }
 
