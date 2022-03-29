@@ -607,8 +607,11 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 afterHook {
                     if (firstArgs != null) instance<ImageView>().also {
+                        /** 注册壁纸颜色监听 */
                         registerWallpaperColorChanged(it)
+                        /** 注册广播 */
                         registerReceiver(it.context)
+                        /** 缓存实例 */
                         statusBarIconViews.add(it)
                     }
                 }
@@ -691,11 +694,16 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(ContextClass, IntentClass)
                 }
                 afterHook {
-                    if (isEnableHookColorNotifyIcon() && prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO))
-                        IconAdaptationTool.prepareAutoUpdateIconRule(
-                            context = firstArgs()!!,
-                            timeSet = prefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
-                        )
+                    firstArgs<Context>()?.also {
+                        /** 注册广播 */
+                        registerReceiver(it)
+                        /** 注册定时监听 */
+                        if (isEnableHookColorNotifyIcon() && prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO))
+                            IconAdaptationTool.prepareAutoUpdateIconRule(
+                                context = it,
+                                timeSet = prefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
+                            )
+                    }
                 }
             }
         }
