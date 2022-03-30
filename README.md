@@ -40,6 +40,11 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 继 MIUI 之后的第二大系统 ColorOS 虽然支持原生通知图标，但是第三方推送五颜六色的图标系统并没有做适配，甚至系统自己的图标都是彩色的，极其不友好。<br/>
 而且从 ColorOS 12 开始，原生图标丢失了着色属性，这也是一种对原生 Android 生态的破坏。
 
+# 捐赠支持
+
+- 工作不易，无意外情况此项目将继续维护下去，提供更多可能，欢迎打赏。<br/><br/>
+  <img src="https://github.com/fankes/YuKiHookAPI/blob/master/img-src/wechat_code.jpg" width = "200" height = "200"/>
+
 # 许可证
 
 - [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
