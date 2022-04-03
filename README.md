@@ -1,6 +1,6 @@
 # ColorOS 通知图标增强
 
-[![Blank](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/fankes/ColorOSNotifyIcon)
+[![Blank](https://img.shields.io/badge/build-pending-dbab09)](https://github.com/fankes/ColorOSNotifyIcon)
 [![Blank](https://img.shields.io/badge/license-AGPL3.0-blue)](https://github.com/fankes/ColorOSNotifyIcon/blob/master/LICENSE)
 [![Blank](https://img.shields.io/badge/version-v1.51-green)](https://github.com/fankes/ColorOSNotifyIcon/releases)
 [![Blank](https://img.shields.io/github/downloads/fankes/ColorOSNotifyIcon/total?label=Release)](https://github.com/fankes/ColorOSNotifyIcon/releases)
