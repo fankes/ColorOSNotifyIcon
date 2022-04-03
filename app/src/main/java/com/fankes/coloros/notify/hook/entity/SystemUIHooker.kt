@@ -552,12 +552,12 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
-        /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断*/
+        /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断 */
         NotificationUtilsClass.hook {
             injectMember {
                 method {
                     name = "isGrayscaleOplus"
-                    param(ImageViewClass, OplusContrastColorUtilClass.clazz)
+                    param(ImageViewClass, OplusContrastColorUtilClass)
                 }
                 replaceAny { firstArgs<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } }
             }.ignoredHookingFailure()
@@ -567,7 +567,7 @@ class SystemUIHooker : YukiBaseHooker() {
             injectMember {
                 method {
                     name = "getIconDescriptor"
-                    param(NotificationEntryClass.clazz, BooleanType)
+                    param(NotificationEntryClass, BooleanType)
                 }
                 afterHook {
                     IconBuilderClass.clazz.field { name = "context" }
@@ -652,7 +652,7 @@ class SystemUIHooker : YukiBaseHooker() {
             }
             /** 记录实例 */
             injectMember {
-                constructor { param(ContextClass, ViewClass, ExpandableNotificationRowClass.clazz) }
+                constructor { param(ContextClass, ViewClass, ExpandableNotificationRowClass) }
                 afterHook { notificationViewWrappers.add(instance) }
             }
         }
