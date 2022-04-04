@@ -35,10 +35,14 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
+import android.util.ArrayMap
+import android.util.ArraySet
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.children
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.const.Const
 import com.fankes.coloros.notify.data.DataConst
@@ -98,6 +102,12 @@ class SystemUIHooker : YukiBaseHooker() {
         private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
 
         /** 根据多个版本存在不同的包名相同的类 */
+        private val OplusNotificationIconAreaControllerClass = VariousClass(
+            "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
+            "com.coloros.systemui.statusbar.phone.ColorosNotificationIconAreaController"
+        )
+
+        /** 根据多个版本存在不同的包名相同的类 */
         private val SystemPromptControllerClass = VariousClass(
             "com.oplusos.systemui.statusbar.policy.SystemPromptController",
             "com.coloros.systemui.statusbar.policy.SystemPromptController"
@@ -153,16 +163,16 @@ class SystemUIHooker : YukiBaseHooker() {
     }
 
     /** 缓存的彩色 APP 图标 */
-    private var appIcons = HashMap<String, Drawable>()
+    private var appIcons = ArrayMap<String, Drawable>()
 
     /** 缓存的通知优化图标数组 */
     private var iconDatas = ArrayList<IconDataBean>()
 
-    /** 缓存的状态栏小图标实例 */
-    private var statusBarIconViews = HashSet<ImageView>()
+    /** 状态栏通知图标容器 */
+    private var notificationIconContainer: ViewGroup? = null
 
     /** 缓存的通知小图标包装纸实例 */
-    private var notificationViewWrappers = HashSet<Any>()
+    private var notificationViewWrappers = ArraySet<Any>()
 
     /** 仅监听一次主题壁纸颜色变化 */
     private var isWallpaperColorListenerSetUp = false
@@ -290,7 +300,7 @@ class SystemUIHooker : YukiBaseHooker() {
             .get(RoundRectDrawableUtilClass.clazz.field { name = "Companion" }.get().self)
         /** 启动一个线程防止卡顿 */
         Thread {
-            statusBarIconViews.takeIf { it.isNotEmpty() }?.forEach {
+            notificationIconContainer?.children?.forEach {
                 runInSafe {
                     /** 得到通知实例 */
                     val nf = nfField.get(it).cast<StatusBarNotification>() ?: return@Thread
@@ -311,7 +321,7 @@ class SystemUIHooker : YukiBaseHooker() {
                         /** 得到缩放大小 */
                         val sNfSize = sNfSizeField.get(it).int()
                         /** 在主线程设置图标 */
-                        it.post { it.setImageDrawable(roundUtil.invoke(pair.first, sRadius, sNfSize, sNfSize, it.context)) }
+                        it.post { (it as? ImageView?)?.setImageDrawable(roundUtil.invoke(pair.first, sRadius, sNfSize, sNfSize, it.context)) }
                     }
                 }
             }
@@ -611,10 +621,18 @@ class SystemUIHooker : YukiBaseHooker() {
                         registerWallpaperColorChanged(it)
                         /** 注册广播 */
                         registerReceiver(it.context)
-                        /** 缓存实例 */
-                        statusBarIconViews.add(it)
                     }
                 }
+            }
+        }
+        /** 注入状态栏通知图标容器实例 */
+        OplusNotificationIconAreaControllerClass.hook {
+            injectMember {
+                method {
+                    name = "updateIconsForLayout"
+                    paramCount = 10
+                }
+                afterHook { notificationIconContainer = args(index = 1).cast() }
             }
         }
         /** 替换通知图标和样式 */
