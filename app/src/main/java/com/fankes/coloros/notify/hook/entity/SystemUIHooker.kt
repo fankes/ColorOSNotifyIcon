@@ -104,13 +104,14 @@ class SystemUIHooker : YukiBaseHooker() {
         /** 根据多个版本存在不同的包名相同的类 */
         private val OplusNotificationIconAreaControllerClass = VariousClass(
             "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
-            "com.coloros.systemui.statusbar.phone.ColorosNotificationIconAreaController"
+            "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
+            "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val SystemPromptControllerClass = VariousClass(
             "com.oplusos.systemui.statusbar.policy.SystemPromptController",
-            "com.coloros.systemui.statusbar.policy.SystemPromptController"
+            "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
@@ -170,6 +171,9 @@ class SystemUIHooker : YukiBaseHooker() {
 
     /** 状态栏通知图标容器 */
     private var notificationIconContainer: ViewGroup? = null
+
+    /** 状态栏通知图标数组 */
+    private var notificationIconInstances = ArrayList<View>()
 
     /** 缓存的通知小图标包装纸实例 */
     private var notificationViewWrappers = ArraySet<Any>()
@@ -300,7 +304,7 @@ class SystemUIHooker : YukiBaseHooker() {
             .get(RoundRectDrawableUtilClass.clazz.field { name = "Companion" }.get().self)
         /** 启动一个线程防止卡顿 */
         Thread {
-            notificationIconContainer?.children?.forEach {
+            (notificationIconContainer?.children?.toList() ?: notificationIconInstances.takeIf { it.isNotEmpty() })?.forEach {
                 runInSafe {
                     /** 得到通知实例 */
                     val nf = nfField.get(it).cast<StatusBarNotification>() ?: return@Thread
@@ -628,11 +632,23 @@ class SystemUIHooker : YukiBaseHooker() {
         /** 注入状态栏通知图标容器实例 */
         OplusNotificationIconAreaControllerClass.hook {
             injectMember {
+                var isOldWay = false
                 method {
                     name = "updateIconsForLayout"
                     paramCount = 10
+                }.remedys {
+                    method {
+                        name = "updateIconsForLayout"
+                        paramCount = 1
+                    }.onFind { isOldWay = true }
                 }
-                afterHook { notificationIconContainer = args(index = 1).cast() }
+                afterHook {
+                    if (isOldWay) {
+                        notificationIconInstances.clear()
+                        field { name = "mLastToShow" }.get(instance).list<View>()
+                            .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
+                    } else notificationIconContainer = args(index = 1).cast()
+                }
             }
         }
         /** 替换通知图标和样式 */
