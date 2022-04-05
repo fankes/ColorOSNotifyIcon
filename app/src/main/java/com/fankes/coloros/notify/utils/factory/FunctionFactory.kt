@@ -33,6 +33,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -192,6 +193,14 @@ fun Context.findAppName(name: String) =
  */
 fun Context.findAppIcon(name: String) =
     safeOfNull { packageManager?.getPackageInfo(name, 0)?.applicationInfo?.loadIcon(packageManager) }
+
+/**
+ * 获取 APP 是否为 DEBUG 版本
+ * @param name APP 包名
+ * @return [Boolean]
+ */
+fun Context.isAppDebuggable(name: String) =
+    safeOfFalse { (packageManager?.getPackageInfo(name, 0)?.applicationInfo?.flags?.and(ApplicationInfo.FLAG_DEBUGGABLE) ?: 0) != 0 }
 
 /**
  * 对数值自动补零
