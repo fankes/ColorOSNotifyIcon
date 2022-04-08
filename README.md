@@ -9,43 +9,48 @@
 <br/><br/>
 <img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png" width = "100" height = "100"/>
 <br/>
-Optimize notification icons for ColorOS and adapt to native notification icon specifications.<br/>
+Optimize notification icons for ColorOS and adapt to native notification icon specifications.
+
 为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeUI。
 
-# Developer
+## Developer
 
 [酷安 @星夜不荟](http://www.coolapk.com/u/876977)
 
-# 适配说明
+## 适配说明
 
 - 此模块仅支持 <b>LSPosed</b>(作用域“系统界面”)、<b>~~EdXposed(随时停止支持)~~</b>、不支持<b>太极、无极</b>
+
 - 目前仅在 ColorOS 12 for OnePlus 上测试通过，如有问题请提交 `issues`
+
 - 建议在不低于 ColorOS 11 的版本上使用
 
-# 请勿用于非法用途
+## 请勿用于非法用途
 
 - 本模块完全开源免费，如果好用你可以打赏支持开发，但是请不要用于非法用途。
+
 - 本模块发布地址仅有 [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)、
   [Release](https://github.com/fankes/ColorOSNotifyIcon/releases)
   及 [蓝奏云](https://fankes.lanzouy.com/b030rvjyf)，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
 
-# 贡献通知图标优化名单
+## 贡献通知图标优化名单
 
-此项目是 `AndroidNotifyIconAdapt` 项目的一部分，详情请参考下方。<br/>
+此项目是 `AndroidNotifyIconAdapt` 项目的一部分，详情请参考下方。
 
 - [Android 通知图标规范适配计划](https://github.com/fankes/AndroidNotifyIconAdapt)
 
-# 历史背景
+## 历史背景
 
-继 MIUI 之后的第二大系统 ColorOS 虽然支持原生通知图标，但是第三方推送五颜六色的图标系统并没有做适配，甚至系统自己的图标都是彩色的，极其不友好。<br/>
+继 MIUI 之后的第二大系统 ColorOS 虽然支持原生通知图标，但是第三方推送五颜六色的图标系统并没有做适配，甚至系统自己的图标都是彩色的，极其不友好。
+
 而且从 ColorOS 12 开始，原生图标丢失了着色属性，这也是一种对原生 Android 生态的破坏。
 
-# 捐赠支持
+## 捐赠支持
 
 - 工作不易，无意外情况此项目将继续维护下去，提供更多可能，欢迎打赏。<br/><br/>
   <img src="https://github.com/fankes/YuKiHookAPI/blob/master/img-src/wechat_code.jpg" width = "200" height = "200"/>
 
-# 许可证
+## 许可证
 
 - [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
 
@@ -66,5 +71,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 
-Powered by [YukiHookAPI](https://github.com/fankes/YukiHookAPI)<br/><br/>
+Powered by [YukiHookAPI](https://github.com/fankes/YukiHookAPI)
+
 版权所有 © 2019-2022 Fankes Studio(qzmmcn@163.com)
