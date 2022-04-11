@@ -86,9 +86,9 @@ object SystemUITool {
             msg = "你确定要立即重启系统界面吗？\n\n" +
                     "重启过程会黑屏并等待进入锁屏重新解锁。"
             confirmButton {
-                execShellSu(cmd = "pgrep systemui").also { pid ->
+                execShell(cmd = "pgrep systemui").also { pid ->
                     if (pid.isNotBlank())
-                        execShellSu(cmd = "kill -9 $pid")
+                        execShell(cmd = "kill -9 $pid")
                     else toast(msg = "ROOT 权限获取失败")
                 }
             }
