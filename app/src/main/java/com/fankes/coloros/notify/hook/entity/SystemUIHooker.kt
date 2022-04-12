@@ -549,7 +549,7 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
                 beforeHook {
                     /** 是否移除 */
-                    if (args().int() == 7 && prefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)) resultNull()
+                    if (args().first().int() == 7 && prefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)) resultNull()
                 }
             }
         }
@@ -573,7 +573,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     name = "isGrayscaleOplus"
                     param(ImageViewClass, OplusContrastColorUtilClass)
                 }
-                replaceAny { firstArgs<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } }
+                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } }
             }.ignoredHookingFailure()
         }
         /** 替换状态栏图标 */
@@ -588,7 +588,7 @@ class SystemUIHooker : YukiBaseHooker() {
                         .get(field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
                             NotificationEntryClass.clazz.method {
                                 name = "getSbn"
-                            }.get(firstArgs).invoke<StatusBarNotification>()?.also { nf ->
+                            }.get(args[0]).invoke<StatusBarNotification>()?.also { nf ->
                                 nf.notification.smallIcon.loadDrawable(context).also { iconDrawable ->
                                     compatStatusIcon(
                                         context = context,
@@ -620,7 +620,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(StatusBarNotificationClass)
                 }
                 afterHook {
-                    if (firstArgs != null) instance<ImageView>().also {
+                    if (args[0] != null) instance<ImageView>().also {
                         /** 注册壁纸颜色监听 */
                         registerWallpaperColorChanged(it)
                         /** 注册广播 */
@@ -698,7 +698,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(ContextClass, IntentClass)
                 }
                 afterHook {
-                    if (isEnableHookColorNotifyIcon()) (lastArgs as? Intent)?.also {
+                    if (isEnableHookColorNotifyIcon()) args().last().cast<Intent>()?.also {
                         if (it.action.equals(Intent.ACTION_PACKAGE_REPLACED).not() &&
                             it.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                         ) return@also
@@ -708,11 +708,11 @@ class SystemUIHooker : YukiBaseHooker() {
                                     if (iconDatas.takeIf { e -> e.isNotEmpty() }
                                             ?.filter { e -> e.packageName == newPkgName }
                                             .isNullOrEmpty()
-                                    ) IconAdaptationTool.pushNewAppSupportNotify(firstArgs()!!, newPkgName)
+                                    ) IconAdaptationTool.pushNewAppSupportNotify(args().first().cast()!!, newPkgName)
                                 }
                             Intent.ACTION_PACKAGE_REMOVED ->
                                 IconAdaptationTool.removeNewAppSupportNotify(
-                                    context = firstArgs()!!,
+                                    context = args().first().cast()!!,
                                     packageName = it.data?.schemeSpecificPart ?: ""
                                 )
                         }
@@ -728,7 +728,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(ContextClass, IntentClass)
                 }
                 afterHook {
-                    firstArgs<Context>()?.also {
+                    args().first().cast<Context>()?.also {
                         /** 注册广播 */
                         registerReceiver(it)
                         /** 注册定时监听 */
