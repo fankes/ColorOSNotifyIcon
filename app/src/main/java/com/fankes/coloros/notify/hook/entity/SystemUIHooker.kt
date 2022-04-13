@@ -36,7 +36,6 @@ import android.graphics.drawable.Icon
 import android.graphics.drawable.VectorDrawable
 import android.service.notification.StatusBarNotification
 import android.util.ArrayMap
-import android.util.ArraySet
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
@@ -56,6 +55,7 @@ import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
+import com.highcapable.yukihookapi.hook.factory.current
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.log.loggerD
@@ -145,6 +145,12 @@ class SystemUIHooker : YukiBaseHooker() {
         )
 
         /** 根据多个版本存在不同的包名相同的类 */
+        private val StatusBarNotificationPresenterClass = VariousClass(
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBarNotificationPresenter",
+            "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBar"
+        )
+
+        /** 根据多个版本存在不同的包名相同的类 */
         private val ExpandableNotificationRowClass = VariousClass(
             "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.ExpandableNotificationRow",
             "$SYSTEMUI_PACKAGE_NAME.statusbar.ExpandableNotificationRow"
@@ -175,8 +181,8 @@ class SystemUIHooker : YukiBaseHooker() {
     /** 状态栏通知图标数组 */
     private var notificationIconInstances = ArrayList<View>()
 
-    /** 缓存的通知小图标包装纸实例 */
-    private var notificationViewWrappers = ArraySet<Any>()
+    /** 通知栏通知控制器 */
+    private var notificationPresenter: Any? = null
 
     /** 仅监听一次主题壁纸颜色变化 */
     private var isWallpaperColorListenerSetUp = false
@@ -334,8 +340,11 @@ class SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新通知小图标 */
     private fun refreshNotificationIcons() = runInSafe {
-        NotificationHeaderViewWrapperClass.clazz.method { name = "resolveHeaderViews" }.also { result ->
-            notificationViewWrappers.takeIf { it.isNotEmpty() }?.forEach { result.get(it).call() }
+        notificationPresenter?.current {
+            method {
+                name = "updateNotificationsOnDensityOrFontScaleChanged"
+                emptyParam()
+            }.call()
         }
     }
 
@@ -629,6 +638,13 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
+        /** 注入通知控制器实例 */
+        StatusBarNotificationPresenterClass.hook {
+            injectMember {
+                allConstructors()
+                afterHook { notificationPresenter = instance }
+            }
+        }
         /** 注入状态栏通知图标容器实例 */
         OplusNotificationIconAreaControllerClass.hook {
             injectMember {
@@ -683,11 +699,6 @@ class SystemUIHooker : YukiBaseHooker() {
                                 }
                         }
                 }
-            }
-            /** 记录实例 */
-            injectMember {
-                constructor { param(ContextClass, ViewClass, ExpandableNotificationRowClass) }
-                afterHook { notificationViewWrappers.add(instance) }
             }
         }
         /** 发送适配新的 APP 图标通知 */
