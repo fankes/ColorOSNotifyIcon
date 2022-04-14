@@ -597,7 +597,7 @@ class SystemUIHooker : YukiBaseHooker() {
                         .get(field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
                             NotificationEntryClass.clazz.method {
                                 name = "getSbn"
-                            }.get(args[0]).invoke<StatusBarNotification>()?.also { nf ->
+                            }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
                                 nf.notification.smallIcon.loadDrawable(context).also { iconDrawable ->
                                     compatStatusIcon(
                                         context = context,
@@ -629,7 +629,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     param(StatusBarNotificationClass)
                 }
                 afterHook {
-                    if (args[0] != null) instance<ImageView>().also {
+                    if (args().first().any() != null) instance<ImageView>().also {
                         /** 注册壁纸颜色监听 */
                         registerWallpaperColorChanged(it)
                         /** 注册广播 */

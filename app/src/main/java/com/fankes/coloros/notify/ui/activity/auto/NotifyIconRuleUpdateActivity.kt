@@ -28,11 +28,11 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
-import com.fankes.coloros.notify.application.CNNApplication.Companion.appContext
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication.Companion.appContext
 
 class NotifyIconRuleUpdateActivity : Activity() {
 

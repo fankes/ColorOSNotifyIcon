@@ -24,32 +24,13 @@
 
 package com.fankes.coloros.notify.application
 
-import android.app.Application
-import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
-import me.weishu.reflection.Reflection
+import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication
 
-class CNNApplication : Application() {
-
-    companion object {
-
-        /** 全局静态实例 */
-        private var context: CNNApplication? = null
-
-        /** 调用全局静态实例 */
-        val appContext get() = context ?: error("App is death")
-    }
-
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
-        /** 解锁隐藏 API */
-        Reflection.unseal(base)
-    }
+class CNNApplication : ModuleApplication() {
 
     override fun onCreate() {
         super.onCreate()
-        /** 设置静态实例 */
-        context = this
         /** 跟随系统夜间模式 */
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
     }
