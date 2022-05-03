@@ -26,6 +26,8 @@ package com.fankes.coloros.notify.ui.activity
 
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
@@ -123,6 +125,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncChildItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
+        binding.notifyPanelConfigSeekbar.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
+        binding.notifyPanelConfigText.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
         binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
         binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
@@ -133,6 +137,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
+        binding.notifyPanelConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
+        binding.notifyPanelConfigSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)
+        binding.notifyPanelConfigText.text = "当前 - ${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}"
         binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
@@ -190,12 +197,31 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             modulePrefs.put(DataConst.ENABLE_ANDROID12_STYLE, b)
             SystemUITool.refreshSystemUI(context = this)
         }
+        binding.notifyPanelConfigSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_NOTIFY_PANEL_ALPHA, b)
+            binding.notifyPanelConfigText.isVisible = b
+            binding.notifyPanelConfigSeekbar.isVisible = b
+            SystemUITool.refreshSystemUI(context = this)
+        }
         binding.notifyIconAutoSyncSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO, b)
             binding.notifyIconAutoSyncChildItem.isVisible = b
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
+        binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                binding.notifyPanelConfigText.text = "当前 - $progress"
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                modulePrefs.put(DataConst.NOTIFY_PANEL_ALPHA, seekBar.progress)
+                SystemUITool.refreshSystemUI(context = this@MainActivity)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+        })
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 自动更新在线规则修改时间按钮点击事件 */

@@ -57,6 +57,7 @@ import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
 import com.highcapable.yukihookapi.hook.factory.field
+import com.highcapable.yukihookapi.hook.factory.hasMethod
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.log.loggerD
 import com.highcapable.yukihookapi.hook.log.loggerE
@@ -100,6 +101,13 @@ class SystemUIHooker : YukiBaseHooker() {
 
         /** 原生存在的类 */
         private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
+
+        /** 原生存在的类 */
+        private const val NotificationBackgroundViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.NotificationBackgroundView"
+
+        /** ColorOS 存在的类 - 旧版本不存在 */
+        private const val OplusNotificationBackgroundViewClass =
+            "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView"
 
         /** 根据多个版本存在不同的包名相同的类 */
         private val OplusNotificationIconAreaControllerClass = VariousClass(
@@ -262,6 +270,18 @@ class SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private val StatusBarNotification.isOplusPush get() = opPkg == ANDROID_PACKAGE_NAME && opPkg != packageName
+
+    /**
+     * 判断通知背景是否为旧版本
+     * @return [Boolean]
+     */
+    private val isOldNotificationBackground
+        get() = safeOfFalse {
+            NotificationBackgroundViewClass.clazz.hasMethod {
+                name = "drawCustom"
+                paramCount = 2
+            }
+        }
 
     /**
      * 打印日志
@@ -512,6 +532,16 @@ class SystemUIHooker : YukiBaseHooker() {
         }
     }
 
+    /**
+     * 设置通知面板背景透明度
+     * @param drawable 背景实例
+     */
+    private fun modifyNotifyPanelAlpha(drawable: Drawable?) {
+        if (prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA))
+            drawable?.alpha = prefs.get(DataConst.NOTIFY_PANEL_ALPHA)
+        else drawable?.alpha = 255
+    }
+
     /** 缓存图标数据 */
     private fun cachingIconDatas() {
         iconDatas.clear()
@@ -667,6 +697,41 @@ class SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
+        /** 替换通知面板背景 - 新版本 */
+        OplusNotificationBackgroundViewClass.hook {
+            injectMember {
+                method {
+                    name = "drawRegionBlur"
+                    paramCount = 2
+                }
+                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+            }
+            injectMember {
+                method {
+                    name = "draw"
+                    paramCount = 2
+                    superClass(isOnlySuperClass = true)
+                }
+                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+            }
+        }.by { isOldNotificationBackground.not() }
+        /** 替换通知面板背景 - 旧版本 */
+        NotificationBackgroundViewClass.hook {
+            injectMember {
+                method {
+                    name = "draw"
+                    paramCount = 2
+                }
+                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+            }
+            injectMember {
+                method {
+                    name = "drawCustom"
+                    paramCount = 2
+                }
+                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+            }
+        }.by { isOldNotificationBackground }
         /** 替换通知图标和样式 */
         NotificationHeaderViewWrapperClass.hook {
             injectMember {

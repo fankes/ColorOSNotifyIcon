@@ -372,14 +372,14 @@
                 android:elevation="0dp"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:paddingLeft="15dp"
-                android:paddingTop="15dp"
-                android:paddingRight="15dp">
+                android:paddingTop="15dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center|start">
+                    android:gravity="center|start"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp">
 
                     <ImageView
                         android:layout_width="15dp"
@@ -402,6 +402,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="5dp"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
                     android:text="启用 Android 12 通知栏风格"
                     android:textAllCaps="false"
                     android:textColor="@color/colorTextGray"
@@ -413,7 +415,57 @@
                     android:layout_marginBottom="10dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
                     android:text="无论任何版本，开启后都将使用 Android 12 原生通知图标方式为通知栏推送的通知图标增加外部圆形轮廓。\n目标为 Android 12 的系统将自动使用系统主题色着色。"
+                    android:textColor="@color/colorTextDark"
+                    android:textSize="12sp" />
+
+                <com.fankes.coloros.notify.ui.view.MaterialSwitch
+                    android:id="@+id/notify_panel_config_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="5dp"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
+                    android:text="自定义通知面板背景透明度"
+                    android:textAllCaps="false"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="15sp" />
+
+                <androidx.appcompat.widget.AppCompatSeekBar
+                    android:id="@+id/notify_panel_config_seekbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginRight="5dp"
+                    android:max="255"
+                    android:min="0" />
+
+                <TextView
+                    android:id="@+id/notify_panel_config_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:maxWidth="100dp"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="15dp"
+                    android:singleLine="true"
+                    android:text="当前 - %1"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:alpha="0.6"
+                    android:lineSpacingExtra="6dp"
+                    android:paddingLeft="15dp"
+                    android:paddingRight="15dp"
+                    android:text="开启自定义功能后，你可以拖拽滑动条来调整通知面板的透明度，0 为全透明，255 为不透明。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
             </LinearLayout>

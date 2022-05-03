@@ -38,6 +38,8 @@ object DataConst {
     val REMOVE_CHANGECP_NOTIFY = PrefsData("_remove_charge_complete_notify", false)
     val REMOVE_DNDALERT_NOTIFY = PrefsData("_remove_dndalert_notify", false)
     val ENABLE_NOTIFY_ICON_FIX_AUTO = PrefsData("_enable_notify_icon_fix_auto", true)
+    val ENABLE_NOTIFY_PANEL_ALPHA = PrefsData("_enable_notify_panel_alpha", true)
+    val NOTIFY_PANEL_ALPHA = PrefsData("_notify_panel_alpha", 185)
     val NOTIFY_ICON_DATAS = PrefsData("_notify_icon_datas", "")
     val NOTIFY_ICON_FIX_AUTO_TIME = PrefsData("_notify_icon_fix_auto_time", "07:00")
 
