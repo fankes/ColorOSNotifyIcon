@@ -2,7 +2,7 @@
 
 [![Blank](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/fankes/ColorOSNotifyIcon)
 [![Blank](https://img.shields.io/badge/license-AGPL3.0-blue)](https://github.com/fankes/ColorOSNotifyIcon/blob/master/LICENSE)
-[![Blank](https://img.shields.io/badge/version-v1.6-green)](https://github.com/fankes/ColorOSNotifyIcon/releases)
+[![Blank](https://img.shields.io/badge/version-v1.7-green)](https://github.com/fankes/ColorOSNotifyIcon/releases)
 [![Blank](https://img.shields.io/github/downloads/fankes/ColorOSNotifyIcon/total?label=Release)](https://github.com/fankes/ColorOSNotifyIcon/releases)
 [![Blank](https://img.shields.io/github/downloads/Xposed-Modules-Repo/com.fankes.coloros.notify/total?label=LSPosed%20Repo&logo=Android&style=flat&labelColor=F48FB1&logoColor=ffffff)](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)
 [![Telegram](https://img.shields.io/badge/Follow-Telegram-blue.svg?logo=telegram)](https://t.me/XiaofangInternet)
@@ -30,8 +30,8 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 - 本模块完全开源免费，如果好用你可以打赏支持开发，但是请不要用于非法用途。
 
 - 本模块发布地址仅有 [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)、
-  [Release](https://github.com/fankes/ColorOSNotifyIcon/releases)
-  及 [蓝奏云](https://fankes.lanzouy.com/b030rvjyf)，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
+  [Release](https://github.com/fankes/ColorOSNotifyIcon/releases)、[蓝奏云](https://fankes.lanzouy.com/b030rvjyf) 及**酷安应用市场**
+  ，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
 
 ## 贡献通知图标优化名单
 

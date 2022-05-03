@@ -453,7 +453,7 @@
                     android:paddingTop="5dp"
                     android:paddingBottom="15dp"
                     android:singleLine="true"
-                    android:text="当前 - %1"
+                    android:text="当前值 - %1"
                     android:textColor="@color/colorTextGray"
                     android:textSize="14sp" />
 
