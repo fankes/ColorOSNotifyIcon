@@ -1,12 +1,12 @@
 plugins {
     id 'com.android.application' version '7.1.3' apply false
     id 'com.android.library' version '7.1.3' apply false
-    id 'org.jetbrains.kotlin.android' version '1.6.20' apply false
+    id 'org.jetbrains.kotlin.android' version '1.6.21' apply false
 }
 
 ext {
-    appVersionName = "1.6"
-    appVersionCode = 11
+    appVersionName = "1.7"
+    appVersionCode = 12
     enableR8 = true
 }
 

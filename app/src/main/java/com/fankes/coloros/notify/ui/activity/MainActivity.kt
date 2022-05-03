@@ -139,7 +139,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.notifyPanelConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.notifyPanelConfigSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigText.text = "当前 - ${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}"
+        binding.notifyPanelConfigText.text = "当前值 - ${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}"
         binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
@@ -212,7 +212,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.notifyPanelConfigText.text = "当前 - $progress"
+                binding.notifyPanelConfigText.text = "当前值 - $progress"
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
