@@ -534,12 +534,20 @@ class SystemUIHooker : YukiBaseHooker() {
 
     /**
      * 设置通知面板背景透明度
+     * @param view 背景 View 实例
      * @param drawable 背景实例
      */
-    private fun modifyNotifyPanelAlpha(drawable: Drawable?) {
-        if (prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA))
-            drawable?.alpha = prefs.get(DataConst.NOTIFY_PANEL_ALPHA)
-        else drawable?.alpha = 255
+    private fun modifyNotifyPanelAlpha(view: View?, drawable: Drawable?) {
+        prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA).also { isEnabled ->
+            /** 设置通知面板背景透明度 */
+            when {
+                isEnabled.not() -> drawable?.alpha = 255
+                view?.parent?.parent?.javaClass?.name?.contains(other = "ChildrenContainer") == true -> drawable?.alpha = 0
+                else -> drawable?.alpha = prefs.get(DataConst.NOTIFY_PANEL_ALPHA)
+            }
+            /** 移除阴影效果 */
+            if (isEnabled) view?.elevation = 0f
+        }
     }
 
     /** 缓存图标数据 */
@@ -704,7 +712,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     name = "drawRegionBlur"
                     paramCount = 2
                 }
-                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
             injectMember {
                 method {
@@ -712,22 +720,7 @@ class SystemUIHooker : YukiBaseHooker() {
                     paramCount = 2
                     superClass(isOnlySuperClass = true)
                 }
-                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
-            }
-        }.by { isOldNotificationBackground.not() }
-        ExpandableNotificationRowClass.hook {
-            injectMember {
-                method {
-                    name = "updateBackgroundForGroupState"
-                    paramCount = 0
-                }
-                beforeHook {
-                    if (prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)) {
-                        ExpandableNotificationRowClass.clazz.field {
-                            name = "mShowGroupBackgroundWhenExpanded"
-                        }.get(instance).setTrue()
-                    }
-                }
+                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
         }.by { isOldNotificationBackground.not() }
         /** 替换通知面板背景 - 旧版本 */
@@ -737,16 +730,29 @@ class SystemUIHooker : YukiBaseHooker() {
                     name = "draw"
                     paramCount = 2
                 }
-                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
             injectMember {
                 method {
                     name = "drawCustom"
                     paramCount = 2
                 }
-                beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
+                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
         }.by { isOldNotificationBackground }
+        /** 替换通知面板背景 - 避免折叠展开通知二次修改通知面板背景 */
+        ExpandableNotificationRowClass.hook {
+            injectMember {
+                method {
+                    name = "updateBackgroundForGroupState"
+                    emptyParam()
+                }
+                beforeHook {
+                    if (prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA))
+                        field { name = "mShowGroupBackgroundWhenExpanded" }.get(instance).setTrue()
+                }
+            }
+        }
         /** 替换通知图标和样式 */
         NotificationHeaderViewWrapperClass.hook {
             injectMember {
