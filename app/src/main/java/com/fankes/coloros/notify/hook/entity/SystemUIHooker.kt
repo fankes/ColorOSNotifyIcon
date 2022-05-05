@@ -715,6 +715,21 @@ class SystemUIHooker : YukiBaseHooker() {
                 beforeHook { modifyNotifyPanelAlpha(args().last().cast<Drawable>()) }
             }
         }.by { isOldNotificationBackground.not() }
+        ExpandableNotificationRowClass.hook {
+            injectMember {
+                method {
+                    name = "updateBackgroundForGroupState"
+                    paramCount = 0
+                }
+                beforeHook {
+                    if (prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)) {
+                        ExpandableNotificationRowClass.clazz.field {
+                            name = "mShowGroupBackgroundWhenExpanded"
+                        }.get(instance).setTrue()
+                    }
+                }
+            }
+        }.by { isOldNotificationBackground.not() }
         /** 替换通知面板背景 - 旧版本 */
         NotificationBackgroundViewClass.hook {
             injectMember {
