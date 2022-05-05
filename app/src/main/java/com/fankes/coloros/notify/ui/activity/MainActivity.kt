@@ -126,7 +126,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncChildItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.notifyPanelConfigSeekbar.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigText.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
+        binding.notifyPanelConfigTextPanel.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
         binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
         binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
@@ -139,7 +139,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.notifyPanelConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.notifyPanelConfigSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigText.text = "当前值 - ${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}"
+        binding.notifyPanelConfigText.text = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA).toString()
         binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
@@ -200,7 +200,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyPanelConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_PANEL_ALPHA, b)
-            binding.notifyPanelConfigText.isVisible = b
+            binding.notifyPanelConfigTextPanel.isVisible = b
             binding.notifyPanelConfigSeekbar.isVisible = b
             SystemUITool.refreshSystemUI(context = this)
         }
@@ -212,7 +212,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.notifyPanelConfigText.text = "当前值 - $progress"
+                binding.notifyPanelConfigText.text = progress.toString()
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
