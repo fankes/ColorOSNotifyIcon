@@ -710,6 +710,11 @@ object SystemUIHooker : YukiBaseHooker() {
                 method {
                     name = "drawRegionBlur"
                     paramCount = 2
+                }.remedys {
+                    method {
+                        name = "draw"
+                        paramCount = 2
+                    }
                 }
                 beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
