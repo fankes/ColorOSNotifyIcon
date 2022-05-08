@@ -20,6 +20,8 @@
  *
  * This file is Created by fankes on 2022/3/25.
  */
+@file:Suppress("StaticFieldLeak")
+
 package com.fankes.coloros.notify.hook.entity
 
 import android.app.WallpaperManager
@@ -71,111 +73,108 @@ import com.highcapable.yukihookapi.hook.type.java.LongType
 /**
  * 系统界面核心 Hook 类
  */
-class SystemUIHooker : YukiBaseHooker() {
+object SystemUIHooker : YukiBaseHooker() {
 
-    companion object {
+    /** 原生存在的类 */
+    private const val ContrastColorUtilClass = "com.android.internal.util.ContrastColorUtil"
 
-        /** 原生存在的类 */
-        private const val ContrastColorUtilClass = "com.android.internal.util.ContrastColorUtil"
+    /** 原生存在的类 */
+    private const val NotificationUtilsClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationUtils"
 
-        /** 原生存在的类 */
-        private const val NotificationUtilsClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationUtils"
+    /** 原生存在的类 */
+    private const val NotificationEntryClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.collection.NotificationEntry"
 
-        /** 原生存在的类 */
-        private const val NotificationEntryClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.collection.NotificationEntry"
+    /** 原生存在的类 */
+    private const val StatusBarIconClass = "com.android.internal.statusbar.StatusBarIcon"
 
-        /** 原生存在的类 */
-        private const val StatusBarIconClass = "com.android.internal.statusbar.StatusBarIcon"
+    /** 原生存在的类 */
+    private const val StatusBarIconViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.StatusBarIconView"
 
-        /** 原生存在的类 */
-        private const val StatusBarIconViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.StatusBarIconView"
+    /** 原生存在的类 */
+    private const val IconBuilderClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconBuilder"
 
-        /** 原生存在的类 */
-        private const val IconBuilderClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconBuilder"
+    /** 原生存在的类 */
+    private const val IconManagerClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconManager"
 
-        /** 原生存在的类 */
-        private const val IconManagerClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconManager"
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
 
-        /** ColorOS 存在的类 - 旧版本不存在 */
-        private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
+    /** 原生存在的类 */
+    private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
 
-        /** 原生存在的类 */
-        private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
+    /** 原生存在的类 */
+    private const val NotificationBackgroundViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.NotificationBackgroundView"
 
-        /** 原生存在的类 */
-        private const val NotificationBackgroundViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.NotificationBackgroundView"
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val OplusNotificationBackgroundViewClass =
+        "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView"
 
-        /** ColorOS 存在的类 - 旧版本不存在 */
-        private const val OplusNotificationBackgroundViewClass =
-            "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView"
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val OplusNotificationIconAreaControllerClass = VariousClass(
+        "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
+        "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
+        "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val OplusNotificationIconAreaControllerClass = VariousClass(
-            "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
-            "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
-            "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val SystemPromptControllerClass = VariousClass(
+        "com.oplusos.systemui.statusbar.policy.SystemPromptController",
+        "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val SystemPromptControllerClass = VariousClass(
-            "com.oplusos.systemui.statusbar.policy.SystemPromptController",
-            "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val RoundRectDrawableUtilClass = VariousClass(
+        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil",
+        "com.coloros.systemui.notification.util.RoundRectDrawableUtil"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val RoundRectDrawableUtilClass = VariousClass(
-            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil",
-            "com.coloros.systemui.notification.util.RoundRectDrawableUtil"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val RoundRectDrawableUtil_CompanionClass = VariousClass(
+        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
+        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val RoundRectDrawableUtil_CompanionClass = VariousClass(
-            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
-            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val DndAlertHelperClass = VariousClass(
+        "com.oplusos.systemui.notification.helper.DndAlertHelper",
+        "com.coloros.systemui.notification.helper.DndAlertHelper"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val DndAlertHelperClass = VariousClass(
-            "com.oplusos.systemui.notification.helper.DndAlertHelper",
-            "com.coloros.systemui.notification.helper.DndAlertHelper"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val OplusPowerNotificationWarningsClass = VariousClass(
+        "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
+        "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val OplusPowerNotificationWarningsClass = VariousClass(
-            "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
-            "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val AbstractReceiverClass = VariousClass(
+        "com.oplusos.systemui.common.receiver.AbstractReceiver",
+        "com.coloros.systemui.common.receiver.AbstractReceiver"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val AbstractReceiverClass = VariousClass(
-            "com.oplusos.systemui.common.receiver.AbstractReceiver",
-            "com.coloros.systemui.common.receiver.AbstractReceiver"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val StatusBarNotificationPresenterClass = VariousClass(
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBarNotificationPresenter",
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBar"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val StatusBarNotificationPresenterClass = VariousClass(
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBarNotificationPresenter",
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.phone.StatusBar"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val ExpandableNotificationRowClass = VariousClass(
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.ExpandableNotificationRow",
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.ExpandableNotificationRow"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val ExpandableNotificationRowClass = VariousClass(
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.ExpandableNotificationRow",
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.ExpandableNotificationRow"
-        )
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val NotificationViewWrapperClass = VariousClass(
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationViewWrapper",
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationViewWrapper"
+    )
 
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val NotificationViewWrapperClass = VariousClass(
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationViewWrapper",
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationViewWrapper"
-        )
-
-        /** 根据多个版本存在不同的包名相同的类 */
-        private val NotificationHeaderViewWrapperClass = VariousClass(
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
-            "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationHeaderViewWrapper"
-        )
-    }
+    /** 根据多个版本存在不同的包名相同的类 */
+    private val NotificationHeaderViewWrapperClass = VariousClass(
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
+        "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.NotificationHeaderViewWrapper"
+    )
 
     /** 缓存的彩色 APP 图标 */
     private var appIcons = ArrayMap<String, Drawable>()
