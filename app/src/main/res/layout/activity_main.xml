@@ -499,7 +499,7 @@
                     android:lineSpacingExtra="6dp"
                     android:paddingLeft="15dp"
                     android:paddingRight="15dp"
-                    android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12~12.1 测试正常，不能保证可以和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。"
+                    android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12.1 测试通过，不能保证可以在任何系统版本中生效，以及和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。\n已知问题：悬浮通知也会被透明，在透明度较低的时候下拉会有阴影光晕，后期看需求再解决。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
             </LinearLayout>
