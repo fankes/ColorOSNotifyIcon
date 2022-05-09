@@ -127,10 +127,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconAutoSyncChildItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.notifyPanelConfigSeekbar.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.notifyPanelConfigTextPanel.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
+        binding.notifyPanelConfigWarnPanel.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
         binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
         binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
         binding.a12StyleConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_ANDROID12_STYLE)
+        binding.notifyMediaPanelAutoExpSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
         binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
         binding.hideIconInLauncherSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_HIDE_ICON)
@@ -139,8 +141,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.notifyPanelConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
         binding.notifyPanelConfigSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigText.text = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA).toString()
+        binding.notifyPanelConfigText.text = "${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}%"
         binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
+        /** 媒体通知自动展开仅支持 12.1 - 旧版本适配过于复杂已放弃 */
+        if (colorOSNumberVersion != "V12.1") {
+            binding.notifyMediaPanelAutoExpSwitch.isVisible = false
+            binding.notifyMediaPanelAutoExpText.isVisible = false
+        }
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_MODULE, b)
@@ -197,10 +204,16 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             modulePrefs.put(DataConst.ENABLE_ANDROID12_STYLE, b)
             SystemUITool.refreshSystemUI(context = this)
         }
+        binding.notifyMediaPanelAutoExpSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            modulePrefs.put(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP, b)
+            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        }
         binding.notifyPanelConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_PANEL_ALPHA, b)
             binding.notifyPanelConfigTextPanel.isVisible = b
+            binding.notifyPanelConfigWarnPanel.isVisible = b
             binding.notifyPanelConfigSeekbar.isVisible = b
             SystemUITool.refreshSystemUI(context = this)
         }
@@ -212,7 +225,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.notifyPanelConfigText.text = progress.toString()
+                binding.notifyPanelConfigText.text = "$progress%"
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
