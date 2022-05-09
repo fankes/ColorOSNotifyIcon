@@ -29,6 +29,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
@@ -96,18 +97,33 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 原生存在的类 */
     private const val IconManagerClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.icon.IconManager"
 
-    /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
-
     /** 原生存在的类 */
     private const val PluginManagerImplClass = "$SYSTEMUI_PACKAGE_NAME.shared.plugins.PluginManagerImpl"
 
     /** 原生存在的类 */
     private const val NotificationBackgroundViewClass = "$SYSTEMUI_PACKAGE_NAME.statusbar.notification.row.NotificationBackgroundView"
 
+    /** 原生存在的类 */
+    private const val PlayerViewHolderClass = "$SYSTEMUI_PACKAGE_NAME.media.PlayerViewHolder"
+
+    /** 原生存在的类 */
+    private const val MediaDataClass = "$SYSTEMUI_PACKAGE_NAME.media.MediaData"
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
+
     /** ColorOS 存在的类 - 旧版本不存在 */
     private const val OplusNotificationBackgroundViewClass =
         "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView"
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val OplusMediaControlPanelClass = "com.oplusos.systemui.media.OplusMediaControlPanel"
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val OplusMediaViewControllerClass = "com.oplusos.systemui.media.OplusMediaViewController"
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private const val BasePlayViewHolderClass = "com.oplusos.systemui.media.base.BasePlayViewHolder"
 
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass = VariousClass(
@@ -187,6 +203,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 状态栏通知图标数组 */
     private var notificationIconInstances = ArrayList<View>()
+
+    /** 媒体通知 [View] */
+    private var notificationPlayerView: View? = null
 
     /** 通知栏通知控制器 */
     private var notificationPresenter: Any? = null
@@ -365,6 +384,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 emptyParam()
             }.call()
         }
+        modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
     }
 
     /**
@@ -535,14 +555,25 @@ object SystemUIHooker : YukiBaseHooker() {
      * 设置通知面板背景透明度
      * @param view 背景 View 实例
      * @param drawable 背景实例
+     * @param isTint 是否着色 [view]
      */
-    private fun modifyNotifyPanelAlpha(view: View?, drawable: Drawable?) {
+    private fun modifyNotifyPanelAlpha(view: View?, drawable: Drawable? = null, isTint: Boolean = false) {
         prefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA).also { isEnabled ->
+            val currentAlpha = prefs.get(DataConst.NOTIFY_PANEL_ALPHA)
+            val currendColor = if (view?.context?.isSystemInDarkMode == true) 0xFF404040.toInt() else 0xFFFAFAFA.toInt()
             /** 设置通知面板背景透明度 */
             when {
-                isEnabled.not() -> drawable?.alpha = 255
-                view?.parent?.parent?.javaClass?.name?.contains(other = "ChildrenContainer") == true -> drawable?.alpha = 0
-                else -> drawable?.alpha = prefs.get(DataConst.NOTIFY_PANEL_ALPHA)
+                isEnabled.not() -> {
+                    if (isTint) view?.backgroundTintList = ColorStateList.valueOf(currendColor)
+                    else drawable?.setTint(currendColor)
+                }
+                isTint.not() && view?.parent?.parent?.javaClass?.name?.contains(other = "ChildrenContainer") == true -> drawable?.alpha = 0
+                else -> {
+                    currendColor.colorAlphaOf(currentAlpha / 100f).also {
+                        if (isTint) view?.backgroundTintList = ColorStateList.valueOf(it)
+                        else drawable?.setTint(it)
+                    }
+                }
             }
             /** 移除阴影效果 */
             if (isEnabled) view?.elevation = 0f
@@ -757,6 +788,47 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
+        /** 替换媒体通知面板背景 - 设置媒体通知自动展开 */
+        OplusMediaControlPanelClass.hook {
+            injectMember {
+                method {
+                    name = "bind"
+                    paramCount = 2
+                }
+                afterHook {
+                    /** 得到当前实例 */
+                    val holder = field {
+                        name = "mViewHolder"
+                        superClass(isOnlySuperClass = true)
+                    }.get(instance).any()
+                    /** 记录媒体通知 [View] */
+                    notificationPlayerView = PlayerViewHolderClass.clazz.method {
+                        name = "getPlayer"
+                        emptyParam()
+                    }.get(holder).invoke()
+                    /** 设置背景着色 */
+                    modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
+                    /** 当前是否正在播放 */
+                    val isPlaying = MediaDataClass.clazz.method {
+                        name = "isPlaying"
+                        emptyParam()
+                    }.get(args().first().any()).boolean()
+
+                    /** 当前通知是否展开 */
+                    val isExpanded = OplusMediaViewControllerClass.clazz.method {
+                        name = "getExpanded"
+                        emptyParam()
+                    }.get(field { name = "mOplusMediaViewController" }.get(instance).self).boolean()
+                    /** 符合条件后执行 */
+                    if (prefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP).not() || isExpanded || isPlaying.not()) return@afterHook
+                    /** 模拟手动展开通知 */
+                    BasePlayViewHolderClass.clazz.method {
+                        name = "getExpandButton"
+                        emptyParam()
+                    }.get(holder).invoke<View>()?.performClick()
+                }
+            }
+        }.ignoredHookClassNotFoundFailure()
         /** 替换通知图标和样式 */
         NotificationHeaderViewWrapperClass.hook {
             injectMember {

@@ -138,14 +138,20 @@ val colorOSFullVersion get() = "${if (isRealmeUI) "RealmeUI " else ""}$colorOSVe
  * 获取 ColorOS 版本
  * @return [String]
  */
-val colorOSVersion
+val colorOSVersion get() = "$colorOSNumberVersion ${Build.DISPLAY}"
+
+/**
+ * 获取 ColorOS 数字版本
+ * @return [String]
+ */
+val colorOSNumberVersion
     get() = safeOf(default = "无法获取") {
         (classOf(name = "com.oplus.os.OplusBuild").let {
             it.field { name = "VERSIONS" }.ignoredError().get().array<String>().takeIf { e -> e.isNotEmpty() }
                 ?.get(it.method { name = "getOplusOSVERSION" }.ignoredError().get().int() - 1)
         } ?: findPropString(
             key = "ro.system.build.fingerprint", default = "无法获取"
-        ).split("ssi:")[1].split("/")[0].trim()) + " ${Build.DISPLAY}"
+        ).split("ssi:")[1].split("/")[0].trim())
     }
 
 /**
