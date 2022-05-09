@@ -281,6 +281,13 @@ val Int.isWhite
     }
 
 /**
+ * 调整颜色透明度
+ * @param value 透明度
+ * @return [Int] 调整后的颜色
+ */
+fun Int.colorAlphaOf(value: Float) = safeOfNan { (255.coerceAtMost(0.coerceAtLeast((value * 255).toInt())) shl 24) + (0x00ffffff and this) }
+
+/**
  * Base64 加密
  * @return [String]
  */
