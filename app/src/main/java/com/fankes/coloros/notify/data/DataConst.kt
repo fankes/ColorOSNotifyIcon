@@ -33,6 +33,7 @@ object DataConst {
     val ENABLE_HIDE_ICON = PrefsData("_hide_icon", false)
     val ENABLE_ANDROID12_STYLE = PrefsData("_notify_android12_style", isUpperOfAndroidS)
     val ENABLE_NOTIFY_ICON_FIX = PrefsData("_notify_icon_fix", true)
+    val ENABLE_NOTIFY_ICON_FORCE_APP_ICON = PrefsData("_notify_icon_force_app_icon", false)
     val ENABLE_NOTIFY_ICON_FIX_NOTIFY = PrefsData("_notify_icon_fix_notify", true)
     val REMOVE_DEV_NOTIFY = PrefsData("_remove_dev_notify", true)
     val REMOVE_CHANGECP_NOTIFY = PrefsData("_remove_charge_complete_notify", false)

@@ -428,6 +428,13 @@ object SystemUIHooker : YukiBaseHooker() {
     ) = runInSafe {
         compatCustomIcon(isGrayscaleIcon, packageName).also { customPair ->
             when {
+                prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
+                    iconView.apply {
+                        /** 重新设置图标 */
+                        setImageDrawable(appIcons[packageName] ?: context.findAppIcon(packageName))
+                        /** 设置默认样式 */
+                        setDefaultNotifyIconViewStyle()
+                    }
                 customPair.first != null || isGrayscaleIcon -> iconView.apply {
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
@@ -467,23 +474,8 @@ object SystemUIHooker : YukiBaseHooker() {
                 else -> iconView.apply {
                     /** 重新设置图标 */
                     setImageDrawable(nf.compatPushingIcon(drawable))
-                    /** 设置裁切到边界 */
-                    clipToOutline = true
-                    /** 设置一个圆角轮廓裁切 */
-                    outlineProvider = object : ViewOutlineProvider() {
-                        override fun getOutline(view: View, out: Outline) {
-                            out.setRoundRect(
-                                0, 0,
-                                view.width, view.height, 3.dpFloat(context)
-                            )
-                        }
-                    }
-                    /** 清除图标间距 */
-                    setPadding(0, 0, 0, 0)
-                    /** 清除背景 */
-                    background = null
-                    /** 清除着色 */
-                    colorFilter = null
+                    /** 设置默认样式 */
+                    setDefaultNotifyIconViewStyle()
                 }
             }
             /** 打印日志 */
@@ -518,6 +510,27 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 移除阴影效果 */
             if (isEnabled) view?.elevation = 0f
         }
+    }
+
+    /** 设置默认通知栏通知图标样式 */
+    private fun ImageView.setDefaultNotifyIconViewStyle() {
+        /** 设置裁切到边界 */
+        clipToOutline = true
+        /** 设置一个圆角轮廓裁切 */
+        outlineProvider = object : ViewOutlineProvider() {
+            override fun getOutline(view: View, out: Outline) {
+                out.setRoundRect(
+                    0, 0,
+                    view.width, view.height, 3.dpFloat(context)
+                )
+            }
+        }
+        /** 清除图标间距 */
+        setPadding(0, 0, 0, 0)
+        /** 清除背景 */
+        background = null
+        /** 清除着色 */
+        colorFilter = null
     }
 
     /** 注册 */
