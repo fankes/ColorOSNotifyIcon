@@ -302,9 +302,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         super.onResume()
         /** 刷新模块状态 */
         refreshModuleStatus()
-        /** 发送广播检查模块激活状态 */
-        SystemUITool.checkingActivated(context = this) { isRegular, isValied ->
-            isModuleRegular = isRegular
+        /** 检查模块激活状态 */
+        SystemUITool.checkingActivated(context = this) { isValied ->
+            isModuleRegular = true
             isModuleValied = isValied
             refreshModuleStatus()
         }
