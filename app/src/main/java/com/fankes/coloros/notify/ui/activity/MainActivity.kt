@@ -38,6 +38,7 @@ import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.fankes.coloros.notify.utils.tool.YukiPromoteTool
 import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
 
@@ -104,6 +105,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         cancelButton()
                         noCancelable()
                     }
+                /** 推广、恰饭 */
+                YukiPromoteTool.promote(context = this)
             }
             else ->
                 showDialog {
