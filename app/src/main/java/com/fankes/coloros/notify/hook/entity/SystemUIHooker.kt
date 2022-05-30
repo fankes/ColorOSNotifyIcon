@@ -462,7 +462,12 @@ object SystemUIHooker : YukiBaseHooker() {
 
                     /** 判断风格并开始 Hook */
                     if (isA12Style) {
-                        background = DrawableBuilder().rounded().solidColor(newApplyColor).build()
+                        /** 通知图标边框圆角大小 */
+                        background = DrawableBuilder()
+                            .rectangle()
+                            .cornerRadius(prefs.get(DataConst.NOTIFY_ICON_CORNER).dp(context))
+                            .solidColor(newApplyColor)
+                            .build()
                         setColorFilter(newStyle)
                         setPadding(2.dp(context), 2.dp(context), 2.dp(context), 2.dp(context))
                     } else {

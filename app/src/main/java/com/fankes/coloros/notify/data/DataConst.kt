@@ -41,6 +41,7 @@ object DataConst {
     val ENABLE_NOTIFY_ICON_FIX_AUTO = PrefsData("_enable_notify_icon_fix_auto", true)
     val ENABLE_NOTIFY_PANEL_ALPHA = PrefsData("_enable_notify_panel_alpha", false)
     val ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP = PrefsData("_enable_notify_media_panel_auto_exp", false)
+    val NOTIFY_ICON_CORNER = PrefsData("_notify_icon_corner", 10)
     val NOTIFY_PANEL_ALPHA = PrefsData("_notify_panel_alpha_pst", 75)
     val NOTIFY_ICON_DATAS = PrefsData("_notify_icon_datas", "")
     val NOTIFY_ICON_FIX_AUTO_TIME = PrefsData("_notify_icon_fix_auto_time", "07:00")
