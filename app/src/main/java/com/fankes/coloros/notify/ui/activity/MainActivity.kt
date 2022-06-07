@@ -289,7 +289,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             "模块无需保持在后台运行，到达同步时间后会自动启动，如果到达时间后模块正在运行则会自动取消本次计划任务。"
                     confirmButton(text = "保存设置") {
                         notifyIconAutoSyncTime = it
-                        binding.notifyIconAutoSyncText.text = it
+                        this@MainActivity.binding.notifyIconAutoSyncText.text = it
                         modulePrefs.put(DataConst.NOTIFY_ICON_FIX_AUTO_TIME, it)
                         SystemUITool.refreshSystemUI(context, isRefreshCacheOnly = true)
                     }
