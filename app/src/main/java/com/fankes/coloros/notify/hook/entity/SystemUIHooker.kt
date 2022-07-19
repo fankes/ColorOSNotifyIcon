@@ -51,7 +51,6 @@ import com.fankes.coloros.notify.hook.HookConst.SYSTEMUI_PACKAGE_NAME
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
-import com.fankes.coloros.notify.utils.drawable.drawabletoolbox.DrawableBuilder
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
@@ -69,6 +68,7 @@ import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.highcapable.yukihookapi.hook.type.java.LongType
+import top.defaults.drawabletoolbox.DrawableBuilder
 
 /**
  * 系统界面核心 Hook 类
