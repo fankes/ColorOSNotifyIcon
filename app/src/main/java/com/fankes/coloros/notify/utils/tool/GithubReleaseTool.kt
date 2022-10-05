@@ -91,7 +91,7 @@ object GithubReleaseTool {
      * @param result 已连接回调
      */
     private fun checkingInternetConnect(context: Context, result: () -> Unit) = runInSafe {
-        if (isNetWorkSuccess)
+        if (context.isNetWorkSuccess)
             OkHttpClient().newBuilder().build().newCall(
                 Request.Builder()
                     .url("https://www.baidu.com")

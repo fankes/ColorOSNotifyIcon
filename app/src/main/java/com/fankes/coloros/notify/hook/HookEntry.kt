@@ -36,7 +36,7 @@ import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 class HookEntry : IYukiHookXposedInit {
 
     override fun onInit() = configs {
-        debugTag = "ColorOSNotify"
+        debugLog { tag = "ColorOSNotify" }
         isDebug = false
     }
 
