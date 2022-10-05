@@ -24,8 +24,6 @@
 
 package com.fankes.coloros.notify.ui.activity
 
-import android.content.ComponentName
-import android.content.pm.PackageManager
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.core.view.isVisible
@@ -140,7 +138,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyMediaPanelAutoExpSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
         binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
-        binding.hideIconInLauncherSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_HIDE_ICON)
         binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconForceAppIconSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON)
         binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
@@ -169,15 +166,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_MODULE_LOG, b)
             SystemUITool.showNeedRestartSnake(context = this)
-        }
-        binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_HIDE_ICON, b)
-            packageManager.setComponentEnabledSetting(
-                ComponentName(packageName, "com.fankes.coloros.notify.Home"),
-                if (b) PackageManager.COMPONENT_ENABLED_STATE_DISABLED else PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP
-            )
         }
         binding.notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
@@ -274,6 +262,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
         })
+        /** 设置桌面图标显示隐藏 */
+        binding.hideIconInLauncherSwitch.isChecked = isLauncherIconShowing.not()
+        binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            hideOrShowLauncherIcon(b)
+        }
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 自动更新在线规则修改时间按钮点击事件 */
