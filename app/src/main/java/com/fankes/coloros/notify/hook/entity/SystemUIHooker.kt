@@ -56,10 +56,7 @@ import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.factory.field
-import com.highcapable.yukihookapi.hook.factory.hasMethod
-import com.highcapable.yukihookapi.hook.factory.method
+import com.highcapable.yukihookapi.hook.factory.*
 import com.highcapable.yukihookapi.hook.log.loggerD
 import com.highcapable.yukihookapi.hook.log.loggerE
 import com.highcapable.yukihookapi.hook.log.loggerW
@@ -234,12 +231,10 @@ object SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private val isOldNotificationBackground
-        get() = safeOfFalse {
-            NotificationBackgroundViewClass.clazz.hasMethod {
-                name = "drawCustom"
-                paramCount = 2
-            }
-        }
+        get() = NotificationBackgroundViewClass.toClassOrNull()?.hasMethod {
+            name = "drawCustom"
+            paramCount = 2
+        } ?: false
 
     /**
      * 打印日志
@@ -257,7 +252,7 @@ object SystemUIHooker : YukiBaseHooker() {
         isGrayscale: Boolean
     ) {
         if (prefs.get(DataConst.ENABLE_MODULE_LOG)) loggerD(
-            msg = "$tag --> [${context.findAppName(packageName)}][$packageName] " +
+            msg = "$tag --> [${context.appNameOf(packageName)}][$packageName] " +
                     "custom [$isCustom] " +
                     "grayscale [$isGrayscale]"
         )
@@ -278,14 +273,14 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新状态栏小图标 */
     private fun refreshStatusBarIcons() = runInSafe {
-        val nfField = StatusBarIconViewClass.clazz.field { name = "mNotification" }
-        val sRadiusField = StatusBarIconViewClass.clazz.field { name = "sIconRadiusFraction" }
-        val sNfSizeField = StatusBarIconViewClass.clazz.field { name = "sNotificationRoundIconSize" }
-        val roundUtil = RoundRectDrawableUtil_CompanionClass.clazz.method {
+        val nfField = StatusBarIconViewClass.toClass().field { name = "mNotification" }
+        val sRadiusField = StatusBarIconViewClass.toClass().field { name = "sIconRadiusFraction" }
+        val sNfSizeField = StatusBarIconViewClass.toClass().field { name = "sNotificationRoundIconSize" }
+        val roundUtil = RoundRectDrawableUtil_CompanionClass.toClass().method {
             name = "getRoundRectDrawable"
             param(DrawableClass, FloatType, IntType, IntType, ContextClass)
         }.onNoSuchMethod { loggerE(msg = "Your system not support \"getRoundRectDrawable\"!", e = it) }
-            .get(RoundRectDrawableUtilClass.clazz.field { name = "Companion" }.get().self)
+            .get(RoundRectDrawableUtilClass.toClass().field { name = "Companion" }.get().any())
         /** 启动一个线程防止卡顿 */
         Thread {
             (notificationIconContainer?.children?.toList() ?: notificationIconInstances.takeIf { it.isNotEmpty() })?.forEach {
@@ -295,6 +290,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
                     /** 得到原始通知图标 */
                     val iconDrawable = nf.notification.smallIcon.loadDrawable(it.context)
+                        ?: return@Thread loggerW(msg = "refreshStatusBarIcons got null smallIcon")
                     /** 获取优化后的状态栏通知图标 */
                     compatStatusIcon(
                         context = it.context,
@@ -318,12 +314,10 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新通知小图标 */
     private fun refreshNotificationIcons() = runInSafe {
-        notificationPresenter?.current {
-            method {
-                name = "updateNotificationsOnDensityOrFontScaleChanged"
-                emptyParam()
-            }.call()
-        }
+        notificationPresenter?.current()?.method {
+            name = "updateNotificationsOnDensityOrFontScaleChanged"
+            emptyParam()
+        }?.call()
         modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
     }
 
@@ -336,7 +330,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private fun isGrayscaleIcon(context: Context?, drawable: Drawable?) =
-        ContrastColorUtilClass.clazz.let {
+        ContrastColorUtilClass.toClassOrNull()?.let {
             drawable is VectorDrawable || it.method {
                 name = "isGrayscaleIcon"
                 param(DrawableClass)
@@ -344,7 +338,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 name = "getInstance"
                 param(ContextClass)
             }.get().invoke(context)).boolean(drawable)
-        }
+        } ?: false
 
     /**
      * 适配通知栏、状态栏来自系统推送的彩色 APP 图标
@@ -431,7 +425,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
                     iconView.apply {
                         /** 重新设置图标 */
-                        setImageDrawable(appIcons[packageName] ?: context.findAppIcon(packageName))
+                        setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))
                         /** 设置默认样式 */
                         setDefaultNotifyIconViewStyle()
                     }
@@ -451,7 +445,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     val newStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else Color.WHITE).toInt()
 
                     /** 原生着色 */
-                    val a12Style = if (isUpperOfAndroidS) context.wallpaperColor else
+                    val a12Style = if (isUpperOfAndroidS) context.systemAccentColor else
                         (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
 
                     /** 旧版图标着色 */
@@ -538,8 +532,8 @@ object SystemUIHooker : YukiBaseHooker() {
         colorFilter = null
     }
 
-    /** 注册 */
-    private fun register() {
+    /** 注册生命周期 */
+    private fun registerLifecycle() {
         /** 解锁后重新刷新状态栏图标防止系统重新设置它 */
         onAppLifecycle { registerReceiver(Intent.ACTION_USER_PRESENT) { _, _ -> if (isUsingCachingMethod) refreshStatusBarIcons() } }
         /** 刷新图标缓存 */
@@ -577,8 +571,8 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     override fun onHook() {
-        /** 注册 */
-        register()
+        /** 注册生命周期 */
+        registerLifecycle()
         /** 缓存图标数据 */
         cachingIconDatas()
         /** 移除开发者警告通知 */
@@ -635,24 +629,24 @@ object SystemUIHooker : YukiBaseHooker() {
                     param(NotificationEntryClass, BooleanType)
                 }
                 afterHook {
-                    IconBuilderClass.clazz.field { name = "context" }
+                    IconBuilderClass.toClass().field { name = "context" }
                         .get(field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
-                            NotificationEntryClass.clazz.method {
+                            NotificationEntryClass.toClass().method {
                                 name = "getSbn"
                             }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
-                                nf.notification.smallIcon.loadDrawable(context).also { iconDrawable ->
+                                nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                     compatStatusIcon(
                                         context = context,
                                         nf = nf,
                                         isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
                                             /** 缓存第一次的 APP 小图标 */
-                                            if (it.not()) context.findAppIcon(nf.packageName)
+                                            if (it.not()) context.appIconOf(nf.packageName)
                                                 ?.also { e -> appIcons[nf.packageName] = e }
                                         },
                                         packageName = nf.packageName,
                                         drawable = iconDrawable
                                     ).also { pair ->
-                                        if (pair.second) StatusBarIconClass.clazz.field {
+                                        if (pair.second) StatusBarIconClass.toClass().field {
                                             name = "icon"
                                             type = IconClass
                                         }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
@@ -679,7 +673,7 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 注入通知控制器实例 */
         StatusBarNotificationPresenterClass.hook {
             injectMember {
-                allConstructors()
+                allMembers(MembersType.CONSTRUCTOR)
                 afterHook { notificationPresenter = instance }
             }
         }
@@ -772,30 +766,30 @@ object SystemUIHooker : YukiBaseHooker() {
                         superClass(isOnlySuperClass = true)
                     }.get(instance).any()
                     /** 记录媒体通知 [View] */
-                    notificationPlayerView = PlayerViewHolderClass.clazz.method {
+                    notificationPlayerView = PlayerViewHolderClass.toClassOrNull()?.method {
                         name = "getPlayer"
                         emptyParam()
-                    }.get(holder).invoke()
+                    }?.get(holder)?.invoke()
                     /** 设置背景着色 */
                     modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
                     /** 当前是否正在播放 */
-                    val isPlaying = MediaDataClass.clazz.method {
+                    val isPlaying = MediaDataClass.toClassOrNull()?.method {
                         name = "isPlaying"
                         emptyParam()
-                    }.get(args().first().any()).boolean()
+                    }?.get(args().first().any())?.boolean() ?: false
 
                     /** 当前通知是否展开 */
-                    val isExpanded = OplusMediaViewControllerClass.clazz.method {
+                    val isExpanded = OplusMediaViewControllerClass.toClassOrNull()?.method {
                         name = "getExpanded"
                         emptyParam()
-                    }.get(field { name = "mOplusMediaViewController" }.get(instance).self).boolean()
+                    }?.get(field { name = "mOplusMediaViewController" }.get(instance).any())?.boolean() ?: false
                     /** 符合条件后执行 */
                     if (prefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP).not() || isExpanded || isPlaying.not()) return@afterHook
                     /** 模拟手动展开通知 */
-                    BasePlayViewHolderClass.clazz.method {
+                    BasePlayViewHolderClass.toClassOrNull()?.method {
                         name = "getExpandButton"
                         emptyParam()
-                    }.get(holder).invoke<View>()?.performClick()
+                    }?.get(holder)?.invoke<View>()?.performClick()
                 }
             }
         }.ignoredHookClassNotFoundFailure()
@@ -804,19 +798,19 @@ object SystemUIHooker : YukiBaseHooker() {
             injectMember {
                 method { name = "resolveHeaderViews" }
                 afterHook {
-                    NotificationHeaderViewWrapperClass.clazz
+                    NotificationHeaderViewWrapperClass.toClass()
                         .field { name = "mIcon" }.get(instance).cast<ImageView>()?.apply {
-                            ExpandableNotificationRowClass.clazz
+                            ExpandableNotificationRowClass.toClass()
                                 .method { name = "getEntry" }
-                                .get(NotificationViewWrapperClass.clazz.field {
+                                .get(NotificationViewWrapperClass.toClass().field {
                                     name = "mRow"
-                                }.get(instance).self).call()?.let {
+                                }.get(instance).any()).call()?.let {
                                     it.javaClass.method {
                                         name = "getSbn"
                                     }.get(it).invoke<StatusBarNotification>()
                                 }.also { nf ->
                                     nf?.notification?.also {
-                                        it.smallIcon.loadDrawable(context).also { iconDrawable ->
+                                        it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                             compatNotifyIcon(
                                                 context = context,
                                                 nf = nf,
