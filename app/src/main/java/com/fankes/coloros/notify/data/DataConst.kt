@@ -30,7 +30,6 @@ object DataConst {
 
     val ENABLE_MODULE = PrefsData("_enable_module", true)
     val ENABLE_MODULE_LOG = PrefsData("_enable_module_log", false)
-    val ENABLE_HIDE_ICON = PrefsData("_hide_icon", false)
     val ENABLE_ANDROID12_STYLE = PrefsData("_notify_android12_style", isUpperOfAndroidS)
     val ENABLE_NOTIFY_ICON_FIX = PrefsData("_notify_icon_fix", true)
     val ENABLE_NOTIFY_ICON_FORCE_APP_ICON = PrefsData("_notify_icon_force_app_icon", false)
