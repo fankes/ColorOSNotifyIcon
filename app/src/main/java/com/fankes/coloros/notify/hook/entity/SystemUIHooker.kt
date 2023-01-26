@@ -365,7 +365,13 @@ object SystemUIHooker : YukiBaseHooker() {
         when {
             /** 替换系统图标为 Android 默认 */
             (packageName == ANDROID_PACKAGE_NAME || packageName == SYSTEMUI_PACKAGE_NAME) && isGrayscaleIcon.not() ->
-                customPair = Pair(if (isUpperOfAndroidS) IconPackParams.android12IconBitmap else IconPackParams.android11IconBitmap, 0)
+                customPair = Pair(
+                    when {
+                        isUpperOfAndroidT -> IconPackParams.android13IconBitmap
+                        isUpperOfAndroidS -> IconPackParams.android12IconBitmap
+                        else -> IconPackParams.android11IconBitmap
+                    }, 0
+                )
             /** 替换自定义通知图标 */
             prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) -> run {
                 iconDatas.takeIf { it.isNotEmpty() }?.forEach {
