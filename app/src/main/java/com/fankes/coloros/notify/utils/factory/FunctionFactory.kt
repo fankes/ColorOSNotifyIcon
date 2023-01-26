@@ -58,7 +58,7 @@ import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.hasClass
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.factory.toClassOrNull
-import com.highcapable.yukihookapi.hook.type.java.StringType
+import com.highcapable.yukihookapi.hook.type.java.StringClass
 import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication.Companion.appContext
 import com.topjohnwu.superuser.Shell
 import java.io.ByteArrayOutputStream
@@ -380,7 +380,7 @@ val String.bitmap: Bitmap get() = unbase64.bitmap
 fun findPropString(key: String, default: String = "") = safeOf(default) {
     "android.os.SystemProperties".toClassOrNull()?.method {
         name = "get"
-        param(StringType, StringType)
+        param(StringClass, StringClass)
     }?.get()?.invoke(key, default) ?: default
 }
 

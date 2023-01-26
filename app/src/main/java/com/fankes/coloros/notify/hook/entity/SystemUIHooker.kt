@@ -560,7 +560,7 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 必要的延迟防止 Sp 存储不刷新 */
         SystemClock.sleep(100)
         /** 获取可读写状态 */
-        return prefs.isXSharePrefsReadable.also {
+        return prefs.isPreferencesAvailable.also {
             isUsingCachingMethod = true
             prefs.clearCache()
             cachingIconDatas()
