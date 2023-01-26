@@ -79,9 +79,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             isNotColorOS ->
                 showDialog {
                     title = "不是 ColorOS 系统"
-                    msg = "此模块专为 ColorOS 系统打造，当前无法识别你的系统为 ColorOS，所以模块无法工作。\n" +
-                            "如有问题请联系 酷安 @星夜不荟"
-                    confirmButton(text = "退出") { finish() }
+                    msg = "此模块专为 ColorOS 系统打造，当前无法识别你的系统为 ColorOS，所以模块无法工作。"
+                    confirmButton(text = "查看支持的模块") {
+                        openBrowser(url = "https://github.com/fankes/AndroidNotifyIconAdapt")
+                        finish()
+                    }
+                    cancelButton(text = "退出") { finish() }
                     noCancelable()
                 }
             /** 判断是否 Hook */
