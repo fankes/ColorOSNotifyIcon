@@ -7,7 +7,7 @@
 [![Blank](https://img.shields.io/github/downloads/Xposed-Modules-Repo/com.fankes.coloros.notify/total?label=LSPosed%20Repo&logo=Android&style=flat&labelColor=F48FB1&logoColor=ffffff)](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases)
 [![Telegram](https://img.shields.io/badge/Follow-Telegram-blue.svg?logo=telegram)](https://t.me/XiaofangInternet)
 <br/><br/>
-<img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png" width = "100" height = "100"/>
+<img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/app/src/main/ic_launcher-playstore.png?raw=true" width = "100" height = "100"/>
 <br/>
 Optimize notification icons for ColorOS and adapt to native notification icon specifications.
 
@@ -48,7 +48,7 @@ Optimize notification icons for ColorOS and adapt to native notification icon sp
 ## 捐赠支持
 
 - 工作不易，无意外情况此项目将继续维护下去，提供更多可能，欢迎打赏。<br/><br/>
-  <img src="https://github.com/fankes/YuKiHookAPI/blob/master/img-src/wechat_code.jpg" width = "200" height = "200"/>
+  <img src="https://github.com/fankes/YuKiHookAPI/blob/master/img-src/wechat_code.jpg?raw=true" width = "200" height = "200"/>
 
 ## 隐私政策
 
