@@ -498,7 +498,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     if (isTint) view?.backgroundTintList = ColorStateList.valueOf(currendColor)
                     else drawable?.setTint(currendColor)
                 }
-                isTint.not() && view?.parent?.parent?.javaClass?.name?.contains(other = "ChildrenContainer") == true -> drawable?.alpha = 0
+                isTint.not() && view?.parent?.parent?.javaClass?.name?.contains("ChildrenContainer") == true -> drawable?.alpha = 0
                 else -> {
                     currendColor.colorAlphaOf(currentAlpha / 100f).also {
                         if (isTint) view?.backgroundTintList = ColorStateList.valueOf(it)

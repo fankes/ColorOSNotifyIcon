@@ -157,9 +157,7 @@ val colorOSNumberVersion
         "com.oplus.os.OplusBuild".toClassOrNull()?.let {
             it.field { name = "VERSIONS" }.ignored().get().array<String>().takeIf { e -> e.isNotEmpty() }
                 ?.get(it.method { name = "getOplusOSVERSION" }.ignored().get().int() - 1)
-        } ?: findPropString(
-            key = "ro.system.build.fingerprint", default = "无法获取"
-        ).split("ssi:")[1].split("/")[0].trim()
+        } ?: findPropString("ro.system.build.fingerprint", "无法获取").split("ssi:")[1].split("/")[0].trim()
     }
 
 /**
