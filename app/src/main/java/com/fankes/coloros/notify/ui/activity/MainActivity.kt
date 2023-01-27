@@ -141,6 +141,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyMediaPanelAutoExpSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
         binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
+        binding.colorIconCompatSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_COLOR_ICON_COMPAT)
         binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconForceAppIconSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON)
         binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
@@ -169,6 +170,23 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_MODULE_LOG, b)
             SystemUITool.showNeedRestartSnake(context = this)
+        }
+        binding.colorIconCompatSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            /** 保存当前配置并生效 */
+            fun saveConfigs() {
+                modulePrefs.put(DataConst.ENABLE_COLOR_ICON_COMPAT, b)
+                SystemUITool.refreshSystemUI(context = this)
+            }
+            if (b) showDialog {
+                title = "启用兼容模式"
+                msg = "启用兼容模式可修复部分系统版本可能出现无法判定通知图标反色的问题，" +
+                        "但是这也可能会导致新的问题，一般情况下不建议开启，确定要继续吗？\n\n" +
+                        "如果系统界面刷新后通知图标颜色发生错误，请尝试重启一次系统界面。"
+                confirmButton { saveConfigs() }
+                cancelButton { btn.isChecked = false }
+                noCancelable()
+            } else saveConfigs()
         }
         binding.notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener

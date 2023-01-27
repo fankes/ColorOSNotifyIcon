@@ -34,7 +34,6 @@ import android.graphics.Outline
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
-import android.graphics.drawable.VectorDrawable
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.util.ArrayMap
@@ -52,6 +51,7 @@ import com.fankes.coloros.notify.hook.factory.isAppNotifyHookAllOf
 import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.bean.VariousClass
@@ -329,16 +329,18 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param drawable 要判断的图标
      * @return [Boolean]
      */
-    private fun isGrayscaleIcon(context: Context?, drawable: Drawable?) =
-        ContrastColorUtilClass.toClassOrNull()?.let {
-            drawable is VectorDrawable || it.method {
-                name = "isGrayscaleIcon"
-                param(DrawableClass)
-            }.get(it.method {
-                name = "getInstance"
-                param(ContextClass)
-            }.get().invoke(context)).boolean(drawable)
-        } ?: false
+    private fun isGrayscaleIcon(context: Context, drawable: Drawable) =
+        if (prefs.get(DataConst.ENABLE_COLOR_ICON_COMPAT).not()) safeOfFalse {
+            ContrastColorUtilClass.toClass().let {
+                it.method {
+                    name = "isGrayscaleIcon"
+                    param(DrawableClass)
+                }.get(it.method {
+                    name = "getInstance"
+                    param(ContextClass)
+                }.get().invoke(context)).boolean(drawable)
+            }
+        } else BitmapCompatTool.isGrayscaleDrawable(drawable)
 
     /**
      * 适配通知栏、状态栏来自系统推送的彩色 APP 图标
@@ -624,7 +626,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "isGrayscaleOplus"
                     param(ImageViewClass, OplusContrastColorUtilClass)
                 }
-                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } }
+                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
             }.ignoredHookingFailure()
         }
         /** 替换状态栏图标 */
