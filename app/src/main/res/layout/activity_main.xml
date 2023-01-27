@@ -32,22 +32,22 @@
         <androidx.constraintlayout.utils.widget.ImageFilterView
             android:id="@+id/title_restart_icon"
             style="?android:attr/selectableItemBackgroundBorderless"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="27dp"
+            android:layout_height="27dp"
             android:layout_marginEnd="15dp"
             android:alpha="0.85"
-            android:src="@mipmap/ic_restart"
+            android:src="@drawable/ic_restart"
             android:tint="@color/colorTextGray"
             android:tooltipText="重启系统界面" />
 
         <androidx.constraintlayout.utils.widget.ImageFilterView
             android:id="@+id/title_github_icon"
             style="?android:attr/selectableItemBackgroundBorderless"
-            android:layout_width="27dp"
-            android:layout_height="27dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
             android:layout_marginEnd="5dp"
             android:alpha="0.85"
-            android:src="@mipmap/ic_github"
+            android:src="@drawable/ic_github"
             android:tint="@color/colorTextGray"
             android:tooltipText="项目地址" />
     </LinearLayout>
@@ -70,7 +70,7 @@
             android:layout_height="25dp"
             android:layout_marginStart="25dp"
             android:layout_marginEnd="5dp"
-            android:src="@mipmap/ic_warn"
+            android:src="@drawable/ic_warn"
             android:tint="@color/white" />
 
         <LinearLayout
@@ -186,7 +186,7 @@
                     android:layout_height="15dp"
                     android:layout_marginEnd="10dp"
                     android:alpha="0.85"
-                    android:src="@mipmap/ic_about"
+                    android:src="@drawable/ic_about"
                     android:tint="@color/colorTextDark" />
 
                 <TextView
@@ -220,11 +220,21 @@
                     android:layout_height="wrap_content"
                     android:gravity="center|start">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_basic" />
+                        app:cardBackgroundColor="#009688"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2.5dp"
+                            android:src="@drawable/ic_preference" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -286,11 +296,21 @@
                     android:layout_height="wrap_content"
                     android:gravity="center|start">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_control" />
+                        app:cardBackgroundColor="#2196F3"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2.5dp"
+                            android:src="@drawable/ic_function" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -381,11 +401,21 @@
                     android:paddingLeft="15dp"
                     android:paddingRight="15dp">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_nf_style" />
+                        app:cardBackgroundColor="#BA68C8"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2.5dp"
+                            android:src="@drawable/ic_theme" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -531,7 +561,7 @@
                         android:lineSpacingExtra="6dp"
                         android:paddingLeft="15dp"
                         android:paddingRight="15dp"
-                        android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12.1 测试通过，不能保证可以在任何系统版本中生效，以及和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。"
+                        android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12.1、13 测试通过，不能保证可以在任何系统版本中生效，以及和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。"
                         android:textColor="@color/colorTextDark"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -572,11 +602,21 @@
                     android:layout_marginRight="15dp"
                     android:gravity="center|start">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_notify" />
+                        app:cardBackgroundColor="#FF7043"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2.5dp"
+                            android:src="@drawable/ic_notify" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -633,7 +673,7 @@
                     android:layout_marginBottom="10dp"
                     android:alpha="0.6"
                     android:lineSpacingExtra="6dp"
-                    android:text="此选项默认开启，开启后将对优化名单内的 APP 通知小图标使用单色调进行修复，特别是通过系统级别推送的通知，它们始终是 APP 默认图标(彩色的 APP 图标)，修复后使得它们的图标看起来更加符合 Android 原生的统一规范。"
+                    android:text="此选项默认开启，开启后将对优化名单内的 APP 通知小图标使用单色调进行修复，特别是通过系统级别推送的通知，它们始终是 APP 默认图标 (彩色的 APP 图标)，修复后使得它们的图标看起来更加符合 Android 原生的统一规范。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
@@ -877,11 +917,21 @@
                     android:layout_height="wrap_content"
                     android:gravity="center|start">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_home" />
+                        app:cardBackgroundColor="#FFFF9800"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2.5dp"
+                            android:src="@drawable/ic_home" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -941,11 +991,21 @@
                     android:layout_marginBottom="15dp"
                     android:gravity="center|start">
 
-                    <ImageView
+                    <androidx.cardview.widget.CardView
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:layout_marginEnd="10dp"
-                        android:src="@mipmap/ic_help" />
+                        app:cardBackgroundColor="#FF03A9F4"
+                        app:cardCornerRadius="50dp"
+                        app:cardElevation="0dp">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_info" />
+                    </androidx.cardview.widget.CardView>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -983,7 +1043,7 @@
                     android:layout_marginBottom="10dp"
                     android:alpha="0.8"
                     android:lineSpacingExtra="10dp"
-                    android:text="Q.哪些是已知问题？\nA.以下是问题描述列表：\n(1) 由于机型有限，仅对 ColorOS 12~12.1 测试正常运行，根据酷友的需要云调试修复 ColorOS 11 的问题，其它版本情况未知，请自行进行测试。\n(2) OxygenOS 只支持 12 版本，其它类 ColorOS 魔改的 UI 理论没有问题，请自行测试。\n(3) 动态刷新系统界面为实验性功能，若动态地改变了系统深色模式，调节了分辨率和字体大小，状态栏的通知图标会还原，或在刷新时发生图标黑白块问题，发生类似这种情况请手动重启一次系统界面即可解决。"
+                    android:text="Q.哪些是已知问题？\nA.以下是问题描述列表：\n(1) 由于机型有限，仅对 ColorOS 12、12.1、13 测试正常运行，根据酷友的需要云调试修复 ColorOS 11 的问题，其它版本情况未知，请自行进行测试。\n(2) OxygenOS 只支持 12、12.1、13 版本，其它类 ColorOS 魔改的 UI 理论没有问题，请自行测试。\n(3) 动态刷新系统界面为实验性功能，若动态地改变了系统深色模式，调节了分辨率和字体大小，状态栏的通知图标会还原，或在刷新时发生图标黑白块问题，发生类似这种情况请手动重启一次系统界面即可解决。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
