@@ -30,7 +30,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.BitmapDrawable
@@ -45,6 +44,7 @@ import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.children
+import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.data.DataConst
 import com.fankes.coloros.notify.hook.HookConst.ANDROID_PACKAGE_NAME
@@ -351,28 +351,26 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /**
      * 自动适配状态栏、通知栏自定义小图标
+     * @param context 实例
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
-     * @return [Pair] - ([Bitmap] 位图,[Int] 颜色)
+     * @return [Pair] - ([Drawable] 位图 or null,[Int] 颜色)
      */
-    private fun compatCustomIcon(isGrayscaleIcon: Boolean, packageName: String): Pair<Bitmap?, Int> {
-        var customPair: Pair<Bitmap?, Int>? = null
+    private fun compatCustomIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String): Pair<Drawable?, Int> {
+        var customPair: Pair<Drawable?, Int>? = null
+        val statSysAdbIcon = runCatching {
+            context.resources.drawableOf("com.android.internal.R\$drawable".toClass().field { name = "stat_sys_adb" }.get().int())
+        }.getOrNull() ?: context.resources.drawableOf(R.drawable.ic_unsupported)
         when {
             /** 替换系统图标为 Android 默认 */
             (packageName == ANDROID_PACKAGE_NAME || packageName == SYSTEMUI_PACKAGE_NAME) && isGrayscaleIcon.not() ->
-                customPair = Pair(
-                    when {
-                        isUpperOfAndroidT -> IconPackParams.android13IconBitmap
-                        isUpperOfAndroidS -> IconPackParams.android12IconBitmap
-                        else -> IconPackParams.android11IconBitmap
-                    }, 0
-                )
+                customPair = Pair(statSysAdbIcon, 0)
             /** 替换自定义通知图标 */
             prefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) -> run {
                 iconDatas.takeIf { it.isNotEmpty() }?.forEach {
                     if (packageName == it.packageName && isAppNotifyHookOf(it)) {
                         if (isGrayscaleIcon.not() || isAppNotifyHookAllOf(it))
-                            customPair = Pair(it.iconBitmap, it.iconColor)
+                            customPair = Pair(BitmapDrawable(context.resources, it.iconBitmap), it.iconColor)
                         return@run
                     }
                 }
@@ -396,11 +394,10 @@ object SystemUIHooker : YukiBaseHooker() {
         isGrayscaleIcon: Boolean,
         packageName: String,
         drawable: Drawable
-    ) = compatCustomIcon(isGrayscaleIcon, packageName).first.also {
+    ) = compatCustomIcon(context, isGrayscaleIcon, packageName).first.also {
         /** 打印日志 */
         printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
-    }?.let { Pair(BitmapDrawable(context.resources, it), true) }
-        ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
+    }?.let { Pair(it, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
 
     /**
      * 自动适配通知栏小图标
@@ -421,7 +418,7 @@ object SystemUIHooker : YukiBaseHooker() {
         iconColor: Int,
         iconView: ImageView
     ) = runInSafe {
-        compatCustomIcon(isGrayscaleIcon, packageName).also { customPair ->
+        compatCustomIcon(context, isGrayscaleIcon, packageName).also { customPair ->
             when {
                 prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
                     iconView.apply {
@@ -434,7 +431,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
                     /** 重新设置图标 */
-                    setImageBitmap(customPair.first ?: drawable.toBitmap())
+                    setImageDrawable(customPair.first ?: drawable)
 
                     /** 是否开启 Android 12 风格 */
                     val isA12Style = prefs.get(DataConst.ENABLE_ANDROID12_STYLE)
@@ -544,6 +541,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     IconAdaptationTool.prepareAutoUpdateIconRule(context, prefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME))
             }
             onCreate {
+                /** 注入模块资源 */
+                injectModuleAppResources()
                 /** 注册发送适配新的 APP 图标通知监听 */
                 registerReceiver(object : BroadcastReceiver() {
                     override fun onReceive(context: Context, intent: Intent?) {
