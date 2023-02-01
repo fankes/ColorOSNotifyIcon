@@ -122,7 +122,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         var notifyIconAutoSyncTime = modulePrefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
         binding.devNotifyConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
-        binding.a12StyleConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
+        binding.notifyStyleConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconCustomCornerItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) &&
@@ -137,7 +137,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
         binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
         binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
-        binding.a12StyleConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_ANDROID12_STYLE)
+        binding.md3StyleConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE)
         binding.notifyMediaPanelAutoExpSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
         binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
@@ -163,7 +163,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             binding.moduleEnableLogSwitch.isVisible = b
             binding.notifyIconConfigItem.isVisible = b
             binding.devNotifyConfigItem.isVisible = b
-            binding.a12StyleConfigItem.isVisible = b
+            binding.notifyStyleConfigItem.isVisible = b
             SystemUITool.showNeedRestartSnake(context = this)
         }
         binding.moduleEnableLogSwitch.setOnCheckedChangeListener { btn, b ->
@@ -235,9 +235,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             modulePrefs.put(DataConst.REMOVE_DNDALERT_NOTIFY, b)
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
-        binding.a12StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
+        binding.md3StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_ANDROID12_STYLE, b)
+            modulePrefs.put(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE, b)
             SystemUITool.refreshSystemUI(context = this)
         }
         binding.notifyMediaPanelAutoExpSwitch.setOnCheckedChangeListener { btn, b ->

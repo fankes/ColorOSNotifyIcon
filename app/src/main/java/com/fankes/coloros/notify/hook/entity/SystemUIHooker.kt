@@ -441,8 +441,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     /** 重新设置图标 */
                     setImageDrawable(customPair.first ?: drawable)
 
-                    /** 是否开启 Android 12 风格 */
-                    val isA12Style = prefs.get(DataConst.ENABLE_ANDROID12_STYLE)
+                    /** 是否开启 Material 3 风格 */
+                    val isMaterial3Style = prefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE)
 
                     /** 旧版风格 */
                     val oldStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else 0xff707173).toInt()
@@ -451,17 +451,17 @@ object SystemUIHooker : YukiBaseHooker() {
                     val newStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else Color.WHITE).toInt()
 
                     /** 原生着色 */
-                    val a12Style = if (isUpperOfAndroidS) context.systemAccentColor else
+                    val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
                         (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
 
                     /** 旧版图标着色 */
                     val oldApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
 
                     /** 新版图标着色 */
-                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: a12Style
+                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: md3Style
 
                     /** 判断风格并开始 Hook */
-                    if (isA12Style) {
+                    if (isMaterial3Style) {
                         /** 通知图标边框圆角大小 */
                         background = DrawableBuilder()
                             .rectangle()
