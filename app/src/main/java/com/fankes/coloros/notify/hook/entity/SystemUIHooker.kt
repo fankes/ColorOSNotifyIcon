@@ -418,15 +418,24 @@ object SystemUIHooker : YukiBaseHooker() {
         iconView: ImageView
     ) = runInSafe {
         compatCustomIcon(context, isGrayscaleIcon, packageName).also { customPair ->
+            /** 设置一个用于替换的图标 */
+            val placeholderView = ImageView(context)
+            /** 克隆之前图标的所有布局信息 */
+            (iconView.parent as? ViewGroup?)?.apply { addView(placeholderView.apply { layoutParams = iconView.layoutParams }) }
+                ?: loggerE(msg = "Cannot got the orginal notification icon's parent view \"${nf.packageName}\"(\"${nf.opPkg}\") of $nf")
+            /** 将之前图标的间距设置为一个超大值以达到隐藏的效果 */
+            999.also { iconView.setPadding(it, it, it, it) }
+            /** 清除之前图标可能存在的背景 */
+            iconView.background = null
             when {
                 prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
-                    iconView.apply {
+                    placeholderView.apply {
                         /** 重新设置图标 */
                         setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))
                         /** 设置默认样式 */
                         setDefaultNotifyIconViewStyle()
                     }
-                customPair.first != null || isGrayscaleIcon -> iconView.apply {
+                customPair.first != null || isGrayscaleIcon -> placeholderView.apply {
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
                     /** 重新设置图标 */
@@ -467,7 +476,7 @@ object SystemUIHooker : YukiBaseHooker() {
                         setPadding(0, 0, 0, 0)
                     }
                 }
-                else -> iconView.apply {
+                else -> placeholderView.apply {
                     /** 重新设置图标 */
                     setImageDrawable(nf.compatPushingIcon(drawable))
                     /** 设置默认样式 */
