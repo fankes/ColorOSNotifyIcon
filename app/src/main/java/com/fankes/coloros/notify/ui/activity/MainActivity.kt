@@ -125,9 +125,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyStyleConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
-        binding.notifyIconCustomCornerItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) &&
+        binding.notifyIconCustomCornerItem.isVisible = modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE) &&
                 modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
-        binding.notifyIconForceAppIconItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncChildItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
@@ -192,8 +191,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
-            binding.notifyIconCustomCornerItem.isVisible = b && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
-            binding.notifyIconForceAppIconItem.isVisible = b
             binding.notifyIconFixNotifyItem.isVisible = b
             binding.notifyIconAutoSyncItem.isVisible = b
             SystemUITool.refreshSystemUI(context = this)
@@ -201,7 +198,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconForceAppIconSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             fun saveState() {
-                binding.notifyIconCustomCornerItem.isVisible = b.not()
+                binding.notifyIconCustomCornerItem.isVisible = b.not() && modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE)
                 modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON, b)
                 SystemUITool.refreshSystemUI(context = this)
             }
@@ -237,6 +234,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         binding.md3StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            binding.notifyIconCustomCornerItem.isVisible = b && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
             modulePrefs.put(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE, b)
             SystemUITool.refreshSystemUI(context = this)
         }
