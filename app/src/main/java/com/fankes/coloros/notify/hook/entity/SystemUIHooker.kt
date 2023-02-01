@@ -428,7 +428,7 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 清除之前图标可能存在的背景 */
             iconView.background = null
             when {
-                prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
+                prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) ->
                     placeholderView.apply {
                         /** 重新设置图标 */
                         setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))

@@ -516,6 +516,112 @@
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
+                <LinearLayout
+                    android:id="@+id/notify_icon_custom_corner_item"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginLeft="15dp"
+                        android:layout_marginRight="15dp"
+                        android:layout_marginBottom="5dp"
+                        android:gravity="center|start"
+                        android:text="调整通知栏中的图标边框圆角大小"
+                        android:textAllCaps="false"
+                        android:textColor="@color/colorTextGray"
+                        android:textSize="15sp" />
+
+                    <androidx.appcompat.widget.AppCompatSeekBar
+                        android:id="@+id/notify_icon_custom_corner_seekbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginRight="5dp"
+                        android:max="10"
+                        android:min="0"
+                        android:progress="10" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="5dp"
+                            android:alpha="0.75"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:maxWidth="100dp"
+                            android:singleLine="true"
+                            android:text="当前"
+                            android:textColor="@color/colorTextGray"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:id="@+id/notify_icon_custom_corner_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:maxWidth="100dp"
+                            android:singleLine="true"
+                            android:text="10 dp"
+                            android:textColor="@color/colorTextGray"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.6"
+                        android:lineSpacingExtra="6dp"
+                        android:paddingLeft="15dp"
+                        android:paddingRight="15dp"
+                        android:text="你可以拖拽滑动条来调整通知栏中的图标边框圆角大小。"
+                        android:textColor="@color/colorTextDark"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.fankes.coloros.notify.ui.widget.MaterialSwitch
+                        android:id="@+id/notify_icon_force_app_icon_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="30dp"
+                        android:layout_marginBottom="5dp"
+                        android:paddingLeft="15dp"
+                        android:paddingRight="15dp"
+                        android:text="通知栏中的图标强制为 APP 图标"
+                        android:textColor="@color/colorTextGray"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:alpha="0.6"
+                        android:lineSpacingExtra="6dp"
+                        android:paddingLeft="15dp"
+                        android:paddingRight="15dp"
+                        android:text="此选项默认关闭，开启后下拉通知栏中的通知图标将会被替换为 APP 自身图标，但是不会更改状态栏中的通知图标，这是一个破坏原生通知图标的行为，仅针对部分有需要的用户而添加，我们不推荐开启这个功能，请根据个人偏好进行选择是否需要开启。"
+                        android:textColor="@color/colorTextDark"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
                 <com.fankes.coloros.notify.ui.widget.MaterialSwitch
                     android:id="@+id/notify_media_panel_auto_exp_switch"
                     android:layout_width="match_parent"
@@ -639,7 +745,7 @@
                         android:lineSpacingExtra="6dp"
                         android:paddingLeft="15dp"
                         android:paddingRight="15dp"
-                        android:text="已知问题：\n(1) 悬浮通知也会被透明，在透明度较低的时候下拉会有阴影光晕，松手释放后恢复正常，后期看需求再解决。\n(2) 媒体通知可能在低于 ColorOS 12.1 的系统上无法生效透明度，旧版本不再适配，该问题不会被修复。"
+                        android:text="已知问题：\n(1) 悬浮通知也会被透明，在透明度较低的时候下拉会有阴影光晕，松手释放后恢复正常，后期看需求再解决。\n(2) 被折叠的通知自动消除 (但并没有完全消除) 后，可能存在通知条目背景全透明的问题，此问题属于系统 BUG，目前暂无有效的解决办法来判断子布局是否已从叠加的通知条目中被移出。\n(3) 媒体通知可能在低于 ColorOS 12.1 的系统上无法生效透明度，旧版本不再适配，该问题不会被修复。"
                         android:textColor="@color/colorTextDark"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -741,114 +847,6 @@
                     android:text="此选项默认开启，开启后将对优化名单内的 APP 通知小图标使用单色调进行修复，特别是通过系统级别推送的通知，它们始终是 APP 默认图标 (彩色的 APP 图标)，修复后使得它们的图标看起来更加符合 Android 原生的统一规范。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/notify_icon_custom_corner_item"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="30dp"
-                        android:layout_marginLeft="15dp"
-                        android:layout_marginRight="15dp"
-                        android:layout_marginBottom="5dp"
-                        android:gravity="center|start"
-                        android:text="调整通知栏中的图标边框圆角大小"
-                        android:textAllCaps="false"
-                        android:textColor="@color/colorTextGray"
-                        android:textSize="15sp" />
-
-                    <androidx.appcompat.widget.AppCompatSeekBar
-                        android:id="@+id/notify_icon_custom_corner_seekbar"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginTop="5dp"
-                        android:max="10"
-                        android:min="0"
-                        android:paddingLeft="5dp"
-                        android:paddingRight="5dp"
-                        android:progress="10" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="15dp"
-                        android:layout_marginRight="15dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingTop="5dp"
-                        android:paddingBottom="15dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="5dp"
-                            android:alpha="0.75"
-                            android:ellipsize="end"
-                            android:gravity="center"
-                            android:maxWidth="100dp"
-                            android:singleLine="true"
-                            android:text="当前"
-                            android:textColor="@color/colorTextGray"
-                            android:textSize="13.5sp" />
-
-                        <TextView
-                            android:id="@+id/notify_icon_custom_corner_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:ellipsize="end"
-                            android:gravity="center"
-                            android:maxWidth="100dp"
-                            android:singleLine="true"
-                            android:text="10 dp"
-                            android:textColor="@color/colorTextGray"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="15dp"
-                        android:layout_marginRight="15dp"
-                        android:layout_marginBottom="10dp"
-                        android:alpha="0.6"
-                        android:lineSpacingExtra="6dp"
-                        android:text="你可以拖拽滑动条来调整通知栏中图标的边框圆角大小。"
-                        android:textColor="@color/colorTextDark"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/notify_icon_force_app_icon_item"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="15dp"
-                    android:layout_marginRight="15dp"
-                    android:orientation="vertical">
-
-                    <com.fankes.coloros.notify.ui.widget.MaterialSwitch
-                        android:id="@+id/notify_icon_force_app_icon_switch"
-                        android:layout_width="match_parent"
-                        android:layout_height="30dp"
-                        android:layout_marginBottom="5dp"
-                        android:text="通知栏中的图标强制为 APP 图标"
-                        android:textColor="@color/colorTextGray"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        android:alpha="0.6"
-                        android:lineSpacingExtra="6dp"
-                        android:text="此选项默认关闭，开启后下拉通知栏中的通知图标将会被替换为 APP 自身图标，但是不会更改状态栏中的通知图标，这是一个破坏原生通知图标的行为，仅针对部分有需要的用户而添加，我们不推荐开启这个功能，请根据个人偏好进行选择是否需要开启。"
-                        android:textColor="@color/colorTextDark"
-                        android:textSize="12sp" />
-                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/notify_icon_fix_notify_item"
