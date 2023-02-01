@@ -446,7 +446,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/a12_style_config_item"
+                android:id="@+id/notify_style_config_item"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="15dp"
@@ -493,13 +493,13 @@
                 </LinearLayout>
 
                 <com.fankes.coloros.notify.ui.widget.MaterialSwitch
-                    android:id="@+id/a12_style_config_switch"
+                    android:id="@+id/md3_style_config_switch"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="5dp"
                     android:paddingLeft="15dp"
                     android:paddingRight="15dp"
-                    android:text="启用 Android 12 通知栏风格"
+                    android:text="启用 Material 3 通知图标风格"
                     android:textAllCaps="false"
                     android:textColor="@color/colorTextGray"
                     android:textSize="15sp" />
@@ -512,7 +512,7 @@
                     android:lineSpacingExtra="6dp"
                     android:paddingLeft="15dp"
                     android:paddingRight="15dp"
-                    android:text="无论任何版本，开启后都将使用 Android 12 原生通知图标方式为通知栏推送的通知图标增加外部圆形轮廓。\n目标为 Android 12 的系统将自动使用系统主题色着色。"
+                    android:text="无论任何版本，开启后都将使用从 Android 12 开始的 Material 3 通知图标设计方式为通知栏的通知图标增加外部轮廓。\n目标为 Android 12 及以上的系统将自动使用系统主题色着色。"
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
@@ -814,9 +814,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="15dp"
                         android:layout_marginRight="15dp"
+                        android:layout_marginBottom="10dp"
                         android:alpha="0.6"
                         android:lineSpacingExtra="6dp"
-                        android:text="你可以拖拽滑动条来调整通知栏中图标的边框圆角大小，仅支持启用了 Android 12 通知栏风格的通知图标。"
+                        android:text="你可以拖拽滑动条来调整通知栏中图标的边框圆角大小。"
                         android:textColor="@color/colorTextDark"
                         android:textSize="12sp" />
                 </LinearLayout>
