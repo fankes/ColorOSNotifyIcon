@@ -25,6 +25,7 @@ package com.fankes.coloros.notify.utils.tool
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import com.fankes.coloros.notify.const.PackageName
+import com.fankes.coloros.notify.ui.activity.MainActivity
 import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.factory.execShell
 import com.fankes.coloros.notify.utils.factory.showDialog
@@ -83,7 +84,8 @@ object SystemUITool {
         context.showDialog {
             title = "重启系统界面"
             msg = "你确定要立即重启系统界面吗？\n\n" +
-                    "重启过程会黑屏并等待进入锁屏重新解锁。"
+                    "重启过程会黑屏并等待进入锁屏重新解锁。" + (if (MainActivity.isModuleRegular && MainActivity.isModuleValied)
+                "\n\n你也可以选择“立即生效”来动态刷新系统界面并生效当前模块设置。" else "")
             confirmButton {
                 execShell(cmd = "pgrep systemui").also { pid ->
                     if (pid.isNotBlank())
@@ -92,6 +94,7 @@ object SystemUITool {
                 }
             }
             cancelButton()
+            if (MainActivity.isModuleRegular && MainActivity.isModuleValied) neutralButton(text = "立即生效") { refreshSystemUI(context) }
         }
     }
 
