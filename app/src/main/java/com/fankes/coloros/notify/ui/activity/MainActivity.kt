@@ -118,7 +118,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
         }
         binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
-        binding.mainTextColorOsVersion.text = "系统版本：$colorOSFullVersion"
+        binding.mainTextColorOsVersion.text = "系统版本：[$androidVersionCodeName] $colorOSFullVersion"
         /** 媒体通知自动展开仅支持 12.1 - 旧版本适配过于复杂已放弃 */
         if (colorOSNumberVersion != "V12.1") {
             binding.notifyMediaPanelAutoExpSwitch.isVisible = false
