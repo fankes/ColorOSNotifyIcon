@@ -22,8 +22,8 @@
  */
 package com.fankes.coloros.notify.hook
 
-import com.fankes.coloros.notify.data.DataConst
-import com.fankes.coloros.notify.hook.HookConst.SYSTEMUI_PACKAGE_NAME
+import com.fankes.coloros.notify.const.PackageName
+import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker
 import com.fankes.coloros.notify.utils.factory.isNotColorOS
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
@@ -41,13 +41,11 @@ object HookEntry : IYukiHookXposedInit {
     }
 
     override fun onHook() = encase {
-        loadApp(SYSTEMUI_PACKAGE_NAME) {
+        loadApp(PackageName.SYSTEMUI) {
+            ConfigData.init(instance = this)
             when {
-                /** 不是 ColorOS 系统停止 Hook */
                 isNotColorOS -> loggerW(msg = "Aborted Hook -> This System is not ColorOS")
-                /** Hook 被手动关闭停止 Hook */
-                prefs.get(DataConst.ENABLE_MODULE).not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
-                /** 开始 Hook */
+                ConfigData.isEnableModule.not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
                 else -> loadHooker(SystemUIHooker)
             }
         }

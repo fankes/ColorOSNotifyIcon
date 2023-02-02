@@ -29,7 +29,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
-import com.fankes.coloros.notify.data.DataConst
+import com.fankes.coloros.notify.data.ConfigData
+import com.fankes.coloros.notify.data.factory.bind
 import com.fankes.coloros.notify.databinding.ActivityMainBinding
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
@@ -38,7 +39,6 @@ import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.fankes.coloros.notify.utils.tool.YukiPromoteTool
 import com.highcapable.yukihookapi.YukiHookAPI
-import com.highcapable.yukihookapi.hook.factory.modulePrefs
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
@@ -63,9 +63,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override fun onCreate() {
         /** 设置可用性 */
         isActivityLive = true
-        /** 设置文本 */
-        binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
-        binding.mainTextColorOsVersion.text = "系统版本：$colorOSFullVersion"
         /** 检查更新 */
         GithubReleaseTool.checkingForUpdate(context = this, moduleVersion) { version, function ->
             binding.mainTextReleaseVersion.apply {
@@ -89,7 +86,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             /** 判断是否 Hook */
             YukiHookAPI.Status.isXposedModuleActive -> {
-                if (IconPackParams(context = this).iconDatas.isEmpty() && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX))
+                if (IconPackParams(context = this).iconDatas.isEmpty() && ConfigData.isEnableNotifyIconFix)
                     showDialog {
                         title = "配置通知图标优化名单"
                         msg = "模块需要获取在线规则以更新“通知图标优化名单”，它现在是空的，这看起来是你第一次使用模块，请首先进行配置才可以使用相关功能。\n" +
@@ -98,7 +95,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         cancelButton()
                         noCancelable()
                     }
-                if (isNotNoificationEnabled && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX))
+                if (isNotNoificationEnabled && ConfigData.isEnableNotifyIconFix)
                     showDialog {
                         title = "模块的通知权限已关闭"
                         msg = "请开启通知权限，以确保你能收到通知优化图标在线规则的更新。"
@@ -120,142 +117,123 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     noCancelable()
                 }
         }
-        var notifyIconAutoSyncTime = modulePrefs.get(DataConst.NOTIFY_ICON_FIX_AUTO_TIME)
-        binding.devNotifyConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
-        binding.notifyStyleConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
-        binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
-        binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
-        binding.notifyIconCustomCornerItem.isVisible = modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE) &&
-                modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
-        binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
-        binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
-        binding.notifyIconAutoSyncChildItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
-        binding.notifyPanelConfigSeekbar.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigTextPanel.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigWarnPanel.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
-        binding.devNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DEV_NOTIFY)
-        binding.crcpNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_CHANGECP_NOTIFY)
-        binding.dndNotifyConfigSwitch.isChecked = modulePrefs.get(DataConst.REMOVE_DNDALERT_NOTIFY)
-        binding.md3StyleConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE)
-        binding.notifyMediaPanelAutoExpSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
-        binding.moduleEnableSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE)
-        binding.moduleEnableLogSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_MODULE_LOG)
-        binding.colorIconCompatSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_COLOR_ICON_COMPAT)
-        binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
-        binding.notifyIconForceAppIconSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON)
-        binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
-        binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
-        binding.notifyPanelConfigSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_PANEL_ALPHA)
-        binding.notifyPanelConfigSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)
-        binding.notifyIconCustomCornerSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_ICON_CORNER)
-        binding.notifyPanelConfigText.text = "${modulePrefs.get(DataConst.NOTIFY_PANEL_ALPHA)}%"
-        binding.notifyIconCustomCornerText.text = "${modulePrefs.get(DataConst.NOTIFY_ICON_CORNER)} dp"
-        binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
+        binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
+        binding.mainTextColorOsVersion.text = "系统版本：$colorOSFullVersion"
         /** 媒体通知自动展开仅支持 12.1 - 旧版本适配过于复杂已放弃 */
         if (colorOSNumberVersion != "V12.1") {
             binding.notifyMediaPanelAutoExpSwitch.isVisible = false
             binding.notifyMediaPanelAutoExpText.isVisible = false
         }
-        binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_MODULE, b)
-            binding.moduleEnableLogSwitch.isVisible = b
-            binding.notifyIconConfigItem.isVisible = b
-            binding.devNotifyConfigItem.isVisible = b
-            binding.notifyStyleConfigItem.isVisible = b
-            SystemUITool.showNeedRestartSnake(context = this)
-        }
-        binding.moduleEnableLogSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_MODULE_LOG, b)
-            SystemUITool.showNeedRestartSnake(context = this)
-        }
-        binding.colorIconCompatSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            /** 保存当前配置并生效 */
-            fun saveConfigs() {
-                modulePrefs.put(DataConst.ENABLE_COLOR_ICON_COMPAT, b)
-                SystemUITool.refreshSystemUI(context = this)
+        binding.notifyPanelConfigSeekbar.progress = ConfigData.notifyPanelAlphaLevel
+        binding.notifyIconCustomCornerSeekbar.progress = ConfigData.notifyIconCornerSize
+        binding.notifyPanelConfigText.text = "${ConfigData.notifyPanelAlphaLevel}%"
+        binding.notifyIconCustomCornerText.text = "${ConfigData.notifyIconCornerSize} dp"
+        binding.notifyIconAutoSyncText.text = ConfigData.notifyIconFixAutoTime
+        binding.moduleEnableSwitch.bind(ConfigData.ENABLE_MODULE) {
+            onInitialize {
+                binding.moduleEnableLogSwitch.isVisible = it
+                binding.notifyIconConfigItem.isVisible = it
+                binding.devNotifyConfigItem.isVisible = it
+                binding.notifyStyleConfigItem.isVisible = it
             }
-            if (b) showDialog {
-                title = "启用兼容模式"
-                msg = "启用兼容模式可修复部分系统版本可能出现无法判定通知图标反色的问题，" +
-                        "但是这也可能会导致新的问题，一般情况下不建议开启，确定要继续吗？\n\n" +
-                        "如果系统界面刷新后通知图标颜色发生错误，请尝试重启一次系统界面。"
-                confirmButton { saveConfigs() }
-                cancelButton { btn.isChecked = false }
-                noCancelable()
-            } else saveConfigs()
-        }
-        binding.notifyIconFixSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX, b)
-            binding.notifyIconFixButton.isVisible = b
-            binding.notifyIconFixNotifyItem.isVisible = b
-            binding.notifyIconAutoSyncItem.isVisible = b
-            SystemUITool.refreshSystemUI(context = this)
-        }
-        binding.notifyIconForceAppIconSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            fun saveState() {
-                binding.notifyIconCustomCornerItem.isVisible = b.not() && modulePrefs.get(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE)
-                modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON, b)
-                SystemUITool.refreshSystemUI(context = this)
+            onChanged {
+                reinitialize()
+                refreshModuleStatus()
+                SystemUITool.showNeedRestartSnake(context = this@MainActivity)
             }
-            if (b) showDialog {
-                title = "破坏性功能警告"
-                msg = "开启这个功能后，任何通知栏中的通知图标都会被强制替换为当前推送通知的 APP 的图标，" +
-                        "某些系统级别的 APP 通知图标可能会显示异常或发生图标丢失。\n\n" +
-                        "此功能仅面向一些追求图标美观度的用户，我们不推荐开启这个功能，且发生任何 BUG 都不会去修复，仍然继续开启吗？"
-                confirmButton { saveState() }
-                cancelButton { btn.isChecked = btn.isChecked.not() }
-                noCancelable()
-            } else saveState()
         }
-        binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.moduleEnableLogSwitch.bind(ConfigData.ENABLE_MODULE_LOG) {
+            onChanged { SystemUITool.showNeedRestartSnake(context = this@MainActivity) }
         }
-        binding.devNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.REMOVE_DEV_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.devNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DEV_NOTIFY) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
         }
-        binding.crcpNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.REMOVE_CHANGECP_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.crcpNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
         }
-        binding.dndNotifyConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.REMOVE_DNDALERT_NOTIFY, b)
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.dndNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DND_ALERT_NOTIFY) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
         }
-        binding.md3StyleConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            binding.notifyIconCustomCornerItem.isVisible = b && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
-            modulePrefs.put(DataConst.ENABLE_MD3_NOTIFY_ICON_STYLE, b)
-            SystemUITool.refreshSystemUI(context = this)
+        binding.colorIconCompatSwitch.bind(ConfigData.ENABLE_COLOR_ICON_COMPAT) {
+            isAutoApplyChanges = false
+            onChanged {
+                /** 应用更改并刷新系统界面 */
+                fun applyChangesAndRefresh() {
+                    applyChanges()
+                    SystemUITool.refreshSystemUI(context = this@MainActivity)
+                }
+                if (it) showDialog {
+                    title = "启用兼容模式"
+                    msg = "启用兼容模式可修复部分系统版本可能出现无法判定通知图标反色的问题，" +
+                            "但是这也可能会导致新的问题，一般情况下不建议开启，确定要继续吗？\n\n" +
+                            "如果系统界面刷新后通知图标颜色发生错误，请尝试重启一次系统界面。"
+                    confirmButton { applyChangesAndRefresh() }
+                    cancelButton { cancelChanges() }
+                    noCancelable()
+                } else applyChangesAndRefresh()
+            }
         }
-        binding.notifyMediaPanelAutoExpSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP, b)
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.md3StyleConfigSwitch.bind(ConfigData.ENABLE_MD3_NOTIFY_ICON_STYLE) {
+            onInitialize { binding.notifyIconCustomCornerItem.isVisible = it && ConfigData.isEnableNotifyIconForceAppIcon.not() }
+            onChanged {
+                reinitialize()
+                SystemUITool.refreshSystemUI(context = this@MainActivity)
+            }
         }
-        binding.notifyPanelConfigSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_NOTIFY_PANEL_ALPHA, b)
-            binding.notifyPanelConfigTextPanel.isVisible = b
-            binding.notifyPanelConfigWarnPanel.isVisible = b
-            binding.notifyPanelConfigSeekbar.isVisible = b
-            SystemUITool.refreshSystemUI(context = this)
+        binding.notifyIconForceAppIconSwitch.bind(ConfigData.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) {
+            isAutoApplyChanges = false
+            onInitialize { binding.notifyIconCustomCornerItem.isVisible = it.not() && ConfigData.isEnableMd3NotifyIconStyle }
+            onChanged {
+                /** 应用更改并刷新系统界面 */
+                fun applyChangesAndRefresh() {
+                    applyChangesAndReinitialize()
+                    SystemUITool.refreshSystemUI(context = this@MainActivity)
+                }
+                if (it) showDialog {
+                    title = "破坏性功能警告"
+                    msg = "开启这个功能后，任何通知栏中的通知图标都会被强制替换为当前推送通知的 APP 的图标，" +
+                            "某些系统级别的 APP 通知图标可能会显示异常或发生图标丢失。\n\n" +
+                            "此功能仅面向一些追求图标美观度的用户，我们不推荐开启这个功能，且发生任何 BUG 都不会去修复，仍然继续开启吗？"
+                    confirmButton { applyChangesAndRefresh() }
+                    cancelButton { cancelChanges() }
+                    noCancelable()
+                } else applyChangesAndRefresh()
+            }
         }
-        binding.notifyIconAutoSyncSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO, b)
-            binding.notifyIconAutoSyncChildItem.isVisible = b
-            SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
+        binding.notifyPanelConfigSwitch.bind(ConfigData.ENABLE_NOTIFY_PANEL_ALPHA) {
+            onInitialize {
+                binding.notifyPanelConfigTextPanel.isVisible = it
+                binding.notifyPanelConfigWarnPanel.isVisible = it
+                binding.notifyPanelConfigSeekbar.isVisible = it
+            }
+            onChanged {
+                reinitialize()
+                SystemUITool.refreshSystemUI(context = this@MainActivity)
+            }
+        }
+        binding.notifyMediaPanelAutoExpSwitch.bind(ConfigData.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
+        }
+        binding.notifyIconFixSwitch.bind(ConfigData.ENABLE_NOTIFY_ICON_FIX) {
+            onInitialize {
+                binding.notifyIconFixButton.isVisible = it
+                binding.notifyIconFixNotifyItem.isVisible = it
+                binding.notifyIconAutoSyncItem.isVisible = it
+            }
+            onChanged {
+                reinitialize()
+                SystemUITool.refreshSystemUI(context = this@MainActivity)
+            }
+        }
+        binding.notifyIconFixNotifySwitch.bind(ConfigData.ENABLE_NOTIFY_ICON_FIX_NOTIFY) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
+        }
+        binding.notifyIconAutoSyncSwitch.bind(ConfigData.ENABLE_NOTIFY_ICON_FIX_AUTO) {
+            onInitialize { binding.notifyIconAutoSyncChildItem.isVisible = it }
+            onChanged {
+                reinitialize()
+                SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true)
+            }
         }
         binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -263,7 +241,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
-                modulePrefs.put(DataConst.NOTIFY_PANEL_ALPHA, seekBar.progress)
+                ConfigData.notifyPanelAlphaLevel = seekBar.progress
                 SystemUITool.refreshSystemUI(context = this@MainActivity)
             }
 
@@ -275,23 +253,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
-                modulePrefs.put(DataConst.NOTIFY_ICON_CORNER, seekBar.progress)
+                ConfigData.notifyIconCornerSize = seekBar.progress
                 SystemUITool.refreshSystemUI(context = this@MainActivity)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
         })
-        /** 设置桌面图标显示隐藏 */
-        binding.hideIconInLauncherSwitch.isChecked = isLauncherIconShowing.not()
-        binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
-            if (btn.isPressed.not()) return@setOnCheckedChangeListener
-            hideOrShowLauncherIcon(b)
-        }
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 自动更新在线规则修改时间按钮点击事件 */
         binding.notifyIconAutoSyncButton.setOnClickListener {
-            showTimePicker(notifyIconAutoSyncTime) {
+            showTimePicker(ConfigData.notifyIconFixAutoTime) {
                 showDialog {
                     title = "每天 $it 自动更新"
                     msg = "设置保存后将在每天 $it 自动同步名单到最新云端数据，若数据已是最新则不会显示任何提示，否则会发送一条通知。\n\n" +
@@ -301,9 +273,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             "3.模块的系统通知权限已开启\n\n" +
                             "模块无需保持在后台运行，到达同步时间后会自动启动，如果到达时间后模块正在运行则会自动取消本次计划任务。"
                     confirmButton(text = "保存设置") {
-                        notifyIconAutoSyncTime = it
+                        ConfigData.notifyIconFixAutoTime = it
                         this@MainActivity.binding.notifyIconAutoSyncText.text = it
-                        modulePrefs.put(DataConst.NOTIFY_ICON_FIX_AUTO_TIME, it)
                         SystemUITool.refreshSystemUI(context, isRefreshCacheOnly = true)
                     }
                     cancelButton()
@@ -319,25 +290,32 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.linkWithFollowMe.setOnClickListener {
             openBrowser(url = "https://www.coolapk.com/u/876977", packageName = "com.coolapk.market")
         }
+        /** 设置桌面图标显示隐藏 */
+        binding.hideIconInLauncherSwitch.isChecked = isLauncherIconShowing.not()
+        binding.hideIconInLauncherSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            hideOrShowLauncherIcon(b)
+        }
     }
 
     /** 刷新模块状态 */
     private fun refreshModuleStatus() {
         binding.mainLinStatus.setBackgroundResource(
             when {
-                YukiHookAPI.Status.isXposedModuleActive && (isModuleRegular.not() || isModuleValied.not()) -> R.drawable.bg_yellow_round
+                YukiHookAPI.Status.isXposedModuleActive &&
+                        (isModuleRegular.not() || isModuleValied.not() || ConfigData.isEnableModule.not()) -> R.drawable.bg_yellow_round
                 YukiHookAPI.Status.isXposedModuleActive -> R.drawable.bg_green_round
                 else -> R.drawable.bg_dark_round
             }
         )
         binding.mainImgStatus.setImageResource(
             when {
-                YukiHookAPI.Status.isXposedModuleActive -> R.drawable.ic_success
+                YukiHookAPI.Status.isXposedModuleActive && ConfigData.isEnableModule -> R.drawable.ic_success
                 else -> R.drawable.ic_warn
             }
         )
         binding.mainTextStatus.text = when {
-            YukiHookAPI.Status.isXposedModuleActive && isModuleRegular.not() && modulePrefs.get(DataConst.ENABLE_MODULE).not() -> "模块已停用"
+            YukiHookAPI.Status.isXposedModuleActive && ConfigData.isEnableModule.not() -> "模块已停用"
             YukiHookAPI.Status.isXposedModuleActive && isModuleRegular.not() -> "模块已激活，请重启系统界面"
             YukiHookAPI.Status.isXposedModuleActive && isModuleValied.not() -> "模块已更新，请重启系统界面"
             YukiHookAPI.Status.isXposedModuleActive -> "模块已激活"

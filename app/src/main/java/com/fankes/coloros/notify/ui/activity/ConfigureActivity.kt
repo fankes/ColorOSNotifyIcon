@@ -30,10 +30,10 @@ import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.databinding.ActivityConfigBinding
 import com.fankes.coloros.notify.databinding.AdapterConfigBinding
 import com.fankes.coloros.notify.databinding.DiaIconFilterBinding
-import com.fankes.coloros.notify.hook.factory.isAppNotifyHookAllOf
-import com.fankes.coloros.notify.hook.factory.isAppNotifyHookOf
-import com.fankes.coloros.notify.hook.factory.putAppNotifyHookAllOf
-import com.fankes.coloros.notify.hook.factory.putAppNotifyHookOf
+import com.fankes.coloros.notify.param.factory.isAppNotifyHookAllOf
+import com.fankes.coloros.notify.param.factory.isAppNotifyHookOf
+import com.fankes.coloros.notify.param.factory.putAppNotifyHookAllOf
+import com.fankes.coloros.notify.param.factory.putAppNotifyHookOf
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
