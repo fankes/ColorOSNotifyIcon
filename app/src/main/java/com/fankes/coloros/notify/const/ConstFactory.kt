@@ -18,16 +18,33 @@
  * and eula along with this software.  If not, see
  * <https://www.gnu.org/licenses/>
  *
- * This file is Created by fankes on 2022/1/24.
+ * This file is Created by fankes on 2023/2/2.
  */
-package com.fankes.coloros.notify.hook
+package com.fankes.coloros.notify.const
 
-object HookConst {
+/**
+ * 包名常量定义类
+ */
+object PackageName {
 
-    const val TYPE_SOURCE_SYNC_WAY_1 = 1000
-    const val TYPE_SOURCE_SYNC_WAY_2 = 2000
-    const val TYPE_SOURCE_SYNC_WAY_3 = 3000
+    /** 系统框架 */
+    const val SYSTEM_FRAMEWORK = "android"
 
-    const val ANDROID_PACKAGE_NAME = "android"
-    const val SYSTEMUI_PACKAGE_NAME = "com.android.systemui"
+    /** 系统界面 (系统 UI) */
+    const val SYSTEMUI = "com.android.systemui"
+}
+
+/**
+ * 通知图标优化名单同步方式定义类
+ */
+object IconRuleSourceSyncType {
+
+    /** Github Raw (代理) */
+    const val GITHUB_RAW_PROXY = 1000
+
+    /** Github Raw (直连) */
+    const val GITHUB_RAW_DIRECT = 2000
+
+    /** 自定义地址 */
+    const val CUSTOM_URL = 3000
 }
