@@ -36,6 +36,7 @@ import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.*
 import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
+import com.fankes.coloros.notify.utils.tool.I18nWarnTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.fankes.coloros.notify.utils.tool.YukiPromoteTool
 import com.highcapable.yukihookapi.YukiHookAPI
@@ -117,6 +118,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     noCancelable()
                 }
         }
+        I18nWarnTool.checkingOrShowing(context = this)
         binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
         binding.mainTextColorOsVersion.text = "系统版本：[$androidVersionCodeName] $colorOSFullVersion"
         /** 媒体通知自动展开仅支持 12.1 - 旧版本适配过于复杂已放弃 */
