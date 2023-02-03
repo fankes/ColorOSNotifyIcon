@@ -24,8 +24,6 @@
 
 package com.fankes.coloros.notify.ui.activity
 
-import android.widget.SeekBar
-import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.BuildConfig
 import com.fankes.coloros.notify.R
@@ -126,10 +124,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             binding.notifyMediaPanelAutoExpSwitch.isVisible = false
             binding.notifyMediaPanelAutoExpText.isVisible = false
         }
-        binding.notifyPanelConfigSeekbar.progress = ConfigData.notifyPanelAlphaLevel
-        binding.notifyIconCustomCornerSeekbar.progress = ConfigData.notifyIconCornerSize
-        binding.notifyPanelConfigText.text = "${ConfigData.notifyPanelAlphaLevel}%"
-        binding.notifyIconCustomCornerText.text = "${ConfigData.notifyIconCornerSize} dp"
         binding.notifyIconAutoSyncText.text = ConfigData.notifyIconFixAutoTime
         binding.moduleEnableSwitch.bind(ConfigData.ENABLE_MODULE) {
             onInitialize {
@@ -237,30 +231,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true)
             }
         }
-        binding.notifyPanelConfigSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.notifyPanelConfigText.text = "$progress%"
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                ConfigData.notifyPanelAlphaLevel = seekBar.progress
-                SystemUITool.refreshSystemUI(context = this@MainActivity)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-        })
-        binding.notifyIconCustomCornerSeekbar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                binding.notifyIconCustomCornerText.text = "$progress dp"
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                ConfigData.notifyIconCornerSize = seekBar.progress
-                SystemUITool.refreshSystemUI(context = this@MainActivity)
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-        })
+        binding.notifyPanelConfigSeekbar.bind(ConfigData.NOTIFY_PANEL_ALPHA_LEVEL, binding.notifyPanelConfigText, suffix = "%") {
+            SystemUITool.refreshSystemUI(context = this)
+        }
+        binding.notifyIconCustomCornerSeekbar.bind(ConfigData.NOTIFY_ICON_CORNER_SIZE, binding.notifyIconCustomCornerText, suffix = " dp") {
+            SystemUITool.refreshSystemUI(context = this)
+        }
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 自动更新在线规则修改时间按钮点击事件 */
