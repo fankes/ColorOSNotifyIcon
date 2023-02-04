@@ -659,8 +659,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                         nf = nf,
                                         isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
                                             /** 缓存第一次的 APP 小图标 */
-                                            if (it.not()) context.appIconOf(nf.packageName)
-                                                ?.also { e -> appIcons[nf.packageName] = e }
+                                            if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
                                         },
                                         packageName = nf.packageName,
                                         drawable = iconDrawable
