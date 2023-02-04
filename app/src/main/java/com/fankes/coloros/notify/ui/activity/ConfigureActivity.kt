@@ -27,6 +27,7 @@ package com.fankes.coloros.notify.ui.activity
 import androidx.core.view.isVisible
 import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.bean.IconDataBean
+import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.databinding.ActivityConfigBinding
 import com.fankes.coloros.notify.databinding.AdapterConfigBinding
 import com.fankes.coloros.notify.databinding.DiaIconFilterBinding
@@ -56,11 +57,11 @@ class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
     private var iconAllDatas = ArrayList<IconDataBean>()
 
     override fun onCreate() {
-        /** 检查激活状态 */
-        if (YukiHookAPI.Status.isXposedModuleActive.not()) {
+        /** 检查激活和启用状态 */
+        if (YukiHookAPI.Status.isXposedModuleActive.not() || ConfigData.isEnableModule.not()) {
             showDialog {
-                title = "模块没有激活"
-                msg = "模块没有激活，你无法使用这里的功能，请先激活模块。"
+                title = "模块不可用"
+                msg = "模块没有激活或已被停用，你无法使用这里的功能，请先激活或启用模块。"
                 confirmButton(text = "我知道了") { finish() }
                 noCancelable()
             }
