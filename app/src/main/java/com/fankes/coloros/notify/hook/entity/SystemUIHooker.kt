@@ -344,29 +344,33 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param context 实例
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
-     * @return [Pair] - ([Drawable] 位图 or null,[Int] 颜色)
+     * @return [Triple] - ([Drawable] 位图,[Int] 颜色,[Boolean] 是否为占位符图标)
      */
-    private fun compatCustomIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String): Pair<Drawable?, Int> {
-        var customPair: Pair<Drawable?, Int>? = null
+    private fun compatCustomIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String): Triple<Drawable?, Int, Boolean> {
+        /** 防止模块资源注入失败重新注入 */
+        context.injectModuleAppResources()
+        var customPair: Triple<Drawable?, Int, Boolean>? = null
         val statSysAdbIcon = runCatching {
             context.resources.drawableOf("com.android.internal.R\$drawable".toClass().field { name = "stat_sys_adb" }.get().int())
         }.getOrNull() ?: context.resources.drawableOf(R.drawable.ic_unsupported)
         when {
             /** 替换系统图标为 Android 默认 */
             (packageName == PackageName.SYSTEM_FRAMEWORK || packageName == PackageName.SYSTEMUI) && isGrayscaleIcon.not() ->
-                customPair = Pair(statSysAdbIcon, 0)
+                customPair = Triple(statSysAdbIcon, 0, false)
             /** 替换自定义通知图标 */
             ConfigData.isEnableNotifyIconFix -> run {
                 iconDatas.takeIf { it.isNotEmpty() }?.forEach {
                     if (packageName == it.packageName && isAppNotifyHookOf(it)) {
                         if (isGrayscaleIcon.not() || isAppNotifyHookAllOf(it))
-                            customPair = Pair(BitmapDrawable(context.resources, it.iconBitmap), it.iconColor)
+                            customPair = Triple(BitmapDrawable(context.resources, it.iconBitmap), it.iconColor, false)
                         return@run
                     }
                 }
+                if (isGrayscaleIcon.not() && ConfigData.isEnableNotifyIconFixPlaceholder)
+                    customPair = Triple(context.resources.drawableOf(R.drawable.ic_unsupported), 0, true)
             }
         }
-        return customPair ?: Pair(null, 0)
+        return customPair ?: Triple(null, 0, false)
     }
 
     /**
@@ -408,7 +412,7 @@ object SystemUIHooker : YukiBaseHooker() {
         iconColor: Int,
         iconView: ImageView
     ) = runInSafe {
-        compatCustomIcon(context, isGrayscaleIcon, packageName).also { customPair ->
+        compatCustomIcon(context, isGrayscaleIcon, packageName).also { customTriple ->
             /** 设置一个用于替换的图标 */
             val placeholderView = ImageView(context)
             /** 克隆之前图标的所有布局信息 */
@@ -425,11 +429,11 @@ object SystemUIHooker : YukiBaseHooker() {
                     /** 设置默认样式 */
                     setDefaultNotifyIconViewStyle()
                 }
-                customPair.first != null || isGrayscaleIcon -> placeholderView.apply {
+                (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon -> placeholderView.apply {
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
                     /** 重新设置图标 */
-                    setImageDrawable(customPair.first ?: drawable)
+                    setImageDrawable(customTriple.first ?: drawable)
 
                     /** 旧版风格 */
                     val oldStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else 0xff707173).toInt()
@@ -442,10 +446,10 @@ object SystemUIHooker : YukiBaseHooker() {
                         (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
 
                     /** 旧版图标着色 */
-                    val oldApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
+                    val oldApplyColor = customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
 
                     /** 新版图标着色 */
-                    val newApplyColor = customPair.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: md3Style
+                    val newApplyColor = customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: md3Style
 
                     /** 判断风格并开始 Hook */
                     if (ConfigData.isEnableMd3NotifyIconStyle) {
@@ -471,7 +475,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
             }
             /** 打印日志 */
-            printLogcat(tag = "NotifyIcon", iconView.context, packageName, isCustom = customPair.first != null, isGrayscaleIcon)
+            printLogcat(tag = "NotifyIcon", iconView.context, packageName, isCustom = customTriple.first != null, isGrayscaleIcon)
         }
     }
 
