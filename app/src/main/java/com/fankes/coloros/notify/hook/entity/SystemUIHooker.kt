@@ -24,6 +24,7 @@
 
 package com.fankes.coloros.notify.hook.entity
 
+import android.app.Notification
 import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
@@ -223,21 +224,22 @@ object SystemUIHooker : YukiBaseHooker() {
      * 打印日志
      * @param tag 标识
      * @param context 实例
-     * @param packageName APP 包名
+     * @param nf 通知实例
      * @param isCustom 是否为通知优化生效图标
      * @param isGrayscale 是否为灰度图标
      */
-    private fun printLogcat(
-        tag: String,
-        context: Context,
-        packageName: String,
-        isCustom: Boolean,
-        isGrayscale: Boolean
-    ) {
+    private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
         if (ConfigData.isEnableModuleLog) loggerD(
-            msg = "$tag --> [${context.appNameOf(packageName)}][$packageName] " +
-                    "custom [$isCustom] " +
-                    "grayscale [$isGrayscale]"
+            msg = "(Processing $tag) ↓\n" +
+                    "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
+                    "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
+                    "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
+                    "[Package Name]: ${nf?.packageName}\n" +
+                    "[Sender Package Name]: ${nf?.opPkg}\n" +
+                    "[Custom Icon]: $isCustom\n" +
+                    "[Grayscale Icon]: $isGrayscale\n" +
+                    "[From System Push]: ${nf?.isOplusPush}\n" +
+                    "[String]: ${nf?.notification}"
         )
     }
 
@@ -388,10 +390,11 @@ object SystemUIHooker : YukiBaseHooker() {
         isGrayscaleIcon: Boolean,
         packageName: String,
         drawable: Drawable
-    ) = compatCustomIcon(context, isGrayscaleIcon, packageName).first.also {
+    ) = compatCustomIcon(context, isGrayscaleIcon, packageName).let {
         /** 打印日志 */
-        printLogcat(tag = "StatusIcon", context, packageName, isCustom = it != null, isGrayscaleIcon)
-    }?.let { Pair(it, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
+        loggerDebug(tag = "Status Bar Icon", context, nf, isCustom = it.first != null && it.third.not(), isGrayscaleIcon)
+        it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
+    }
 
     /**
      * 自动适配通知栏小图标
@@ -474,8 +477,10 @@ object SystemUIHooker : YukiBaseHooker() {
                     setDefaultNotifyIconViewStyle()
                 }
             }
+            /** 是否为通知优化生效图标 */
+            val isCustom = customTriple.first != null && customTriple.third.not()
             /** 打印日志 */
-            printLogcat(tag = "NotifyIcon", iconView.context, packageName, isCustom = customTriple.first != null, isGrayscaleIcon)
+            loggerDebug(tag = "Notification Panel Icon", iconView.context, nf, isCustom = isCustom, isGrayscaleIcon)
         }
     }
 
