@@ -45,6 +45,7 @@ import com.fankes.coloros.notify.databinding.DiaSourceFromBinding
 import com.fankes.coloros.notify.databinding.DiaSourceFromStringBinding
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.ConfigureActivity
+import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.factory.safeOfNull
 import com.fankes.coloros.notify.utils.factory.showDialog
 import com.fankes.coloros.notify.utils.factory.snake
@@ -246,6 +247,8 @@ object IconRuleManagerTool {
         fun doParse(result: () -> Unit = {}) {
             wait(context, url) { isDone, content ->
                 result()
+                /** 延迟重新回调防止对话框无法取消 */
+                delayedRun { result() }
                 IconPackParams(context).also { params ->
                     when {
                         isDone -> when {
