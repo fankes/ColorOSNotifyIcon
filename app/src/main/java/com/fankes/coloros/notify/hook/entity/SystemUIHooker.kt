@@ -630,15 +630,22 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
-        /** 修复并替换新版本 ColorOS 原生灰度图标色彩判断 */
+        /** 修复并替换 ColorOS 以及原生灰度图标色彩判断 */
         NotificationUtilsClass.hook {
+            injectMember {
+                method {
+                    name = "isGrayscale"
+                    param(ImageViewClass, ContrastColorUtilClass)
+                }
+                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
+            }
             injectMember {
                 method {
                     name = "isGrayscaleOplus"
                     param(ImageViewClass, OplusContrastColorUtilClass)
                 }
                 replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
-            }.ignoredHookingFailure()
+            }.ignoredNoSuchMemberFailure()
         }
         /** 替换状态栏图标 */
         IconManagerClass.hook {
