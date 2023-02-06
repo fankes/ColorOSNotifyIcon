@@ -68,7 +68,7 @@ object ConfigData {
     val ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP = PrefsData("_enable_notify_media_panel_auto_exp", false)
 
     /** 启用自定义通知面板背景透明度 */
-    val ENABLE_NOTIFY_PANEL_ALPHA = PrefsData("_enable_notify_panel_alpha", false)
+    val ENABLE_NOTIFY_PANEL_ALPHA = PrefsData("_enable_notify_panel_alpha_pst", false)
 
     /** 自定义通知面板背景透明度 */
     val NOTIFY_PANEL_ALPHA_LEVEL = PrefsData("_notify_panel_alpha_pst", 75)

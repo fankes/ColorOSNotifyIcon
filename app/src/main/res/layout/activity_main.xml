@@ -617,6 +617,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
                     android:orientation="vertical">
 
                     <com.fankes.coloros.notify.ui.widget.MaterialSwitch
@@ -633,7 +634,6 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
                         android:alpha="0.6"
                         android:lineSpacingExtra="6dp"
                         android:paddingLeft="15dp"
@@ -646,8 +646,8 @@
                 <com.fankes.coloros.notify.ui.widget.MaterialSwitch
                     android:id="@+id/notify_media_panel_auto_exp_switch"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="5dp"
+                    android:layout_height="30dp"
+                    android:layout_marginBottom="5dp"
                     android:paddingLeft="15dp"
                     android:paddingRight="15dp"
                     android:text="启用媒体通知播放时自动展开"
@@ -668,95 +668,70 @@
                     android:textColor="@color/colorTextDark"
                     android:textSize="12sp" />
 
-                <com.fankes.coloros.notify.ui.widget.MaterialSwitch
-                    android:id="@+id/notify_panel_config_switch"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="5dp"
-                    android:paddingLeft="15dp"
-                    android:paddingRight="15dp"
-                    android:text="自定义通知面板背景透明度"
-                    android:textAllCaps="false"
-                    android:textColor="@color/colorTextGray"
-                    android:textSize="15sp" />
-
-                <androidx.appcompat.widget.AppCompatSeekBar
-                    android:id="@+id/notify_panel_config_seekbar"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginLeft="5dp"
-                    android:layout_marginTop="5dp"
-                    android:layout_marginRight="5dp"
-                    android:max="100"
-                    android:min="0"
-                    android:progress="75" />
-
                 <LinearLayout
-                    android:id="@+id/notify_panel_config_text_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingTop="5dp"
-                    android:paddingBottom="15dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="5dp"
-                        android:alpha="0.75"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxWidth="100dp"
-                        android:singleLine="true"
-                        android:text="当前"
-                        android:textColor="@color/colorTextGray"
-                        android:textSize="13.5sp" />
-
-                    <TextView
-                        android:id="@+id/notify_panel_config_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:gravity="center"
-                        android:maxWidth="100dp"
-                        android:singleLine="true"
-                        android:text="75%"
-                        android:textColor="@color/colorTextGray"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:alpha="0.6"
-                    android:lineSpacingExtra="6dp"
-                    android:paddingLeft="15dp"
-                    android:paddingRight="15dp"
-                    android:text="开启自定义功能后，你可以拖拽滑动条来调整通知面板的透明度，0% 为全透明，100% 为不透明。"
-                    android:textColor="@color/colorTextDark"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/notify_panel_config_warn_panel"
+                    android:id="@+id/notify_panel_config_item"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
+                    <com.fankes.coloros.notify.ui.widget.MaterialSwitch
+                        android:id="@+id/notify_panel_config_switch"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="10dp"
-                        android:alpha="0.6"
-                        android:lineSpacingExtra="6dp"
+                        android:layout_height="30dp"
+                        android:layout_marginBottom="5dp"
                         android:paddingLeft="15dp"
                         android:paddingRight="15dp"
-                        android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12.1、13 测试通过，不能保证可以在任何系统版本中生效，以及和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。"
-                        android:textColor="@color/colorTextDark"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:text="自定义通知面板背景透明度"
+                        android:textAllCaps="false"
+                        android:textColor="@color/colorTextGray"
+                        android:textSize="15sp" />
+
+                    <androidx.appcompat.widget.AppCompatSeekBar
+                        android:id="@+id/notify_panel_config_seekbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_marginRight="5dp"
+                        android:max="100"
+                        android:min="0"
+                        android:progress="75" />
+
+                    <LinearLayout
+                        android:id="@+id/notify_panel_config_text_panel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="5dp"
+                            android:alpha="0.75"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:maxWidth="100dp"
+                            android:singleLine="true"
+                            android:text="当前"
+                            android:textColor="@color/colorTextGray"
+                            android:textSize="13.5sp" />
+
+                        <TextView
+                            android:id="@+id/notify_panel_config_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:maxWidth="100dp"
+                            android:singleLine="true"
+                            android:text="75%"
+                            android:textColor="@color/colorTextGray"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
@@ -766,10 +741,42 @@
                         android:lineSpacingExtra="6dp"
                         android:paddingLeft="15dp"
                         android:paddingRight="15dp"
-                        android:text="已知问题：\n(1) 悬浮通知也会被透明，在透明度较低的时候下拉会有阴影光晕，松手释放后恢复正常，后期看需求再解决。\n(2) 被折叠的通知自动消除 (但并没有完全消除) 后，可能存在通知条目背景全透明的问题，此问题属于系统 BUG，目前暂无有效的解决办法来判断子布局是否已从叠加的通知条目中被移出。\n(3) 媒体通知可能在低于 ColorOS 12.1 的系统上无法生效透明度，旧版本不再适配，该问题不会被修复。"
+                        android:text="开启自定义功能后，你可以拖拽滑动条来调整通知面板的透明度，0% 为全透明，100% 为不透明。"
                         android:textColor="@color/colorTextDark"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/notify_panel_config_warn_panel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:alpha="0.6"
+                            android:lineSpacingExtra="6dp"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:text="此功能为实验性功能，后期不一定继续维护，且仅在 ColorOS 12.1、13 测试通过，不能保证可以在任何系统版本中生效，以及和各种通知栏主题模块配合使用，如有冲突请关闭此功能或禁用相关重复功能的主题模块。"
+                            android:textColor="@color/colorTextDark"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:alpha="0.6"
+                            android:lineSpacingExtra="6dp"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:text="已知问题：\n(1) 悬浮通知也会被透明，在透明度较低的时候下拉会有阴影光晕，松手释放后恢复正常，后期看需求再解决。\n(2) 被折叠的通知自动消除 (但并没有完全消除) 后，可能存在通知条目背景全透明的问题，此问题属于系统 BUG，目前暂无有效的解决办法来判断子布局是否已从叠加的通知条目中被移出。\n(3) 媒体通知可能在低于 ColorOS 12.1 的系统上无法生效透明度，旧版本不再适配，该问题不会被修复。"
+                            android:textColor="@color/colorTextDark"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 
