@@ -630,7 +630,7 @@ object SystemUIHooker : YukiBaseHooker() {
         DndAlertHelperClass.hook {
             injectMember {
                 method {
-                    name = "sendNotificationWithEndtime"
+                    name { it.lowercase() == "sendnotificationwithendtime" }
                     param(LongType)
                 }
                 beforeHook {
@@ -748,7 +748,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
                 beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
-        }.by { isOldNotificationBackground.not() }
+        }.ignoredHookClassNotFoundFailure().by { isOldNotificationBackground.not() }
         /** 替换通知面板背景 - 旧版本 */
         NotificationBackgroundViewClass.hook {
             injectMember {
@@ -764,7 +764,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     paramCount = 2
                 }
                 beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
-            }
+            }.ignoredNoSuchMemberFailure()
         }.by { isOldNotificationBackground }
         /** 替换通知面板背景 - 避免折叠展开通知二次修改通知面板背景 */
         ExpandableNotificationRowClass.hook {
