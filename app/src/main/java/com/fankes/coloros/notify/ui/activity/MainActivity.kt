@@ -124,6 +124,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             binding.notifyMediaPanelAutoExpSwitch.isVisible = false
             binding.notifyMediaPanelAutoExpText.isVisible = false
         }
+        /** 通知面板背景透明度功能仅支持 ColorOS 12、12.1、13 */
+        binding.notifyPanelConfigItem.isVisible = colorOSNumberVersion.let { it == "V12" || it == "V12.1" || it == "V13" }
         binding.notifyIconAutoSyncText.text = ConfigData.notifyIconFixAutoTime
         binding.moduleEnableSwitch.bind(ConfigData.ENABLE_MODULE) {
             onInitialize {
