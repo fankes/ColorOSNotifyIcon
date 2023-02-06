@@ -338,12 +338,12 @@ val Context.systemAccentColor
 
 /**
  * 获取系统壁纸颜色
- * @return [Int] 无法获取时返回透明色
+ * @return [Int] 无法获取时返回默认颜色
  */
 val Context.wallpaperColor
-    get() = safeOfNan {
-        WallpaperManager.getInstance(this).getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb() ?: 0
-    }
+    get() = runCatching {
+        WallpaperManager.getInstance(this).getWallpaperColors(WallpaperManager.FLAG_SYSTEM)?.primaryColor?.toArgb()
+    }.getOrNull() ?: (if (isSystemInDarkMode) 0xFFD8D8D8.toInt() else 0xFF707173.toInt())
 
 /**
  * 是否为白色
