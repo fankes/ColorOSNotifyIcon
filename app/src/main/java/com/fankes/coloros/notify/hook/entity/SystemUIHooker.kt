@@ -141,7 +141,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val RoundRectDrawableUtil_CompanionClass = VariousClass(
         "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
-        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion"
+        "com.coloros.systemui.notification.util.RoundRectDrawableUtil\$Companion"
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
