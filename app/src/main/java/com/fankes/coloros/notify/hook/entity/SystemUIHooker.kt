@@ -430,14 +430,14 @@ object SystemUIHooker : YukiBaseHooker() {
                     setImageDrawable(customTriple.first ?: drawable)
 
                     /** 旧版风格 */
-                    val oldStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else 0xff707173).toInt()
+                    val oldStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
 
                     /** 新版风格 */
-                    val newStyle = (if (context.isSystemInDarkMode) 0xffdcdcdc else Color.WHITE).toInt()
+                    val newStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else Color.WHITE
 
                     /** 原生着色 */
                     val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
-                        (if (context.isSystemInDarkMode) 0xff707173 else oldStyle).toInt()
+                        (if (context.isSystemInDarkMode) 0xFF707173.toInt() else oldStyle)
 
                     /** 旧版图标着色 */
                     val oldApplyColor = customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
