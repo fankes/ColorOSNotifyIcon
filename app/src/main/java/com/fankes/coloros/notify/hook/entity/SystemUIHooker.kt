@@ -852,15 +852,21 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }.also { nf ->
                                     nf?.notification?.also {
                                         it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                            compatNotifyIcon(
-                                                context = context,
-                                                nf = nf,
-                                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                                packageName = context.packageName,
-                                                drawable = iconDrawable,
-                                                iconColor = it.color,
-                                                iconView = this
-                                            )
+                                            /** 执行替换 */
+                                            fun doParse() {
+                                                compatNotifyIcon(
+                                                    context = context,
+                                                    nf = nf,
+                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                    packageName = context.packageName,
+                                                    drawable = iconDrawable,
+                                                    iconColor = it.color,
+                                                    iconView = this
+                                                )
+                                            }
+                                            doParse()
+                                            /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
+                                            delayedRun(ms = 1500) { doParse() }
                                         }
                                     }
                                 }
