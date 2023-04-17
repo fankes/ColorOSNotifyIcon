@@ -505,7 +505,7 @@ object SystemUIHooker : YukiBaseHooker() {
         when {
             isEnable.not() -> {
                 if (isTint) view.backgroundTintList = defaultNotifyPanelTintList
-                else drawable?.setTint(currentColor)
+                else drawable?.setTintList(defaultNotifyPanelTintList)
             }
             isTint.not() && view.parent?.parent?.javaClass?.name?.contains("ChildrenContainer") == true -> drawable?.alpha = 0
             else -> {
