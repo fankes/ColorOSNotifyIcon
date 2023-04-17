@@ -439,11 +439,17 @@ object SystemUIHooker : YukiBaseHooker() {
                     val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
                         (if (context.isSystemInDarkMode) 0xFF707173.toInt() else oldStyle)
 
+                    /** 原生通知图标颜色 */
+                    val nativeIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else iconColor
+
+                    /** 自定义通知图标颜色 */
+                    val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else customTriple.second
+
                     /** 旧版图标着色 */
-                    val oldApplyColor = customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: oldStyle
+                    val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
 
                     /** 新版图标着色 */
-                    val newApplyColor = customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: md3Style
+                    val newApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style
 
                     /** 判断风格并开始 Hook */
                     if (ConfigData.isEnableMd3NotifyIconStyle) {
