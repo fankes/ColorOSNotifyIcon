@@ -198,6 +198,12 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 通知栏通知控制器 */
     private var notificationPresenter: Any? = null
 
+    /** 通知面板默认背景着色 [ColorStateList] */
+    private var defaultNotifyPanelTintList: ColorStateList? = null
+
+    /** 通知面板默认背景阴影效果强度 */
+    private var defaultNotifyPanelElevation = -1f
+
     /** 仅监听一次主题壁纸颜色变化 */
     private var isWallpaperColorListenerSetUp = false
 
@@ -488,25 +494,28 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param isTint 是否着色 [view]
      */
     private fun modifyNotifyPanelAlpha(view: View?, drawable: Drawable? = null, isTint: Boolean = false) {
+        if (view == null) return
+        if (defaultNotifyPanelTintList == null) defaultNotifyPanelTintList = view.backgroundTintList
+        if (defaultNotifyPanelElevation < 0f) defaultNotifyPanelElevation = view.elevation
         val isEnable = ConfigData.isEnableNotifyPanelAlpha
         val currentAlpha = ConfigData.notifyPanelAlphaLevel
-        val currendColor = if (view?.context?.isSystemInDarkMode == true) 0xFF404040.toInt() else 0xFFFAFAFA.toInt()
+        val currentColor = if (view.context?.isSystemInDarkMode == true) 0xFF404040.toInt() else 0xFFFAFAFA.toInt()
         /** 设置通知面板背景透明度 */
         when {
             isEnable.not() -> {
-                if (isTint) view?.backgroundTintList = ColorStateList.valueOf(currendColor)
-                else drawable?.setTint(currendColor)
+                if (isTint) view.backgroundTintList = defaultNotifyPanelTintList
+                else drawable?.setTint(currentColor)
             }
-            isTint.not() && view?.parent?.parent?.javaClass?.name?.contains("ChildrenContainer") == true -> drawable?.alpha = 0
+            isTint.not() && view.parent?.parent?.javaClass?.name?.contains("ChildrenContainer") == true -> drawable?.alpha = 0
             else -> {
-                currendColor.colorAlphaOf(currentAlpha / 100f).also {
-                    if (isTint) view?.backgroundTintList = ColorStateList.valueOf(it)
+                currentColor.colorAlphaOf(currentAlpha / 100f).also {
+                    if (isTint) view.backgroundTintList = ColorStateList.valueOf(it)
                     else drawable?.setTint(it)
                 }
             }
         }
         /** 移除阴影效果 */
-        if (isEnable) view?.elevation = 0f
+        view.elevation = if (isEnable) 0f else defaultNotifyPanelElevation
     }
 
     /** 设置默认通知栏通知图标样式 */
