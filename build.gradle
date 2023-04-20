@@ -12,8 +12,8 @@ ext {
             targetSdk : 33
     ]
     app = [
-            versionName   : '1.97',
-            versionCode   : 20,
+            versionName   : '1.98',
+            versionCode   : 21,
             signingConfigs: [
                     secretConfigsDirPath : "${projectDir.getAbsolutePath()}/.secret",
                     secretConfigsFileName: "key_store_secret.json"
