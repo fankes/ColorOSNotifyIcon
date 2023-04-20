@@ -130,6 +130,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.moduleEnableSwitch.bind(ConfigData.ENABLE_MODULE) {
             onInitialize {
                 binding.moduleEnableLogSwitch.isVisible = it
+                binding.moduleEnableLogText.isVisible = it
+                binding.modulePrefsCacheEnableSwitch.isVisible = it
+                binding.modulePrefsCacheEnableText.isVisible = it
                 binding.expAllDebugLogButton.isVisible = it && ConfigData.isEnableModuleLog
                 binding.notifyIconConfigItem.isVisible = it
                 binding.devNotifyConfigItem.isVisible = it
@@ -140,6 +143,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 refreshModuleStatus()
                 SystemUITool.showNeedRestartSnake(context = this@MainActivity)
             }
+        }
+        binding.modulePrefsCacheEnableSwitch.bind(ConfigData.ENABLE_PREFS_CACHE) {
+            onChanged { SystemUITool.showNeedRestartSnake(context = this@MainActivity) }
         }
         binding.moduleEnableLogSwitch.bind(ConfigData.ENABLE_MODULE_LOG) {
             onInitialize { binding.expAllDebugLogButton.isVisible = it && ConfigData.isEnableModule }
