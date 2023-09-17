@@ -28,7 +28,11 @@ import android.app.Activity
 import android.app.Notification
 import android.app.Service
 import android.app.WallpaperManager
-import android.content.*
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -52,7 +56,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.content.res.ResourcesCompat
-import com.fankes.coloros.notify.BuildConfig
+import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.hasClass
@@ -63,7 +67,9 @@ import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication.Com
 import com.topjohnwu.superuser.Shell
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 /**
  * 系统深色模式是否开启
@@ -203,7 +209,7 @@ fun Resources.colorOf(@ColorRes resId: Int) = ResourcesCompat.getColor(this, res
  * @return [PackageInfo] or null
  */
 private fun Context.getPackageInfoCompat(packageName: String, flag: Number = 0) = runCatching {
-    @Suppress("DEPRECATION")
+    @Suppress("DEPRECATION", "KotlinRedundantDiagnosticSuppress")
     if (Build.VERSION.SDK_INT >= 33)
         packageManager?.getPackageInfo(packageName, PackageInfoFlags.of(flag.toLong()))
     else packageManager?.getPackageInfo(packageName, flag.toInt())
@@ -416,7 +422,10 @@ fun findPropString(key: String, default: String = "") = safeOf(default) {
  * 是否有 Root 权限
  * @return [Boolean]
  */
-val isRootAccess get() = safeOfFalse { Shell.rootAccess() }
+val isRootAccess get() = safeOfFalse {
+    @Suppress("DEPRECATION")
+    Shell.rootAccess()
+}
 
 /**
  * 执行命令
@@ -425,6 +434,7 @@ val isRootAccess get() = safeOfFalse { Shell.rootAccess() }
  * @return [String] 执行结果
  */
 fun execShell(cmd: String, isSu: Boolean = true) = safeOfNothing {
+    @Suppress("DEPRECATION")
     (if (isSu) Shell.su(cmd) else Shell.sh(cmd)).exec().out.let {
         if (it.isNotEmpty()) it[0].trim() else ""
     }
@@ -541,7 +551,7 @@ fun Any?.delayedRun(ms: Long = 150, it: () -> Unit) = runInSafe {
  */
 fun Context.hideOrShowLauncherIcon(isShow: Boolean) {
     packageManager?.setComponentEnabledSetting(
-        ComponentName(packageName, "${BuildConfig.APPLICATION_ID}.Home"),
+        ComponentName(packageName, "${BuildConfigWrapper.APPLICATION_ID}.Home"),
         if (isShow) PackageManager.COMPONENT_ENABLED_STATE_DISABLED else PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
         PackageManager.DONT_KILL_APP
     )
@@ -553,5 +563,5 @@ fun Context.hideOrShowLauncherIcon(isShow: Boolean) {
  */
 val Context.isLauncherIconShowing
     get() = packageManager?.getComponentEnabledSetting(
-        ComponentName(packageName, "${BuildConfig.APPLICATION_ID}.Home")
+        ComponentName(packageName, "${BuildConfigWrapper.APPLICATION_ID}.Home")
     ) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED
