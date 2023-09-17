@@ -28,7 +28,11 @@ import android.content.Context
 import android.graphics.Color
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.data.ConfigData
-import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.factory.bitmap
+import com.fankes.coloros.notify.utils.factory.safeOf
+import com.fankes.coloros.notify.utils.factory.safeOfNan
+import com.fankes.coloros.notify.utils.factory.safeOfNull
+import com.fankes.coloros.notify.utils.factory.snake
 import com.highcapable.yukihookapi.hook.factory.prefs
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import org.json.JSONArray
