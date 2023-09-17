@@ -20,7 +20,7 @@
  *
  * This file is Created by fankes on 2022/2/25.
  */
-@file:Suppress("TrustAllX509TrustManager", "CustomX509TrustManager", "DEPRECATION", "IMPLICIT_CAST_TO_ANY")
+@file:Suppress("TrustAllX509TrustManager", "CustomX509TrustManager", "IMPLICIT_CAST_TO_ANY")
 
 package com.fankes.coloros.notify.utils.tool
 
@@ -45,13 +45,25 @@ import com.fankes.coloros.notify.databinding.DiaSourceFromBinding
 import com.fankes.coloros.notify.databinding.DiaSourceFromStringBinding
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.ui.activity.ConfigureActivity
-import com.fankes.coloros.notify.utils.factory.*
+import com.fankes.coloros.notify.utils.factory.delayedRun
+import com.fankes.coloros.notify.utils.factory.openBrowser
+import com.fankes.coloros.notify.utils.factory.safeOfNull
+import com.fankes.coloros.notify.utils.factory.showDialog
+import com.fankes.coloros.notify.utils.factory.snake
 import com.highcapable.yukihookapi.hook.log.loggerD
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import java.io.IOException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import javax.net.ssl.*
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 /**
  * 通知图标在线规则管理类
