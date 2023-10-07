@@ -29,10 +29,10 @@ import com.fankes.coloros.notify.utils.factory.isNotColorOS
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.factory.configs
 import com.highcapable.yukihookapi.hook.factory.encase
-import com.highcapable.yukihookapi.hook.log.loggerW
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 
-@InjectYukiHookWithXposed(isUsingResourcesHook = false)
+@InjectYukiHookWithXposed
 object HookEntry : IYukiHookXposedInit {
 
     override fun onInit() = configs {
@@ -48,8 +48,8 @@ object HookEntry : IYukiHookXposedInit {
         loadApp(PackageName.SYSTEMUI) {
             ConfigData.init(instance = this)
             when {
-                isNotColorOS -> loggerW(msg = "Aborted Hook -> This System is not ColorOS")
-                ConfigData.isEnableModule.not() -> loggerW(msg = "Aborted Hook -> Hook Closed")
+                isNotColorOS -> YLog.warn("Aborted Hook -> This System is not ColorOS")
+                ConfigData.isEnableModule.not() -> YLog.warn("Aborted Hook -> Hook Closed")
                 else -> loadHooker(SystemUIHooker)
             }
         }

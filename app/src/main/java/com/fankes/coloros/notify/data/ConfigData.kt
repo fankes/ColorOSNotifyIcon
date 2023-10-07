@@ -28,7 +28,7 @@ import android.content.Context
 import com.fankes.coloros.notify.const.IconRuleSourceSyncType
 import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.highcapable.yukihookapi.hook.factory.prefs
-import com.highcapable.yukihookapi.hook.log.loggerW
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
 
@@ -134,7 +134,7 @@ object ConfigData {
     private fun putString(data: PrefsData<String>, value: String) {
         when (instance) {
             is Context -> (instance as Context).prefs().edit { put(data, value) }
-            is PackageParam -> loggerW(msg = "Not support for this method")
+            is PackageParam -> YLog.warn("Not support for this method")
             else -> error("Unknown type for put prefs data")
         }
     }
@@ -158,7 +158,7 @@ object ConfigData {
     internal fun putInt(data: PrefsData<Int>, value: Int) {
         when (instance) {
             is Context -> (instance as Context).prefs().edit { put(data, value) }
-            is PackageParam -> loggerW(msg = "Not support for this method")
+            is PackageParam -> YLog.warn("Not support for this method")
             else -> error("Unknown type for put prefs data")
         }
     }
@@ -182,7 +182,7 @@ object ConfigData {
     internal fun putBoolean(data: PrefsData<Boolean>, value: Boolean) {
         when (instance) {
             is Context -> (instance as Context).prefs().edit { put(data, value) }
-            is PackageParam -> loggerW(msg = "Not support for this method")
+            is PackageParam -> YLog.warn("Not support for this method")
             else -> error("Unknown type for put prefs data")
         }
     }
