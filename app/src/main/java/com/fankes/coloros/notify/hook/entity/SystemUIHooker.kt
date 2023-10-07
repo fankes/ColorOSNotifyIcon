@@ -70,20 +70,19 @@ import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.yukihookapi.hook.bean.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.factory.MembersType
+import com.highcapable.yukihookapi.hook.factory.constructor
 import com.highcapable.yukihookapi.hook.factory.current
 import com.highcapable.yukihookapi.hook.factory.field
 import com.highcapable.yukihookapi.hook.factory.hasMethod
 import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.log.loggerD
-import com.highcapable.yukihookapi.hook.log.loggerE
-import com.highcapable.yukihookapi.hook.log.loggerW
+import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.type.android.ContextClass
 import com.highcapable.yukihookapi.hook.type.android.DrawableClass
 import com.highcapable.yukihookapi.hook.type.android.IconClass
 import com.highcapable.yukihookapi.hook.type.android.ImageViewClass
 import com.highcapable.yukihookapi.hook.type.android.StatusBarNotificationClass
+import com.highcapable.yukihookapi.hook.type.defined.VagueType
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
@@ -96,110 +95,130 @@ import top.defaults.drawabletoolbox.DrawableBuilder
 object SystemUIHooker : YukiBaseHooker() {
 
     /** 原生存在的类 */
-    private const val ContrastColorUtilClass = "com.android.internal.util.ContrastColorUtil"
+    private val ContrastColorUtilClass by lazyClass("com.android.internal.util.ContrastColorUtil")
 
     /** 原生存在的类 */
-    private const val NotificationUtilsClass = "${PackageName.SYSTEMUI}.statusbar.notification.NotificationUtils"
+    private val NotificationUtilsClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.NotificationUtils")
 
     /** 原生存在的类 */
-    private const val NotificationEntryClass = "${PackageName.SYSTEMUI}.statusbar.notification.collection.NotificationEntry"
+    private val NotificationEntryClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.collection.NotificationEntry")
 
     /** 原生存在的类 */
-    private const val StatusBarIconClass = "com.android.internal.statusbar.StatusBarIcon"
+    private val StatusBarIconClass by lazyClass("com.android.internal.statusbar.StatusBarIcon")
 
     /** 原生存在的类 */
-    private const val StatusBarIconViewClass = "${PackageName.SYSTEMUI}.statusbar.StatusBarIconView"
+    private val StatusBarIconViewClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.StatusBarIconView")
 
     /** 原生存在的类 */
-    private const val IconBuilderClass = "${PackageName.SYSTEMUI}.statusbar.notification.icon.IconBuilder"
+    private val IconBuilderClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.icon.IconBuilder")
 
     /** 原生存在的类 */
-    private const val IconManagerClass = "${PackageName.SYSTEMUI}.statusbar.notification.icon.IconManager"
+    private val IconManagerClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.icon.IconManager")
 
     /** 原生存在的类 */
-    private const val NotificationBackgroundViewClass = "${PackageName.SYSTEMUI}.statusbar.notification.row.NotificationBackgroundView"
+    private val NotificationBackgroundViewClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.row.NotificationBackgroundView")
 
     /** 原生存在的类 */
-    private const val PlayerViewHolderClass = "${PackageName.SYSTEMUI}.media.PlayerViewHolder"
+    private val PlayerViewHolderClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.PlayerViewHolder")
 
     /** 原生存在的类 */
-    private const val MediaDataClass = "${PackageName.SYSTEMUI}.media.MediaData"
+    private val MediaDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.MediaData")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val OplusContrastColorUtilClass = "com.oplusos.util.OplusContrastColorUtil"
+    private val OplusContrastColorUtilClass by lazyClassOrNull("com.oplusos.util.OplusContrastColorUtil")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val OplusNotificationBackgroundViewClass =
-        "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView"
+    private val OplusNotificationBackgroundViewClass by lazyClassOrNull(
+        "com.oplusos.systemui.statusbar.notification.row.OplusNotificationBackgroundView")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val OplusMediaControlPanelClass = "com.oplusos.systemui.media.OplusMediaControlPanel"
+    private val OplusMediaControlPanelClass by lazyClassOrNull("com.oplusos.systemui.media.OplusMediaControlPanel")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val OplusMediaViewControllerClass = "com.oplusos.systemui.media.OplusMediaViewController"
+    private val OplusMediaViewControllerClass by lazyClassOrNull("com.oplusos.systemui.media.OplusMediaViewController")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
-    private const val BasePlayViewHolderClass = "com.oplusos.systemui.media.base.BasePlayViewHolder"
+    private val BasePlayViewHolderClass by lazyClassOrNull("com.oplusos.systemui.media.base.BasePlayViewHolder")
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val OplusNotificationIconAreaControllerClass = VariousClass(
-        "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
-        "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
-        "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
+    private val OplusNotificationIconAreaControllerClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
+            "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
+            "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val SystemPromptControllerClass = VariousClass(
-        "com.oplusos.systemui.statusbar.policy.SystemPromptController",
-        "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
+    private val SystemPromptControllerClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.statusbar.policy.SystemPromptController",
+            "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val RoundRectDrawableUtilClass = VariousClass(
-        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil",
-        "com.coloros.systemui.notification.util.RoundRectDrawableUtil"
+    private val RoundRectDrawableUtilClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil",
+            "com.coloros.systemui.notification.util.RoundRectDrawableUtil"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val RoundRectDrawableUtil_CompanionClass = VariousClass(
-        "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
-        "com.coloros.systemui.notification.util.RoundRectDrawableUtil\$Companion"
+    private val RoundRectDrawableUtil_CompanionClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.notification.util.RoundRectDrawableUtil\$Companion",
+            "com.coloros.systemui.notification.util.RoundRectDrawableUtil\$Companion"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val DndAlertHelperClass = VariousClass(
-        "com.oplusos.systemui.notification.helper.DndAlertHelper",
-        "com.coloros.systemui.notification.helper.DndAlertHelper"
+    private val DndAlertHelperClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.notification.helper.DndAlertHelper",
+            "com.coloros.systemui.notification.helper.DndAlertHelper"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val OplusPowerNotificationWarningsClass = VariousClass(
-        "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
-        "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
+    private val OplusPowerNotificationWarningsClass by lazyClass(
+        VariousClass(
+            "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
+            "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val StatusBarNotificationPresenterClass = VariousClass(
-        "${PackageName.SYSTEMUI}.statusbar.phone.StatusBarNotificationPresenter",
-        "${PackageName.SYSTEMUI}.statusbar.phone.StatusBar"
+    private val StatusBarNotificationPresenterClass by lazyClass(
+        VariousClass(
+            "${PackageName.SYSTEMUI}.statusbar.phone.StatusBarNotificationPresenter",
+            "${PackageName.SYSTEMUI}.statusbar.phone.StatusBar"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val ExpandableNotificationRowClass = VariousClass(
-        "${PackageName.SYSTEMUI}.statusbar.notification.row.ExpandableNotificationRow",
-        "${PackageName.SYSTEMUI}.statusbar.ExpandableNotificationRow"
+    private val ExpandableNotificationRowClass by lazyClass(
+        VariousClass(
+            "${PackageName.SYSTEMUI}.statusbar.notification.row.ExpandableNotificationRow",
+            "${PackageName.SYSTEMUI}.statusbar.ExpandableNotificationRow"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val NotificationViewWrapperClass = VariousClass(
-        "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationViewWrapper",
-        "${PackageName.SYSTEMUI}.statusbar.notification.NotificationViewWrapper"
+    private val NotificationViewWrapperClass by lazyClass(
+        VariousClass(
+            "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationViewWrapper",
+            "${PackageName.SYSTEMUI}.statusbar.notification.NotificationViewWrapper"
+        )
     )
 
     /** 根据多个版本存在不同的包名相同的类 */
-    private val NotificationHeaderViewWrapperClass = VariousClass(
-        "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
-        "${PackageName.SYSTEMUI}.statusbar.notification.NotificationHeaderViewWrapper"
+    private val NotificationHeaderViewWrapperClass by lazyClass(
+        VariousClass(
+            "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
+            "${PackageName.SYSTEMUI}.statusbar.notification.NotificationHeaderViewWrapper"
+        )
     )
 
     /** 缓存的彩色 APP 图标 */
@@ -243,7 +262,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private val isOldNotificationBackground
-        get() = NotificationBackgroundViewClass.toClassOrNull()?.hasMethod {
+        get() = NotificationBackgroundViewClass?.hasMethod {
             name = "drawCustom"
             paramCount = 2
         } ?: false
@@ -257,7 +276,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param isGrayscale 是否为灰度图标
      */
     private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
-        if (ConfigData.isEnableModuleLog) loggerD(
+        if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
                 "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
                 "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
@@ -286,14 +305,14 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新状态栏小图标 */
     private fun refreshStatusBarIcons() = runInSafe {
-        val nfField = StatusBarIconViewClass.toClass().field { name = "mNotification" }
-        val sRadiusField = StatusBarIconViewClass.toClass().field { name = "sIconRadiusFraction" }
-        val sNfSizeField = StatusBarIconViewClass.toClass().field { name = "sNotificationRoundIconSize" }
-        val roundUtil = RoundRectDrawableUtil_CompanionClass.toClass().method {
+        val nfField = StatusBarIconViewClass.field { name = "mNotification" }
+        val sRadiusField = StatusBarIconViewClass.field { name = "sIconRadiusFraction" }
+        val sNfSizeField = StatusBarIconViewClass.field { name = "sNotificationRoundIconSize" }
+        val roundUtil = RoundRectDrawableUtil_CompanionClass.method {
             name = "getRoundRectDrawable"
             param(DrawableClass, FloatType, IntType, IntType, ContextClass)
-        }.onNoSuchMethod { loggerE(msg = "Your system not support \"getRoundRectDrawable\"!", e = it) }
-            .get(RoundRectDrawableUtilClass.toClass().field { name = "Companion" }.get().any())
+        }.onNoSuchMethod { YLog.error("Your system not support \"getRoundRectDrawable\"!", it) }
+            .get(RoundRectDrawableUtilClass.field { name = "Companion" }.get().any())
         /** 启动一个线程防止卡顿 */
         Thread {
             (notificationIconContainer?.children?.toList() ?: notificationIconInstances.takeIf { it.isNotEmpty() })?.forEach {
@@ -303,7 +322,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
                     /** 得到原始通知图标 */
                     val iconDrawable = nf.notification.smallIcon.loadDrawable(it.context)
-                        ?: return@Thread loggerW(msg = "refreshStatusBarIcons got null smallIcon")
+                        ?: return@Thread YLog.warn("refreshStatusBarIcons got null smallIcon")
                     /** 获取优化后的状态栏通知图标 */
                     compatStatusIcon(
                         context = it.context,
@@ -344,7 +363,7 @@ object SystemUIHooker : YukiBaseHooker() {
      */
     private fun isGrayscaleIcon(context: Context, drawable: Drawable) =
         if (ConfigData.isEnableColorIconCompat.not()) safeOfFalse {
-            ContrastColorUtilClass.toClass().let {
+            ContrastColorUtilClass.let {
                 it.method {
                     name = "isGrayscaleIcon"
                     param(DrawableClass)
@@ -632,138 +651,101 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 缓存图标数据 */
         cachingIconDatas()
         /** 移除开发者警告通知 */
-        SystemPromptControllerClass.hook {
-            injectMember {
-                method { name = "updateDeveloperMode" }
-                beforeHook {
-                    /** 是否移除 */
-                    if (ConfigData.isEnableRemoveDevNotify) resultNull()
-                }
-            }
+        SystemPromptControllerClass.method {
+            name = "updateDeveloperMode"
+        }.hook().before {
+            /** 是否移除 */
+            if (ConfigData.isEnableRemoveDevNotify) resultNull()
         }
         /** 移除充电完成通知 */
-        OplusPowerNotificationWarningsClass.hook {
-            injectMember {
-                method {
-                    name = "showChargeErrorDialog"
-                    param(IntType)
-                }
-                beforeHook {
-                    /** 是否移除 */
-                    if (args().first().int() == 7 && ConfigData.isEnableRemoveChangeCompleteNotify) resultNull()
-                }
-            }
+        OplusPowerNotificationWarningsClass.method {
+            name = "showChargeErrorDialog"
+            param(IntType)
+        }.hook().before {
+            /** 是否移除 */
+            if (args().first().int() == 7 && ConfigData.isEnableRemoveChangeCompleteNotify) resultNull()
         }
         /** 移除免打扰通知 */
-        DndAlertHelperClass.hook {
-            injectMember {
-                method {
-                    name { it.lowercase() == "sendnotificationwithendtime" }
-                    param(LongType)
-                }
-                beforeHook {
-                    /** 是否移除 */
-                    if (ConfigData.isEnableRemoveDndAlertNotify) resultNull()
-                }
-            }
+        DndAlertHelperClass.method {
+            name { it.lowercase() == "sendnotificationwithendtime" }
+            param(LongType)
+        }.hook().before {
+            /** 是否移除 */
+            if (ConfigData.isEnableRemoveDndAlertNotify) resultNull()
         }
         /** 修复并替换 ColorOS 以及原生灰度图标色彩判断 */
-        NotificationUtilsClass.hook {
-            injectMember {
-                method {
-                    name = "isGrayscale"
-                    param(ImageViewClass, ContrastColorUtilClass)
-                }
-                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
-            }
-            injectMember {
-                method {
-                    name = "isGrayscaleOplus"
-                    param(ImageViewClass, OplusContrastColorUtilClass)
-                }
-                replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
-            }.ignoredNoSuchMemberFailure()
+        NotificationUtilsClass.apply {
+            method {
+                name = "isGrayscale"
+                param(ImageViewClass, ContrastColorUtilClass)
+            }.hook().replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
+            method {
+                name = "isGrayscaleOplus"
+                param(ImageViewClass, OplusContrastColorUtilClass ?: VagueType)
+            }.ignored().hook().replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
         }
         /** 替换状态栏图标 */
-        IconManagerClass.hook {
-            injectMember {
-                method {
-                    name = "getIconDescriptor"
-                    param(NotificationEntryClass, BooleanType)
-                }
-                afterHook {
-                    IconBuilderClass.toClass().field { name = "context" }
-                        .get(field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
-                        NotificationEntryClass.toClass().method {
-                            name = "getSbn"
-                        }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
-                            nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                compatStatusIcon(
-                                    context = context,
-                                    nf = nf,
-                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
-                                        /** 缓存第一次的 APP 小图标 */
-                                        if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
-                                    },
-                                    packageName = nf.packageName,
-                                    drawable = iconDrawable
-                                ).also { pair ->
-                                    if (pair.second) StatusBarIconClass.toClass().field {
-                                        name = "icon"
-                                        type = IconClass
-                                    }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
-                                }
-                            }
+        IconManagerClass.method {
+            name = "getIconDescriptor"
+            param(NotificationEntryClass, BooleanType)
+        }.hook().after {
+            IconBuilderClass.field { name = "context" }
+                .get(IconManagerClass.field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
+                NotificationEntryClass.method {
+                    name = "getSbn"
+                }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
+                    nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                        compatStatusIcon(
+                            context = context,
+                            nf = nf,
+                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
+                                /** 缓存第一次的 APP 小图标 */
+                                if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
+                            },
+                            packageName = nf.packageName,
+                            drawable = iconDrawable
+                        ).also { pair ->
+                            if (pair.second) StatusBarIconClass.field {
+                                name = "icon"
+                                type = IconClass
+                            }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
                         }
                     }
                 }
             }
         }
         /** 得到状态栏图标实例 */
-        StatusBarIconViewClass.hook {
-            injectMember {
-                method {
-                    name = "setNotification"
-                    param(StatusBarNotificationClass)
-                }
-                afterHook {
-                    /** 注册壁纸颜色监听 */
-                    if (args().first().any() != null) instance<ImageView>().also { registerWallpaperColorChanged(it) }
-                }
-            }
+        StatusBarIconViewClass.method {
+            name = "setNotification"
+            param(StatusBarNotificationClass)
+        }.hook().after {
+            /** 注册壁纸颜色监听 */
+            if (args().first().any() != null) instance<ImageView>().also { registerWallpaperColorChanged(it) }
         }
         /** 注入通知控制器实例 */
-        StatusBarNotificationPresenterClass.hook {
-            injectMember {
-                allMembers(MembersType.CONSTRUCTOR)
-                afterHook { notificationPresenter = instance }
-            }
-        }
+        StatusBarNotificationPresenterClass.constructor().hookAll().after { notificationPresenter = instance }
         /** 注入状态栏通知图标容器实例 */
-        OplusNotificationIconAreaControllerClass.hook {
-            injectMember {
-                var isOldWay = false
+        OplusNotificationIconAreaControllerClass.apply {
+            var isOldWay = false
+            method {
+                name = "updateIconsForLayout"
+                paramCount = 10
+            }.remedys {
                 method {
                     name = "updateIconsForLayout"
-                    paramCount = 10
-                }.remedys {
-                    method {
-                        name = "updateIconsForLayout"
-                        paramCount = 1
-                    }.onFind { isOldWay = true }
-                }
-                afterHook {
-                    if (isOldWay) {
-                        notificationIconInstances.clear()
-                        field { name = "mLastToShow" }.get(instance).list<View>()
-                            .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
-                    } else notificationIconContainer = args(index = 1).cast()
-                }
+                    paramCount = 1
+                }.onFind { isOldWay = true }
+            }.hook().after {
+                if (isOldWay) {
+                    notificationIconInstances.clear()
+                    field { name = "mLastToShow" }.get(instance).list<View>()
+                        .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
+                } else notificationIconContainer = args(index = 1).cast()
             }
         }
         /** 替换通知面板背景 - 新版本 */
-        OplusNotificationBackgroundViewClass.hook {
-            injectMember {
+        if (isOldNotificationBackground.not())
+            OplusNotificationBackgroundViewClass?.apply {
                 method {
                     name = "drawRegionBlur"
                     paramCount = 2
@@ -772,122 +754,104 @@ object SystemUIHooker : YukiBaseHooker() {
                         name = "draw"
                         paramCount = 2
                     }
-                }
-                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
-            }
-            injectMember {
+                }.hook().before { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
                 method {
                     name = "draw"
                     paramCount = 2
                     superClass(isOnlySuperClass = true)
-                }
-                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
+                }.hook().before { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
             }
-        }.ignoredHookClassNotFoundFailure().by { isOldNotificationBackground.not() }
         /** 替换通知面板背景 - 旧版本 */
-        NotificationBackgroundViewClass.hook {
-            injectMember {
+        if (isOldNotificationBackground)
+            NotificationBackgroundViewClass?.apply {
                 method {
                     name = "draw"
                     paramCount = 2
-                }
-                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
-            }
-            injectMember {
+                }.hook().before { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
                 method {
                     name = "drawCustom"
                     paramCount = 2
-                }
-                beforeHook { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
-            }.ignoredNoSuchMemberFailure()
-        }.by { isOldNotificationBackground }
+                }.ignored().hook().before { modifyNotifyPanelAlpha(instance(), args().last().cast<Drawable>()) }
+            }
         /** 替换通知面板背景 - 避免折叠展开通知二次修改通知面板背景 */
-        ExpandableNotificationRowClass.hook {
-            injectMember {
-                method {
-                    name = "updateBackgroundForGroupState"
-                    emptyParam()
-                }
-                beforeHook {
-                    if (ConfigData.isEnableNotifyPanelAlpha) field { name = "mShowGroupBackgroundWhenExpanded" }.get(instance).setTrue()
-                }
+        ExpandableNotificationRowClass.apply {
+            method {
+                name = "updateBackgroundForGroupState"
+                emptyParam()
+            }.hook().before {
+                if (ConfigData.isEnableNotifyPanelAlpha) field { name = "mShowGroupBackgroundWhenExpanded" }.get(instance).setTrue()
             }
         }
         /** 替换媒体通知面板背景 - 设置媒体通知自动展开 */
-        OplusMediaControlPanelClass.hook {
-            injectMember {
-                method {
-                    name = "bind"
-                    paramCount = 2
-                }
-                afterHook {
-                    /** 得到当前实例 */
-                    val holder = field {
-                        name = "mViewHolder"
-                        superClass(isOnlySuperClass = true)
-                    }.get(instance).any()
-                    /** 记录媒体通知 [View] */
-                    notificationPlayerView = PlayerViewHolderClass.toClassOrNull()?.method {
-                        name = "getPlayer"
-                        emptyParam()
-                    }?.get(holder)?.invoke()
-                    /** 设置背景着色 */
-                    modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
-                    /** 当前是否正在播放 */
-                    val isPlaying = MediaDataClass.toClassOrNull()?.method {
-                        name = "isPlaying"
-                        emptyParam()
-                    }?.get(args().first().any())?.boolean() ?: false
+        OplusMediaControlPanelClass?.apply {
+            method {
+                name = "bind"
+                paramCount = 2
+            }.hook().after {
+                /** 得到当前实例 */
+                val holder = OplusMediaControlPanelClass?.field {
+                    name = "mViewHolder"
+                    superClass(isOnlySuperClass = true)
+                }?.get(instance)?.any()
+                /** 记录媒体通知 [View] */
+                notificationPlayerView = PlayerViewHolderClass?.method {
+                    name = "getPlayer"
+                    emptyParam()
+                }?.get(holder)?.invoke()
+                /** 设置背景着色 */
+                modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
+                /** 当前是否正在播放 */
+                val isPlaying = MediaDataClass?.method {
+                    name = "isPlaying"
+                    emptyParam()
+                }?.get(args().first().any())?.boolean() ?: false
 
-                    /** 当前通知是否展开 */
-                    val isExpanded = OplusMediaViewControllerClass.toClassOrNull()?.method {
-                        name = "getExpanded"
-                        emptyParam()
-                    }?.get(field { name = "mOplusMediaViewController" }.get(instance).any())?.boolean() ?: false
-                    /** 符合条件后执行 */
-                    if (ConfigData.isEnableNotifyMediaPanelAutoExp.not() || isExpanded || isPlaying.not()) return@afterHook
-                    /** 模拟手动展开通知 */
-                    BasePlayViewHolderClass.toClassOrNull()?.method {
-                        name = "getExpandButton"
-                        emptyParam()
-                    }?.get(holder)?.invoke<View>()?.performClick()
-                }
+                /** 当前通知是否展开 */
+                val isExpanded = OplusMediaViewControllerClass?.method {
+                    name = "getExpanded"
+                    emptyParam()
+                }?.get(field { name = "mOplusMediaViewController" }.get(instance).any())?.boolean() ?: false
+                /** 符合条件后执行 */
+                if (ConfigData.isEnableNotifyMediaPanelAutoExp.not() || isExpanded || isPlaying.not()) return@after
+                /** 模拟手动展开通知 */
+                BasePlayViewHolderClass?.method {
+                    name = "getExpandButton"
+                    emptyParam()
+                }?.get(holder)?.invoke<View>()?.performClick()
             }
-        }.ignoredHookClassNotFoundFailure()
+        }
         /** 替换通知图标和样式 */
-        NotificationHeaderViewWrapperClass.hook {
-            injectMember {
-                method { name { it == "resolveHeaderViews" || it == "onContentUpdated" } }.all()
-                afterHook {
-                    NotificationHeaderViewWrapperClass.toClass()
-                        .field { name = "mIcon" }.get(instance).cast<ImageView>()?.apply {
-                        ExpandableNotificationRowClass.toClass()
-                            .method { name = "getEntry" }
-                            .get(NotificationViewWrapperClass.toClass().field {
-                                name = "mRow"
-                            }.get(instance).any()).call()?.let {
-                            it.javaClass.method {
-                                name = "getSbn"
-                            }.get(it).invoke<StatusBarNotification>()
-                        }.also { nf ->
-                            nf?.notification?.also {
-                                it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                    /** 执行替换 */
-                                    fun doParse() {
-                                        compatNotifyIcon(
-                                            context = context,
-                                            nf = nf,
-                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                            packageName = context.packageName,
-                                            drawable = iconDrawable,
-                                            iconColor = it.color,
-                                            iconView = this
-                                        )
-                                    }
-                                    doParse()
-                                    /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
-                                    delayedRun(ms = 1500) { doParse() }
+        NotificationHeaderViewWrapperClass.apply {
+            method {
+                name { it == "resolveHeaderViews" || it == "onContentUpdated" }
+            }.hookAll().after {
+                field { name = "mIcon" }.get(instance).cast<ImageView>()?.apply {
+                    ExpandableNotificationRowClass
+                        .method { name = "getEntry" }
+                        .get(NotificationViewWrapperClass.field {
+                            name = "mRow"
+                        }.get(instance).any()).call()?.let {
+                        it.javaClass.method {
+                            name = "getSbn"
+                        }.get(it).invoke<StatusBarNotification>()
+                    }.also { nf ->
+                        nf?.notification?.also {
+                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                /** 执行替换 */
+                                fun doParse() {
+                                    compatNotifyIcon(
+                                        context = context,
+                                        nf = nf,
+                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                        packageName = context.packageName,
+                                        drawable = iconDrawable,
+                                        iconColor = it.color,
+                                        iconView = this
+                                    )
                                 }
+                                doParse()
+                                /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
+                                delayedRun(ms = 1500) { doParse() }
                             }
                         }
                     }

@@ -38,8 +38,8 @@ import com.fankes.coloros.notify.utils.factory.snake
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.hook.factory.dataChannel
-import com.highcapable.yukihookapi.hook.log.YukiHookLogger
-import com.highcapable.yukihookapi.hook.log.YukiLoggerData
+import com.highcapable.yukihookapi.hook.log.YLog
+import com.highcapable.yukihookapi.hook.log.data.YLogData
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.xposed.channel.data.ChannelData
 import java.util.Locale
@@ -53,7 +53,7 @@ object SystemUITool {
     private val CALL_MODULE_REFRESH_RESULT = ChannelData("call_module_refresh_result", false)
 
     /** 当前全部调试日志 */
-    private var debugLogs = ArrayList<YukiLoggerData>()
+    private var debugLogs = listOf<YLogData>()
 
     /** 当前启动器实例 */
     private var launcher: ActivityResultLauncher<String>? = null
@@ -100,7 +100,7 @@ object SystemUITool {
                         "[Android Version]: ${Build.VERSION.RELEASE}\n" +
                         "[Android API Level]: ${Build.VERSION.SDK_INT}\n" +
                         "[ColorOS Version]: $colorOSFullVersion\n" +
-                        "[System Locale]: ${Locale.getDefault()}\n\n" + YukiHookLogger.contents(debugLogs).trim()
+                        "[System Locale]: ${Locale.getDefault()}\n\n" + YLog.contents(debugLogs).trim()
                     activity.contentResolver?.openOutputStream(e)?.apply { write(content.toByteArray()) }?.close()
                     activity.snake(msg = "导出完成")
                 } ?: activity.snake(msg = "已取消操作")
