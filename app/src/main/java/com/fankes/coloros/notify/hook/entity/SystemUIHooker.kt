@@ -101,6 +101,9 @@ object SystemUIHooker : YukiBaseHooker() {
     private val NotificationUtilsClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.NotificationUtils")
 
     /** 原生存在的类 */
+    private val NotificationIconAreaControllerClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.phone.NotificationIconAreaController")
+
+    /** 原生存在的类 */
     private val NotificationEntryClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.collection.NotificationEntry")
 
     /** 原生存在的类 */
@@ -143,6 +146,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.phone.OplusNotificationIconAreaController",
             "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
             "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
             "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
@@ -152,6 +156,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val SystemPromptControllerClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.controller.SystemPromptController",
             "com.oplusos.systemui.statusbar.policy.SystemPromptController",
             "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
         )
@@ -176,6 +181,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val DndAlertHelperClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.notification.helper.DndAlertHelper",
             "com.oplusos.systemui.notification.helper.DndAlertHelper",
             "com.coloros.systemui.notification.helper.DndAlertHelper"
         )
@@ -184,6 +190,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusPowerNotificationWarningsClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.notification.power.OplusPowerNotificationWarnings",
             "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
             "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
         )
@@ -218,6 +225,14 @@ object SystemUIHooker : YukiBaseHooker() {
         VariousClass(
             "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
             "${PackageName.SYSTEMUI}.statusbar.notification.NotificationHeaderViewWrapper"
+        )
+    )
+
+    /** 根据多个版本存在不同的方法相同的类 */
+    private val StatusBarIconControllerClass by lazyClass(
+        VariousClass(
+            "${PackageName.SYSTEMUI}.statusbar.StatusBarIconView",
+            "com.oplus.systemui.statusbar.phone.StatusBarIconControllerExImpl"
         )
     )
 
@@ -306,8 +321,16 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 刷新状态栏小图标 */
     private fun refreshStatusBarIcons() = runInSafe {
         val nfField = StatusBarIconViewClass.field { name = "mNotification" }
-        val sRadiusField = StatusBarIconViewClass.field { name = "sIconRadiusFraction" }
-        val sNfSizeField = StatusBarIconViewClass.field { name = "sNotificationRoundIconSize" }
+        val sRadiusField = StatusBarIconViewClass.field {
+            name = "sIconRadiusFraction"
+        }.remedys {
+            StatusBarIconControllerClass.field { name = "sIconRadiusFraction" }
+        }
+        val sNfSizeField = StatusBarIconViewClass.field {
+            name = "sNotificationRoundIconSize"
+        }.remedys {
+            StatusBarIconControllerClass.field { name = "sNotificationRoundIconSize" }
+        }
         val roundUtil = RoundRectDrawableUtil_CompanionClass.method {
             name = "getRoundRectDrawable"
             param(DrawableClass, FloatType, IntType, IntType, ContextClass)
@@ -731,6 +754,11 @@ object SystemUIHooker : YukiBaseHooker() {
                 name = "updateIconsForLayout"
                 paramCount = 10
             }.remedys {
+                /** ColorOS 14*/
+                method {
+                    name = "updateIconsForLayout"
+                    paramCount = 5
+                }
                 method {
                     name = "updateIconsForLayout"
                     paramCount = 1
@@ -741,6 +769,15 @@ object SystemUIHooker : YukiBaseHooker() {
                     field { name = "mLastToShow" }.get(instance).list<View>()
                         .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
                 } else notificationIconContainer = args(index = 1).cast()
+            }
+            /** 注入状态栏通知图标容器实例 */
+            NotificationIconAreaControllerClass.apply {
+                method {
+                    name = "updateIconsForLayout"
+                    paramCount = 8
+                }.hook().after {
+                    notificationIconContainer = args(index = 1).cast()
+                }
             }
         }
         /** 替换通知面板背景 - 新版本 */
