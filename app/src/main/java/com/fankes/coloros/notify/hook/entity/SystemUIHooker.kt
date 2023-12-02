@@ -143,6 +143,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.phone.OplusNotificationIconAreaController",
             "com.oplusos.systemui.statusbar.phone.OplusNotificationIconAreaController",
             "com.oplusos.systemui.statusbar.policy.OplusNotificationIconAreaController",
             "com.coloros.systemui.statusbar.policy.ColorNotificationIconAreaController"
@@ -152,6 +153,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val SystemPromptControllerClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.controller.SystemPromptController",
             "com.oplusos.systemui.statusbar.policy.SystemPromptController",
             "com.coloros.systemui.statusbar.policy.ColorSystemPromptController"
         )
@@ -176,6 +178,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val DndAlertHelperClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.notification.helper.DndAlertHelper",
             "com.oplusos.systemui.notification.helper.DndAlertHelper",
             "com.coloros.systemui.notification.helper.DndAlertHelper"
         )
@@ -184,6 +187,7 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusPowerNotificationWarningsClass by lazyClass(
         VariousClass(
+            "com.oplus.systemui.statusbar.notification.power.OplusPowerNotificationWarnings",
             "com.oplusos.systemui.notification.power.OplusPowerNotificationWarnings",
             "com.coloros.systemui.notification.power.ColorosPowerNotificationWarnings"
         )
