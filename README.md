@@ -11,7 +11,7 @@
 [![QQ](https://img.shields.io/badge/discussion-QQ-blue.svg?logo=tencent-qq&logoColor=red)](https://qm.qq.com/cgi-bin/qm/qr?k=dp2h5YhWiga9WWb_Oh7kSHmx01X8I8ii&jump_from=webapi&authKey=Za5CaFP0lk7+Zgsk2KpoBD7sSaYbeXbsDgFjiWelOeH4VSionpxFJ7V0qQBSqvFM)
 [![QQ 频道](https://img.shields.io/badge/discussion-QQ%20频道-blue.svg?logo=tencent-qq&logoColor=red)](https://pd.qq.com/s/44gcy28h)
 
-<img src="https://github.com/fankes/ColorOSNotifyIcon/blob/master/img-src/icon.png?raw=true" width = "100" height = "100" alt="LOGO"/>
+<img src="img-src/icon.png" width = "100" height = "100" alt="LOGO"/>
 
 Optimize notification icons for ColorOS and adapt to native notification icon specifications.
 
@@ -89,7 +89,7 @@ This project will not be adapted i18n, please stay tuned for my new projects in 
 
 ## 隐私政策
 
-- [PRIVACY](https://github.com/fankes/ColorOSNotifyIcon/blob/master/PRIVACY.md)
+- [PRIVACY](PRIVACY.md)
 
 ## 许可证
 
