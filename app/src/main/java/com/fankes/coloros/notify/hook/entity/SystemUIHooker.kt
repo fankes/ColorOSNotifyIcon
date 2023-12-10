@@ -754,7 +754,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 name = "updateIconsForLayout"
                 paramCount = 10
             }.remedys {
-                /** ColorOS 14*/
+                /** ColorOS 14 */
                 method {
                     name = "updateIconsForLayout"
                     paramCount = 5
