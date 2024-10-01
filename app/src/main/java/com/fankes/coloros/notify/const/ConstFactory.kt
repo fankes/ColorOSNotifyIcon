@@ -50,6 +50,9 @@ object IconRuleSourceSyncType {
     /** GitHub Raw (代理 - 7ED Services) */
     const val GITHUB_RAW_PROXY_2 = 1000
 
+    /** GitHub Raw (自定义) */
+    const val GITHUB_RAW_PROXY = 4000
+
     /** GitHub Raw (直连) */
     const val GITHUB_RAW_DIRECT = 2000
 
