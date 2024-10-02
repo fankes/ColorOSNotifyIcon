@@ -100,9 +100,6 @@ object ConfigData {
     /** 通知图标优化名单同步地址 */
     val ICON_RULE_SOURCE_SYNC_CUSTOM_URL = PrefsData("_rule_source_sync_way_custom_url", "")
 
-    /** 通知图标优化名单同步镜像地址 */
-    val ICON_RULE_SOURCE_SYNC_PROXY_URL = PrefsData("_rule_source_sync_way_proxy_url", "")
-
     /** 当前实例 - [Context] or [PackageParam] */
     private var instance: Any? = null
 
@@ -388,15 +385,5 @@ object ConfigData {
         get() = getString(ICON_RULE_SOURCE_SYNC_CUSTOM_URL)
         set(value) {
             putString(ICON_RULE_SOURCE_SYNC_CUSTOM_URL, value)
-        }
-
-    /**
-     * 通知图标优化名单同步镜像地址
-     * @return [String]
-     */
-    var iconRuleSourceSyncProxyUrl
-        get() = getString(ICON_RULE_SOURCE_SYNC_PROXY_URL)
-        set(value) {
-            putString(ICON_RULE_SOURCE_SYNC_PROXY_URL, value)
         }
 }
