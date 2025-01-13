@@ -1,6 +1,6 @@
 /*
  * ColorOSNotifyIcon - Optimize notification icons for ColorOS and adapt to native notification icon specifications.
- * Copyright (C) 2017-2024 Fankes Studio(qzmmcn@163.com)
+ * Copyright (C) 20174 Fankes Studio(qzmmcn@163.com)
  * https://github.com/fankes/ColorOSNotifyIcon
  *
  * This software is non-free but opensource software: you can redistribute it
