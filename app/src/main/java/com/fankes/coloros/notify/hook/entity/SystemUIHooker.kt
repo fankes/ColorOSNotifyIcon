@@ -749,7 +749,7 @@ object SystemUIHooker : YukiBaseHooker() {
         StatusBarNotificationPresenterClass.constructor().hookAll().after { notificationPresenter = instance }
         /** 注入状态栏通知图标容器实例 */
         OplusNotificationIconAreaControllerClass.apply {
-            var isOldWay = false
+            var way = 0
             method {
                 name = "updateIconsForLayout"
                 paramCount = 10
@@ -762,13 +762,20 @@ object SystemUIHooker : YukiBaseHooker() {
                 method {
                     name = "updateIconsForLayout"
                     paramCount = 1
-                }.onFind { isOldWay = true }
+                }.onFind { way = 1 }
+                method {
+                    name = "updateStatusBarIcons"
+                }.onFind { way = 2 }
             }.hook().after {
-                if (isOldWay) {
-                    notificationIconInstances.clear()
-                    field { name = "mLastToShow" }.get(instance).list<View>()
-                        .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
-                } else notificationIconContainer = args(index = 1).cast()
+                when (way) {
+                    1 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.method { name = "getNotificationIcons" }.get(instance).invoke()
+                    2 -> {
+                        notificationIconInstances.clear()
+                        field { name = "mLastToShow" }.get(instance).list<View>()
+                            .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
+                    }
+                    else -> notificationIconContainer = args(index = 1).cast()
+                }
             }
             /** 注入状态栏通知图标容器实例 */
             NotificationIconAreaControllerClass.apply {
