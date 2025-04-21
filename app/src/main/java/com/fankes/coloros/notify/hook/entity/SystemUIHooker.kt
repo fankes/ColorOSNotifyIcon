@@ -88,6 +88,8 @@ import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.highcapable.yukihookapi.hook.type.java.LongType
 import top.defaults.drawabletoolbox.DrawableBuilder
+import androidx.core.graphics.drawable.toDrawable
+import com.highcapable.yukihookapi.hook.type.android.NotificationClass
 
 /**
  * 系统界面核心 Hook 类
@@ -142,6 +144,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val BasePlayViewHolderClass by lazyClassOrNull("com.oplusos.systemui.media.base.BasePlayViewHolder")
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private val OplusNotificationSmallIconUtilClass by lazyClassOrNull("com.oplus.systemui.statusbar.notification.util.OplusNotificationSmallIconUtil")
 
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
@@ -293,15 +298,15 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
         if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
-                "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
-                "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
-                "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
-                "[Package Name]: ${nf?.packageName}\n" +
-                "[Sender Package Name]: ${nf?.opPkg}\n" +
-                "[Custom Icon]: $isCustom\n" +
-                "[Grayscale Icon]: $isGrayscale\n" +
-                "[From System Push]: ${nf?.isOplusPush}\n" +
-                "[String]: ${nf?.notification}"
+              "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
+              "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
+              "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
+              "[Package Name]: ${nf?.packageName}\n" +
+              "[Sender Package Name]: ${nf?.opPkg}\n" +
+              "[Custom Icon]: $isCustom\n" +
+              "[Grayscale Icon]: $isGrayscale\n" +
+              "[From System Push]: ${nf?.isOplusPush}\n" +
+              "[String]: ${nf?.notification}"
         )
     }
 
@@ -434,7 +439,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 iconDatas.takeIf { it.isNotEmpty() }?.forEach {
                     if (packageName == it.packageName && isAppNotifyHookOf(it)) {
                         if (isGrayscaleIcon.not() || isAppNotifyHookAllOf(it))
-                            customPair = Triple(BitmapDrawable(context.resources, it.iconBitmap), it.iconColor, false)
+                            customPair = Triple(it.iconBitmap.toDrawable(context.resources), it.iconColor, false)
                         return@run
                     }
                 }
@@ -696,6 +701,13 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 是否移除 */
             if (ConfigData.isEnableRemoveDndAlertNotify) resultNull()
         }
+        /** 拦截ColorOS使用应用图标判断 */
+        OplusNotificationSmallIconUtilClass?.method {
+            name = "useAppIconForSmallIcon"
+            param(NotificationClass)
+        }?.hook()?.before {
+            resultFalse()
+        }
         /** 修复并替换 ColorOS 以及原生灰度图标色彩判断 */
         NotificationUtilsClass.apply {
             method {
@@ -714,28 +726,28 @@ object SystemUIHooker : YukiBaseHooker() {
         }.hook().after {
             IconBuilderClass.field { name = "context" }
                 .get(IconManagerClass.field { name = "iconBuilder" }.get(instance).cast()).cast<Context>()?.also { context ->
-                NotificationEntryClass.method {
-                    name = "getSbn"
-                }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
-                    nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                        compatStatusIcon(
-                            context = context,
-                            nf = nf,
-                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
-                                /** 缓存第一次的 APP 小图标 */
-                                if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
-                            },
-                            packageName = nf.packageName,
-                            drawable = iconDrawable
-                        ).also { pair ->
-                            if (pair.second) StatusBarIconClass.field {
-                                name = "icon"
-                                type = IconClass
-                            }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
+                    NotificationEntryClass.method {
+                        name = "getSbn"
+                    }.get(args().first().any()).invoke<StatusBarNotification>()?.also { nf ->
+                        nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                            compatStatusIcon(
+                                context = context,
+                                nf = nf,
+                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
+                                    /** 缓存第一次的 APP 小图标 */
+                                    if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
+                                },
+                                packageName = nf.packageName,
+                                drawable = iconDrawable
+                            ).also { pair ->
+                                if (pair.second) StatusBarIconClass.field {
+                                    name = "icon"
+                                    type = IconClass
+                                }.get(result).set(Icon.createWithBitmap(pair.first.toBitmap()))
+                            }
                         }
                     }
                 }
-            }
         }
         /** 得到状态栏图标实例 */
         StatusBarIconViewClass.method {
@@ -768,8 +780,8 @@ object SystemUIHooker : YukiBaseHooker() {
                 }.onFind { way = 2 }
             }.hook().after {
                 when (way) {
-                    1 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.method { name = "getNotificationIcons" }.get(instance).invoke()
-                    2 -> {
+                    2 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.method { name = "getNotificationIcons" }.get(instance).invoke()
+                    1 -> {
                         notificationIconInstances.clear()
                         field { name = "mLastToShow" }.get(instance).list<View>()
                             .takeIf { it.isNotEmpty() }?.forEach { notificationIconInstances.add(it) }
@@ -875,30 +887,30 @@ object SystemUIHooker : YukiBaseHooker() {
                         .get(NotificationViewWrapperClass.field {
                             name = "mRow"
                         }.get(instance).any()).call()?.let {
-                        it.javaClass.method {
-                            name = "getSbn"
-                        }.get(it).invoke<StatusBarNotification>()
-                    }.also { nf ->
-                        nf?.notification?.also {
-                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                /** 执行替换 */
-                                fun doParse() {
-                                    compatNotifyIcon(
-                                        context = context,
-                                        nf = nf,
-                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                        packageName = context.packageName,
-                                        drawable = iconDrawable,
-                                        iconColor = it.color,
-                                        iconView = this
-                                    )
+                            it.javaClass.method {
+                                name = "getSbn"
+                            }.get(it).invoke<StatusBarNotification>()
+                        }.also { nf ->
+                            nf?.notification?.also {
+                                it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    /** 执行替换 */
+                                    fun doParse() {
+                                        compatNotifyIcon(
+                                            context = context,
+                                            nf = nf,
+                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                            packageName = context.packageName,
+                                            drawable = iconDrawable,
+                                            iconColor = it.color,
+                                            iconView = this
+                                        )
+                                    }
+                                    doParse()
+                                    /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
+                                    delayedRun(ms = 1500) { doParse() }
                                 }
-                                doParse()
-                                /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
-                                delayedRun(ms = 1500) { doParse() }
                             }
                         }
-                    }
                 }
             }
         }
