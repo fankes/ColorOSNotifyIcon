@@ -25,7 +25,7 @@ package com.fankes.coloros.notify.hook.entity
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.type.android.NotificationClass
-import com.highcapable.yukihookapi.hook.type.java.BooleanClass
+import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.StringClass
 
 /**
@@ -39,7 +39,7 @@ object SystemFrameworkHooker : YukiBaseHooker() {
         /** 拦截ColorOS覆盖应用通知图标 */
         OplusNotificationFixHelperClass?.method {
             name = "fixSmallIcon"
-            param(NotificationClass, StringClass, StringClass, BooleanClass)
+            param(NotificationClass, StringClass, StringClass, BooleanType)
         }?.ignored()?.hook()?.intercept()
     }
 }
