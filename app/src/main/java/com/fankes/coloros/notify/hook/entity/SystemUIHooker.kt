@@ -129,6 +129,9 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 原生存在的类 */
     private val MediaDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.MediaData")
 
+    /** 原生存在的类 - 旧版本不存在 */
+    private val LegacyNotificationIconAreaControllerImpl by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.phone.LegacyNotificationIconAreaControllerImpl")
+
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusContrastColorUtilClass by lazyClassOrNull("com.oplusos.util.OplusContrastColorUtil")
 
@@ -697,6 +700,11 @@ object SystemUIHooker : YukiBaseHooker() {
         DndAlertHelperClass.method {
             name { it.lowercase() == "sendnotificationwithendtime" }
             param(LongType)
+        }.remedys {
+            method {
+                name = "operateNotification"
+                param(LongType, IntType, BooleanType)
+            }
         }.hook().before {
             /** 是否移除 */
             if (ConfigData.isEnableRemoveDndAlertNotify) resultNull()
@@ -789,7 +797,21 @@ object SystemUIHooker : YukiBaseHooker() {
                     else -> notificationIconContainer = args(index = 1).cast()
                 }
             }
-            /** 注入状态栏通知图标容器实例 */
+        }
+        
+        /** 注入状态栏通知图标容器实例 */
+        if (LegacyNotificationIconAreaControllerImpl != null) {
+            /** ColorOS 15.0.1 */
+            LegacyNotificationIconAreaControllerImpl?.apply {
+                method {
+                    name = "updateIconsForLayout"
+                    paramCount = 8
+                }.hook().after {
+                    notificationIconContainer = args(index = 1).cast()
+                }
+            }
+        } else {
+            /** ColorOS 15 */
             NotificationIconAreaControllerClass.apply {
                 method {
                     name = "updateIconsForLayout"
@@ -799,6 +821,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
             }
         }
+        
         /** 替换通知面板背景 - 新版本 */
         if (isOldNotificationBackground.not())
             OplusNotificationBackgroundViewClass?.apply {
