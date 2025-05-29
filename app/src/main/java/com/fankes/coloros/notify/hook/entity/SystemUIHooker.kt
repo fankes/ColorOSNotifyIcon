@@ -32,7 +32,6 @@ import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Outline
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.os.SystemClock
@@ -43,6 +42,7 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.children
 import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.bean.IconDataBean
@@ -81,6 +81,7 @@ import com.highcapable.yukihookapi.hook.type.android.ContextClass
 import com.highcapable.yukihookapi.hook.type.android.DrawableClass
 import com.highcapable.yukihookapi.hook.type.android.IconClass
 import com.highcapable.yukihookapi.hook.type.android.ImageViewClass
+import com.highcapable.yukihookapi.hook.type.android.NotificationClass
 import com.highcapable.yukihookapi.hook.type.android.StatusBarNotificationClass
 import com.highcapable.yukihookapi.hook.type.defined.VagueType
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
@@ -88,8 +89,6 @@ import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.highcapable.yukihookapi.hook.type.java.LongType
 import top.defaults.drawabletoolbox.DrawableBuilder
-import androidx.core.graphics.drawable.toDrawable
-import com.highcapable.yukihookapi.hook.type.android.NotificationClass
 
 /**
  * 系统界面核心 Hook 类
@@ -298,15 +297,15 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
         if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
-              "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
-              "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
-              "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
-              "[Package Name]: ${nf?.packageName}\n" +
-              "[Sender Package Name]: ${nf?.opPkg}\n" +
-              "[Custom Icon]: $isCustom\n" +
-              "[Grayscale Icon]: $isGrayscale\n" +
-              "[From System Push]: ${nf?.isOplusPush}\n" +
-              "[String]: ${nf?.notification}"
+                "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
+                "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
+                "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
+                "[Package Name]: ${nf?.packageName}\n" +
+                "[Sender Package Name]: ${nf?.opPkg}\n" +
+                "[Custom Icon]: $isCustom\n" +
+                "[Grayscale Icon]: $isGrayscale\n" +
+                "[From System Push]: ${nf?.isOplusPush}\n" +
+                "[String]: ${nf?.notification}"
         )
     }
 

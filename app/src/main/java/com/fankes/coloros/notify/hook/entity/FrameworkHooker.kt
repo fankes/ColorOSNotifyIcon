@@ -18,7 +18,7 @@
  * and eula along with this software.  If not, see
  * <https://www.gnu.org/licenses/>
  *
- * This file is created by fankes on 2022/3/25.
+ * This file is created by Nep-Timeline on 2025/5/27.
  */
 package com.fankes.coloros.notify.hook.entity
 
@@ -31,12 +31,13 @@ import com.highcapable.yukihookapi.hook.type.java.StringClass
 /**
  * 系统框架核心 Hook 类
  */
-object SystemFrameworkHooker : YukiBaseHooker() {
+object FrameworkHooker : YukiBaseHooker() {
+
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationFixHelperClass by lazyClassOrNull("com.android.server.notification.OplusNotificationFixHelper")
 
     override fun onHook() {
-        /** 拦截ColorOS覆盖应用通知图标 */
+        /** 拦截 ColorOS 覆盖应用通知图标 */
         OplusNotificationFixHelperClass?.method {
             name = "fixSmallIcon"
             param(NotificationClass, StringClass, StringClass, BooleanType)
