@@ -35,6 +35,13 @@ This project will not be adapted i18n, please stay tuned for my new projects in 
 
 - 建议在不低于 ColorOS 11 的版本上使用
 
+## 注意事项
+
+由于 ColorOS 15 版本的系统性通知图标行为变更，系统强制在通知图标初始化阶段就将图标强制替换为 APP 彩色图标进行破坏，所以目前加入了 “系统框架”
+作用域，如果在模块安装后没有自动勾选此作用域，请手动进行勾选并重新启动系统以修复此破坏行为，ColorOS 15 以下版本的系统无需勾选。
+
+感谢 [Nep-Timeline](https://github.com/Nep-Timeline) 提供的解决方案。
+
 ## 历史背景
 
 继 MIUI 之后的第二大系统 ColorOS 虽然支持原生通知图标，但是第三方推送五颜六色的图标系统并没有做适配，甚至系统自己的图标都是彩色的，极其不友好。
