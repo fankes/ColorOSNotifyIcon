@@ -20,7 +20,7 @@
  *
  * This file is created by fankes on 2022/1/7.
  */
-@file:Suppress("unused")
+@file:Suppress("unused", "DEPRECATION")
 
 package com.fankes.coloros.notify.utils.factory
 
