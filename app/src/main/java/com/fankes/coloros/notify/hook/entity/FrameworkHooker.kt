@@ -22,11 +22,9 @@
  */
 package com.fankes.coloros.notify.hook.entity
 
+import android.app.Notification
+import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.type.android.NotificationClass
-import com.highcapable.yukihookapi.hook.type.java.BooleanType
-import com.highcapable.yukihookapi.hook.type.java.StringClass
 
 /**
  * 系统框架核心 Hook 类
@@ -38,9 +36,9 @@ object FrameworkHooker : YukiBaseHooker() {
 
     override fun onHook() {
         /** 拦截 ColorOS 覆盖应用通知图标 */
-        OplusNotificationFixHelperClass?.method {
+        OplusNotificationFixHelperClass?.resolve()?.optional()?.firstMethodOrNull {
             name = "fixSmallIcon"
-            param(NotificationClass, StringClass, StringClass, BooleanType)
-        }?.ignored()?.hook()?.intercept()
+            parameters(Notification::class, String::class, String::class, Boolean::class)
+        }?.hook()?.intercept()
     }
 }
