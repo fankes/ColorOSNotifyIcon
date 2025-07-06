@@ -68,6 +68,7 @@ import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
 import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.kavaref.condition.type.VagueType
 import com.highcapable.kavaref.extension.VariousClass
@@ -363,7 +364,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新通知小图标 */
     private fun refreshNotificationIcons() = runInSafe {
-        notificationPresenter?.resolve()?.optional()?.firstMethodOrNull {
+        notificationPresenter?.asResolver()?.optional()?.firstMethodOrNull {
             name = "updateNotificationsOnDensityOrFontScaleChanged"
             emptyParameters()
         }?.invoke()
@@ -886,7 +887,7 @@ object SystemUIHooker : YukiBaseHooker() {
                         ?.of(NotificationViewWrapperClass.resolve().optional().firstFieldOrNull {
                             name = "mRow"
                         }?.of(instance)?.get())?.invokeQuietly()?.let {
-                            it.resolve().optional().firstMethodOrNull {
+                            it.asResolver().optional().firstMethodOrNull {
                                 name = "getSbn"
                             }?.invoke<StatusBarNotification>()
                         }.also { nf ->
