@@ -20,7 +20,7 @@
  *
  * This file is created by fankes on 2022/1/7.
  */
-@file:Suppress("unused", "ObsoleteSdkInt")
+@file:Suppress("unused", "ObsoleteSdkInt", "DEPRECATION")
 
 package com.fankes.coloros.notify.utils.factory
 
@@ -56,6 +56,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.net.toUri
 import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.yukihookapi.hook.factory.field
@@ -133,7 +134,7 @@ inline val isNotColorOS get() = !isColorOS
 val isRealmeUI
     get() = safeOfFalse {
         val query = appContext.contentResolver.query(
-            Uri.parse("content://com.oplus.customize.coreapp.configmanager.configprovider.AppFeatureProvider")
+            "content://com.oplus.customize.coreapp.configmanager.configprovider.AppFeatureProvider".toUri()
                 .buildUpon()
                 .appendPath("app_feature")
                 .build(), null, "featurename=?", arrayOf("com.android.launcher.device_rm"), null
@@ -149,6 +150,8 @@ val isRealmeUI
  */
 val androidVersionCodeName
     get() = when (Build.VERSION.SDK_INT) {
+        36 -> "B"
+        35 -> "V"
         34 -> "U"
         33 -> "T"
         32 -> "S_V2"
@@ -485,7 +488,7 @@ fun Context.openBrowser(url: String, packageName: String = "") = runCatching {
     startActivity(Intent().apply {
         if (packageName.isNotBlank()) setPackage(packageName)
         action = Intent.ACTION_VIEW
-        data = Uri.parse(url)
+        data = url.toUri()
         /** 防止顶栈一样重叠在自己的 APP 中 */
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     })
