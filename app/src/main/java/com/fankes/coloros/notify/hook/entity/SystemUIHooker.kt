@@ -76,9 +76,7 @@ import com.highcapable.kavaref.extension.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.log.YLog
-import de.robv.android.xposed.XposedHelpers
 import top.defaults.drawabletoolbox.DrawableBuilder
-
 
 /**
  * 系统界面核心 Hook 类
@@ -334,8 +332,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新状态栏小图标 */
     private fun refreshStatusBarIcons() = runInSafe {
-        if (isNewNotification)
-            return@runInSafe
+        if (isNewNotification) return@runInSafe
         val nfField = StatusBarIconViewClass.resolve().optional().firstFieldOrNull { name = "mNotification" }
         val sRadiusField = StatusBarIconViewClass.resolve().optional(silent = true).firstFieldOrNull {
             name = "sIconRadiusFraction"
@@ -866,8 +863,15 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "proxyOnContentUpdated"
                     parameterCount = 1
                 }?.hook()?.after {
-                    val imageView = XposedHelpers.getObjectField(XposedHelpers.callMethod(instance, "getBase"), "mIcon") as ImageView
-                    imageView.apply {
+                    val mBase = instance.asResolver().optional().firstMethodOrNull {
+                        name = "getBase"
+                        emptyParameters()
+                    }?.invokeQuietly()
+                    val imageView = mBase?.asResolver()?.optional()?.firstFieldOrNull {
+                        name = "mIcon"
+                        type = ImageView::class
+                    }?.getQuietly<ImageView>()
+                    imageView?.apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(args[0])?.invokeQuietly()?.let {
@@ -913,9 +917,10 @@ object SystemUIHooker : YukiBaseHooker() {
                                     name = "getSbn"
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
-                                val context = StatusBarNotification::class.java.resolve().firstMethod { name = "getPackageContext" }.of(nf).invoke<Context>(instanceContext)
-                                if (context == null)
-                                    return@also
+                                val context = StatusBarNotification::class.resolve().firstMethod {
+                                    name = "getPackageContext"
+                                }.of(nf).invoke<Context>(instanceContext)
+                                if (context == null) return@also
 
                                 nf?.notification?.also {
                                     it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
@@ -949,9 +954,9 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "updateIconsForLayout"
                     parameterCount = 1
                 }?.apply { way = 1 }
-                ?: firstMethodOrNull {
-                    name = "updateIconsForLayout"
-                }?.apply { way = 2 })?.hook()?.after {
+                    ?: firstMethodOrNull {
+                        name = "updateIconsForLayout"
+                    }?.apply { way = 2 })?.hook()?.after {
                     when (way) {
                         2 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.resolve().optional()
                             .firstMethodOrNull { name = "getNotificationIcons" }
