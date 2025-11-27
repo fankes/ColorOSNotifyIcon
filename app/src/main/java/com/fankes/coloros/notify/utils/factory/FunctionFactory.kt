@@ -150,6 +150,8 @@ val isRealmeUI
  */
 val androidVersionCodeName
     get() = when (Build.VERSION.SDK_INT) {
+        36 -> "B"
+        35 -> "V"
         34 -> "U"
         33 -> "T"
         32 -> "S_V2"
