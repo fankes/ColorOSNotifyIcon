@@ -866,10 +866,12 @@ object SystemUIHooker : YukiBaseHooker() {
                     val mBase = instance.asResolver().optional().firstMethodOrNull {
                         name = "getBase"
                         emptyParameters()
+                        superclass()
                     }?.invokeQuietly()
                     val imageView = mBase?.asResolver()?.optional()?.firstFieldOrNull {
                         name = "mIcon"
                         type = ImageView::class
+                        superclass()
                     }?.getQuietly<ImageView>()
                     imageView?.apply {
                         ExpandableNotificationRowClass.resolve().optional()
