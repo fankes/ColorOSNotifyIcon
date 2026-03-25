@@ -115,6 +115,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 原生存在的类 */
     private val MediaDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.MediaData")
+  
+    /** 原生存在的类 */
+    private val ViewConfigCoordinatorClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.collection.coordinator.ViewConfigCoordinator")
 
     /** 原生存在的类 - 旧版本不存在 */
     private val LegacyNotificationIconAreaControllerImpl by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.phone.LegacyNotificationIconAreaControllerImpl")
@@ -142,7 +145,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationGroupTemplateWrapperClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupTemplateWrapper")
-
+  
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
         VariousClass(
@@ -292,6 +295,13 @@ object SystemUIHooker : YukiBaseHooker() {
             ?.firstMethodOrNull {
                 name = "proxyOnContentUpdated"
                 parameterCount = 1
+            } != null
+    
+    private val isNotificationPresenter
+        get() = StatusBarNotificationPresenterClass.resolve().optional(silent = true)
+            .firstMethodOrNull {
+                name = "updateNotificationsOnDensityOrFontScaleChanged"
+                emptyParameters()
             } != null
 
     /**
@@ -785,7 +795,10 @@ object SystemUIHooker : YukiBaseHooker() {
             if (args().first().any() != null) instance<ImageView>().also { registerWallpaperColorChanged(it) }
         }
         /** 注入通知控制器实例 */
-        StatusBarNotificationPresenterClass.resolve().optional().constructor {}.hookAll().after { notificationPresenter = instance }
+        if (isNotificationPresenter)
+            StatusBarNotificationPresenterClass.resolve().optional().constructor {}.hookAll().after { notificationPresenter = instance }
+        else
+            ViewConfigCoordinatorClass?.resolve()?.optional()?.constructor {}?.hookAll()?.after { notificationPresenter = instance }
         /** 替换通知面板背景 - 新版本 */
         if (!isOldNotificationBackground)
             OplusNotificationBackgroundViewClass?.resolve()?.optional()?.apply {
