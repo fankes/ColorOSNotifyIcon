@@ -115,6 +115,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 原生存在的类 */
     private val MediaDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.MediaData")
+  
+    /** 原生存在的类 */
+    private val ViewConfigCoordinatorClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.collection.coordinator.ViewConfigCoordinator")
 
     /** 原生存在的类 - 旧版本不存在 */
     private val LegacyNotificationIconAreaControllerImpl by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.phone.LegacyNotificationIconAreaControllerImpl")
@@ -142,10 +145,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationGroupTemplateWrapperClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupTemplateWrapper")
-    
-    /** 原生存在的类 */
-    private val ViewConfigCoordinatorClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.collection.coordinator.ViewConfigCoordinator")
-
+  
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
         VariousClass(
