@@ -739,9 +739,16 @@ object SystemUIHooker : YukiBaseHooker() {
             }
         }
         /** 拦截 ColorOS 使用应用图标判断 */
-        OplusNotificationSmallIconUtilClass?.resolve()?.optional()?.firstMethodOrNull {
-            name = "useAppIconForSmallIcon"
-            parameters(Notification::class)
+        OplusNotificationSmallIconUtilClass?.resolve()?.optional()?.apply {
+            firstMethodOrNull {
+                name = "useAppIconForSmallIcon"
+                parameters(Notification::class)
+            }?.hook()?.before {
+                resultFalse()
+            }
+        }
+        Notification::class.java.resolve().optional().firstMethodOrNull {
+            name = "shouldUseAppIcon"
         }?.hook()?.before {
             resultFalse()
         }
@@ -1020,7 +1027,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             }
                     }
                 }
-                
+
                 method {
                     name { it == "resolveHeaderViews" || it == "onContentUpdated" }
                 }.hookAll().after {
