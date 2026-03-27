@@ -34,6 +34,7 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.util.ArrayMap
@@ -146,6 +147,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationGroupTemplateWrapperClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupTemplateWrapper")
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private val OplusNotificationGroupExtImplClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupExtImpl")
 
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
@@ -516,7 +520,8 @@ object SystemUIHooker : YukiBaseHooker() {
         packageName: String,
         drawable: Drawable,
         iconColor: Int,
-        iconView: ImageView
+        iconView: ImageView,
+        header: Boolean = false
     ) = runInSafe {
         compatCustomIcon(context, isGrayscaleIcon, packageName).also { customTriple ->
             when {
@@ -563,11 +568,23 @@ object SystemUIHooker : YukiBaseHooker() {
                             .solidColor(newApplyColor)
                             .build()
                         setColorFilter(newStyle)
-                        setPadding(2.dp(context))
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                            if (header)
+                                setPadding(3.2f.dp(context))
+                            else
+                                setPadding(6.dp(context))
+                        else
+                            setPadding(2.dp(context))
                     } else {
                         background = null
                         setColorFilter(oldApplyColor)
-                        setPadding(0)
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                            if (header)
+                                setPadding(2.2f.dp(context))
+                            else
+                                setPadding(4.dp(context))
+                        else
+                            setPadding(0.dp(context))
                     }
                 }
                 else -> iconView.apply {
@@ -747,11 +764,6 @@ object SystemUIHooker : YukiBaseHooker() {
                 resultFalse()
             }
         }
-        Notification::class.java.resolve().optional().firstMethodOrNull {
-            name = "shouldUseAppIcon"
-        }?.hook()?.before {
-            resultFalse()
-        }
         /** 修复并替换 ColorOS 以及原生灰度图标色彩判断 */
         NotificationUtilsClass.resolve().optional(silent = true).apply {
             firstMethodOrNull {
@@ -878,6 +890,54 @@ object SystemUIHooker : YukiBaseHooker() {
         }
 
         if (isNewNotification) {
+            /** 阻止颜色覆盖 */
+            OplusNotificationGroupExtImplClass?.resolve()?.optional()?.firstMethodOrNull {
+                name = "updateExpandIconColorFilter"
+                parameterCount = 1
+            }?.hook()?.intercept()
+            /** 动态处理通知展开 */
+            ExpandableNotificationRowClass.resolve().optional().apply {
+                firstMethodOrNull {
+                    name = "onExpansionChanged"
+                    parameterCount = 2
+                }?.hook()?.before {
+                    ExpandableNotificationRowClass.resolve().optional()
+                        .firstFieldOrNull { name = "mChildrenContainer" }
+                        ?.of(instance)?.getQuietly()?.let {
+                            it.asResolver().optional().firstFieldOrNull {
+                                name = "mCurrentHeader"
+                                superclass()
+                            }?.get()
+                        }.also { header ->
+                            header?.asResolver()?.optional()?.firstFieldOrNull {
+                                name = "mIcon"
+                            }?.get<ImageView>()?.apply {
+                                ExpandableNotificationRowClass.resolve().optional()
+                                    .firstMethodOrNull { name = "getEntry" }
+                                    ?.of(instance)?.invokeQuietly()?.let {
+                                        it.asResolver().optional().firstMethodOrNull {
+                                            name = "getSbn"
+                                        }?.invoke<StatusBarNotification>()
+                                    }.also { nf ->
+                                        nf?.notification?.also {
+                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                                compatNotifyIcon(
+                                                    context = context,
+                                                    nf = nf,
+                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                    packageName = context.packageName,
+                                                    drawable = iconDrawable,
+                                                    iconColor = it.color,
+                                                    iconView = this,
+                                                    header = true
+                                                )
+                                            }
+                                        }
+                                    }
+                            }
+                        }
+                }
+            }
             /** 替换通知图标和样式 */
             OplusNotificationHeaderViewWrapperExImpClass?.resolve()?.optional()?.apply {
                 firstMethodOrNull {
