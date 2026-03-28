@@ -34,6 +34,7 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.util.ArrayMap
@@ -76,6 +77,7 @@ import com.highcapable.kavaref.extension.VariousClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.log.YLog
+import de.robv.android.xposed.XposedHelpers
 import top.defaults.drawabletoolbox.DrawableBuilder
 
 /**
@@ -115,7 +117,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 原生存在的类 */
     private val MediaDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.MediaData")
-  
+
     /** 原生存在的类 */
     private val ViewConfigCoordinatorClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.collection.coordinator.ViewConfigCoordinator")
 
@@ -145,7 +147,10 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationGroupTemplateWrapperClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupTemplateWrapper")
-  
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private val OplusNotificationGroupExtImplClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupExtImpl")
+
     /** 根据多个版本存在不同的包名相同的类 */
     private val OplusNotificationIconAreaControllerClass by lazyClass(
         VariousClass(
@@ -296,7 +301,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 name = "proxyOnContentUpdated"
                 parameterCount = 1
             } != null
-    
+
     private val isNotificationPresenter
         get() = StatusBarNotificationPresenterClass.resolve().optional(silent = true)
             .firstMethodOrNull {
@@ -315,15 +320,15 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
         if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
-                "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
-                "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
-                "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
-                "[Package Name]: ${nf?.packageName}\n" +
-                "[Sender Package Name]: ${nf?.opPkg}\n" +
-                "[Custom Icon]: $isCustom\n" +
-                "[Grayscale Icon]: $isGrayscale\n" +
-                "[From System Push]: ${nf?.isOplusPush}\n" +
-                "[String]: ${nf?.notification}"
+              "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
+              "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
+              "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
+              "[Package Name]: ${nf?.packageName}\n" +
+              "[Sender Package Name]: ${nf?.opPkg}\n" +
+              "[Custom Icon]: $isCustom\n" +
+              "[Grayscale Icon]: $isGrayscale\n" +
+              "[From System Push]: ${nf?.isOplusPush}\n" +
+              "[String]: ${nf?.notification}"
         )
     }
 
@@ -515,7 +520,8 @@ object SystemUIHooker : YukiBaseHooker() {
         packageName: String,
         drawable: Drawable,
         iconColor: Int,
-        iconView: ImageView
+        iconView: ImageView,
+        header: Boolean = false
     ) = runInSafe {
         compatCustomIcon(context, isGrayscaleIcon, packageName).also { customTriple ->
             when {
@@ -562,11 +568,23 @@ object SystemUIHooker : YukiBaseHooker() {
                             .solidColor(newApplyColor)
                             .build()
                         setColorFilter(newStyle)
-                        setPadding(2.dp(context))
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                            if (header)
+                                setPadding(3.2f.dp(context))
+                            else
+                                setPadding(6.dp(context))
+                        else
+                            setPadding(2.dp(context))
                     } else {
                         background = null
                         setColorFilter(oldApplyColor)
-                        setPadding(0)
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                            if (header)
+                                setPadding(2.2f.dp(context))
+                            else
+                                setPadding(4.dp(context))
+                        else
+                            setPadding(0.dp(context))
                     }
                 }
                 else -> iconView.apply {
@@ -738,11 +756,13 @@ object SystemUIHooker : YukiBaseHooker() {
             }
         }
         /** 拦截 ColorOS 使用应用图标判断 */
-        OplusNotificationSmallIconUtilClass?.resolve()?.optional()?.firstMethodOrNull {
-            name = "useAppIconForSmallIcon"
-            parameters(Notification::class)
-        }?.hook()?.before {
-            resultFalse()
+        OplusNotificationSmallIconUtilClass?.resolve()?.optional()?.apply {
+            firstMethodOrNull {
+                name = "useAppIconForSmallIcon"
+                parameters(Notification::class)
+            }?.hook()?.before {
+                resultFalse()
+            }
         }
         /** 修复并替换 ColorOS 以及原生灰度图标色彩判断 */
         NotificationUtilsClass.resolve().optional(silent = true).apply {
@@ -870,23 +890,62 @@ object SystemUIHooker : YukiBaseHooker() {
         }
 
         if (isNewNotification) {
+            /** 阻止颜色覆盖 */
+            OplusNotificationGroupExtImplClass?.resolve()?.optional()?.firstMethodOrNull {
+                name = "updateExpandIconColorFilter"
+                parameterCount = 1
+            }?.hook()?.intercept()
+            /** 动态处理通知展开 */
+            ExpandableNotificationRowClass.resolve().optional().apply {
+                firstMethodOrNull {
+                    name = "onExpansionChanged"
+                    parameterCount = 2
+                }?.hook()?.before {
+                    ExpandableNotificationRowClass.resolve().optional()
+                        .firstFieldOrNull { name = "mChildrenContainer" }
+                        ?.of(instance)?.getQuietly()?.let {
+                            it.asResolver().optional().firstFieldOrNull {
+                                name = "mCurrentHeader"
+                                superclass()
+                            }?.get()
+                        }.also { header ->
+                            header?.asResolver()?.optional()?.firstFieldOrNull {
+                                name = "mIcon"
+                            }?.get<ImageView>()?.apply {
+                                ExpandableNotificationRowClass.resolve().optional()
+                                    .firstMethodOrNull { name = "getEntry" }
+                                    ?.of(instance)?.invokeQuietly()?.let {
+                                        it.asResolver().optional().firstMethodOrNull {
+                                            name = "getSbn"
+                                        }?.invoke<StatusBarNotification>()
+                                    }.also { nf ->
+                                        nf?.notification?.also {
+                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                                compatNotifyIcon(
+                                                    context = context,
+                                                    nf = nf,
+                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                    packageName = context.packageName,
+                                                    drawable = iconDrawable,
+                                                    iconColor = it.color,
+                                                    iconView = this,
+                                                    header = true
+                                                )
+                                            }
+                                        }
+                                    }
+                            }
+                        }
+                }
+            }
             /** 替换通知图标和样式 */
             OplusNotificationHeaderViewWrapperExImpClass?.resolve()?.optional()?.apply {
                 firstMethodOrNull {
                     name = "proxyOnContentUpdated"
                     parameterCount = 1
                 }?.hook()?.after {
-                    val mBase = instance.asResolver().optional().firstMethodOrNull {
-                        name = "getBase"
-                        emptyParameters()
-                        superclass()
-                    }?.invokeQuietly()
-                    val imageView = mBase?.asResolver()?.optional()?.firstFieldOrNull {
-                        name = "mIcon"
-                        type = ImageView::class
-                        superclass()
-                    }?.getQuietly<ImageView>()
-                    imageView?.apply {
+                    val imageView = XposedHelpers.getObjectField(XposedHelpers.callMethod(instance, "getBase"), "mIcon") as ImageView
+                    imageView.apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(args[0])?.invokeQuietly()?.let {
@@ -969,9 +1028,9 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "updateIconsForLayout"
                     parameterCount = 1
                 }?.apply { way = 1 }
-                    ?: firstMethodOrNull {
-                        name = "updateIconsForLayout"
-                    }?.apply { way = 2 })?.hook()?.after {
+                ?: firstMethodOrNull {
+                    name = "updateIconsForLayout"
+                }?.apply { way = 2 })?.hook()?.after {
                     when (way) {
                         2 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.resolve().optional()
                             .firstMethodOrNull { name = "getNotificationIcons" }
@@ -998,6 +1057,37 @@ object SystemUIHooker : YukiBaseHooker() {
 
             /** 替换通知图标和样式 */
             NotificationHeaderViewWrapperClass.resolve().optional().apply {
+                method {
+                    name { it == "updateExpandability" || it == "setExpanded" }
+                }.hookAll().before {
+                    firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
+                        ExpandableNotificationRowClass.resolve().optional()
+                            .firstMethodOrNull { name = "getEntry" }
+                            ?.of(NotificationViewWrapperClass.resolve().optional().firstFieldOrNull {
+                                name = "mRow"
+                            }?.of(instance)?.get())?.invokeQuietly()?.let {
+                                it.asResolver().optional().firstMethodOrNull {
+                                    name = "getSbn"
+                                }?.invoke<StatusBarNotification>()
+                            }.also { nf ->
+                                nf?.notification?.also {
+                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                        /** 执行替换 */
+                                        compatNotifyIcon(
+                                            context = context,
+                                            nf = nf,
+                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                            packageName = context.packageName,
+                                            drawable = iconDrawable,
+                                            iconColor = it.color,
+                                            iconView = this
+                                        )
+                                    }
+                                }
+                            }
+                    }
+                }
+
                 method {
                     name { it == "resolveHeaderViews" || it == "onContentUpdated" }
                 }.hookAll().after {

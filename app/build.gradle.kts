@@ -51,7 +51,7 @@ androidComponents {
         it.outputs.forEach { output ->
             val currentType = it.buildType
             val currentSuffix = gropify.github.ci.commit.id.let { suffix ->
-                if (suffix.isNotBlank()) "-$suffix" else ""
+                if (!suffix.isBlank()) "-$suffix" else ""
             }
             val currentVersion = "${output.versionName.get()}$currentSuffix(${output.versionCode.get()})"
             if (output is com.android.build.api.variant.impl.VariantOutputImpl)

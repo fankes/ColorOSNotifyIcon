@@ -583,9 +583,9 @@
                         android:layout_marginLeft="5dp"
                         android:layout_marginTop="5dp"
                         android:layout_marginRight="5dp"
-                        android:max="10"
+                        android:max="15"
                         android:min="0"
-                        android:progress="10" />
+                        android:progress="15" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -616,7 +616,7 @@
                             android:gravity="center"
                             android:maxWidth="100dp"
                             android:singleLine="true"
-                            android:text="10 dp"
+                            android:text="15 dp"
                             android:textColor="@color/colorTextGray"
                             android:textSize="15sp"
                             android:textStyle="bold" />
