@@ -32,11 +32,8 @@ import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Outline
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
-import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
@@ -529,11 +526,8 @@ object SystemUIHooker : YukiBaseHooker() {
         compatCustomIcon(context, isGrayscaleIcon, packageName).also { customTriple ->
             when {
                 ConfigData.isEnableNotifyIconForceAppIcon -> iconView.apply {
-                    val newDrawable = appIcons[packageName] ?: context.appIconOf(packageName)
-                    /** 仅在图标变化时重新设置，防止偶发性闪烁 */
-                    if (drawable == newDrawable) return@apply
                     /** 重新设置图标 */
-                    setImageDrawable(newDrawable)
+                    setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))
                     /** 设置默认样式 */
                     setDefaultNotifyIconViewStyle()
                 }
@@ -573,7 +567,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             .cornerRadius(ConfigData.notifyIconCornerSize.dp(context))
                             .solidColor(newApplyColor)
                             .build()
-                        applyIconColorFilter(newStyle)
+                        setColorFilter(newStyle)
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
                             if (header)
                                 setPadding(3.2f.dp(context))
@@ -583,7 +577,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             setPadding(2.dp(context))
                     } else {
                         background = null
-                        applyIconColorFilter(oldApplyColor)
+                        setColorFilter(oldApplyColor)
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
                             if (header)
                                 setPadding(2.2f.dp(context))
@@ -657,27 +651,6 @@ object SystemUIHooker : YukiBaseHooker() {
         background = null
         /** 清除着色 */
         colorFilter = null
-    }
-
-    /**
-     * 对通知图标应用颜色滤镜
-     *
-     * 若图标为 [LayerDrawable]，仅对第一层（图标本身）应用颜色滤镜，
-     * 保留其他层（如小角标）的原始颜色，避免角标无颜色填充问题。
-     * @param color 要应用的颜色
-     */
-    private fun ImageView.applyIconColorFilter(color: Int) {
-        val d = drawable
-        if (d is LayerDrawable && d.numberOfLayers > 1) {
-            /** mutate() 对 LayerDrawable 始终返回 LayerDrawable 自身，此处强转是安全的 */
-            val mutableD = d.mutate() as LayerDrawable
-            mutableD.getDrawable(0)?.setColorFilter(PorterDuffColorFilter(color, PorterDuff.Mode.SRC_ATOP))
-            for (i in 1 until mutableD.numberOfLayers) {
-                mutableD.getDrawable(i)?.clearColorFilter()
-            }
-        } else {
-            setColorFilter(color)
-        }
     }
 
     /** 注册生命周期 */
@@ -1144,9 +1117,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                         }
                                         doParse()
                                         /** 延迟重新设置防止部分机型的系统重新设置图标出现图标着色后黑白块问题 */
-                                        /** 强制 APP 图标模式下跳过延迟重新设置，防止偶发性闪烁 */
-                                        if (ConfigData.isEnableNotifyIconForceAppIcon.not())
-                                            delayedRun(ms = 1500) { doParse() }
+                                        delayedRun(ms = 1500) { doParse() }
                                     }
                                 }
                             }
