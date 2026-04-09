@@ -720,7 +720,7 @@ object SystemUIHooker : YukiBaseHooker() {
     
     /** 通过媒体会话和AOSP方法判断是否为媒体通知 */
     fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
-        if (isMediaNotificationVanilla(notification)) return true
+        if (isMediaNotificationAOSP(notification)) return true
 
         val mediaSessionManager: MediaSessionManager = getMediaSessionManager(context)
 
@@ -817,7 +817,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     NotificationEntryClass.resolve().optional().firstMethodOrNull {
                         name = "getSbn"
                     }?.of(args().first().any())?.invokeQuietly<StatusBarNotification>()?.also { nf ->
-                        if (!isMediaNotification(context, nf.notification, context.packageName)) nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                        if (!isMediaNotification(context, nf.notification, nf.packageName)) nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                             compatStatusIcon(
                                 context = context,
                                 nf = nf,
