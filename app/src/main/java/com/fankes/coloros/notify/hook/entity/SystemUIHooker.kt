@@ -1,3 +1,4 @@
+
 /*
  * ColorOSNotifyIcon - Optimize notification icons for ColorOS and adapt to native notification icon specifications.
  * Copyright (C) 20174 Fankes Studio(qzmmcn@163.com)
@@ -34,6 +35,7 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import android.media.session.MediaSessionManager
 import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
@@ -255,6 +257,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 状态栏通知图标数组 */
     private var notificationIconInstances = ArrayList<View>()
+
+    /** 媒体会话管理器 */
+    private var mediaSessionManager: MediaSessionManager? = null
 
     /** 媒体通知 [View] */
     private var notificationPlayerView: View? = null
@@ -700,6 +705,34 @@ object SystemUIHooker : YukiBaseHooker() {
         IconPackParams(param = this).iconDatas.apply { if (isNotEmpty()) forEach { iconDatas.add(it) } }
     }
 
+    /** 获取媒体会话管理器 */
+    fun getMediaSessionManager(context: Context): MediaSessionManager {
+        if (mediaSessionManager == null)
+            mediaSessionManager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+
+        return mediaSessionManager!!
+    }
+
+    /** 判断是否为媒体通知 */
+    fun isMediaNotificationAOSP(notification: Notification?): Boolean {
+        if (notification == null) return false
+
+        return notification.javaClass.resolve().firstMethod { name = "isMediaNotification" }.of(notification).invoke<Boolean>() == true
+    }
+
+    /** 通过媒体会话和AOSP方法判断是否为媒体通知 */
+    fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
+        if (isMediaNotificationAOSP(notification)) return true
+
+        val mediaSessionManager: MediaSessionManager = getMediaSessionManager(context)
+
+        for (mediaController in mediaSessionManager.getActiveSessions(null))
+            if (packageName == mediaController.getPackageName() && notification.contentView != null)
+                return true
+
+        return false
+    }
+
     /**
      * 刷新缓存数据
      * @param isRefreshCacheOnly 仅刷新缓存不刷新图标和通知改变 - 默认：否
@@ -786,7 +819,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     NotificationEntryClass.resolve().optional().firstMethodOrNull {
                         name = "getSbn"
                     }?.of(args().first().any())?.invokeQuietly<StatusBarNotification>()?.also { nf ->
-                        nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                        if (!isMediaNotification(context, nf.notification, nf.packageName)) nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                             compatStatusIcon(
                                 context = context,
                                 nf = nf,
@@ -920,7 +953,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                         }?.invoke<StatusBarNotification>()
                                     }.also { nf ->
                                         nf?.notification?.also {
-                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                            if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                                 compatNotifyIcon(
                                                     context = context,
                                                     nf = nf,
@@ -954,7 +987,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         compatNotifyIcon(
                                             context = context,
                                             nf = nf,
@@ -997,7 +1030,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 if (context == null) return@also
 
                                 nf?.notification?.also {
-                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         compatNotifyIcon(
                                             context = context,
                                             nf = nf,
@@ -1071,7 +1104,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         /** 执行替换 */
                                         compatNotifyIcon(
                                             context = context,
@@ -1102,7 +1135,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         /** 执行替换 */
                                         fun doParse() {
                                             compatNotifyIcon(
