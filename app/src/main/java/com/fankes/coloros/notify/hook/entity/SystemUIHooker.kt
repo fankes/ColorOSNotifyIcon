@@ -1,3 +1,4 @@
+
 /*
  * ColorOSNotifyIcon - Optimize notification icons for ColorOS and adapt to native notification icon specifications.
  * Copyright (C) 20174 Fankes Studio(qzmmcn@163.com)
@@ -34,6 +35,7 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
+import android.media.session.MediaSessionManager
 import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
@@ -258,7 +260,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 媒体会话管理器 */
     private var mediaSessionManager: MediaSessionManager? = null
-    
+
     /** 媒体通知 [View] */
     private var notificationPlayerView: View? = null
 
@@ -702,7 +704,7 @@ object SystemUIHooker : YukiBaseHooker() {
         iconDatas.clear()
         IconPackParams(param = this).iconDatas.apply { if (isNotEmpty()) forEach { iconDatas.add(it) } }
     }
-    
+
     /** 获取媒体会话管理器 */
     fun getMediaSessionManager(context: Context): MediaSessionManager {
         if (mediaSessionManager == null)
@@ -717,7 +719,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
         return notification.javaClass.resolve().firstMethod { name = "isMediaNotification" }.of(notification).invoke<Boolean>() == true
     }
-    
+
     /** 通过媒体会话和AOSP方法判断是否为媒体通知 */
     fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
         if (isMediaNotificationAOSP(notification)) return true
