@@ -301,6 +301,14 @@ object SystemUIHooker : YukiBaseHooker() {
             } != null
 
     /**
+     * 取通知头部包装器的图标 [ImageView]
+     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
+     * @return [ImageView] or null
+     */
+    private fun headerIconOf(headerWrapperExImp: Any?) =
+        safeOfNull { XposedHelpers.getObjectField(XposedHelpers.callMethod(headerWrapperExImp, "getBase"), "mIcon") as? ImageView }
+
+    /**
      * 判断通知是否为新版本
      * @return [Boolean]
      */
@@ -987,8 +995,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "proxyOnContentUpdated"
                     parameterCount = 1
                 }?.hook()?.after {
-                    val imageView = XposedHelpers.getObjectField(XposedHelpers.callMethod(instance, "getBase"), "mIcon") as ImageView
-                    imageView.apply {
+                    headerIconOf(instance).apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(args[0])?.invokeQuietly()?.let {
