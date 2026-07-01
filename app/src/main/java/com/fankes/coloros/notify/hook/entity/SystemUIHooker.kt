@@ -995,7 +995,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "proxyOnContentUpdated"
                     parameterCount = 1
                 }?.hook()?.after {
-                    headerIconOf(instance).apply {
+                    headerIconOf(instance)?.apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(args[0])?.invokeQuietly()?.let {
