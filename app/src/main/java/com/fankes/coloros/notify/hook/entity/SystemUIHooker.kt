@@ -67,6 +67,7 @@ import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
+import com.fankes.coloros.notify.utils.factory.safeOfNull
 import com.fankes.coloros.notify.utils.factory.systemAccentColor
 import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
 import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
@@ -1113,7 +1114,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
             /** 替换通知图标和样式 */
             NotificationHeaderViewWrapperClass.resolve().optional().apply {
-                method {
+                /*method {
                     name { it == "updateExpandability" || it == "setExpanded" }
                 }.hookAll().before {
                     firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
@@ -1142,7 +1143,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }
                             }
                     }
-                }
+                }*/
 
                 method {
                     name { it == "resolveHeaderViews" || it == "onContentUpdated" }
