@@ -81,6 +81,7 @@ import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.log.YLog
 import de.robv.android.xposed.XposedHelpers
 import top.defaults.drawabletoolbox.DrawableBuilder
+import java.util.WeakHashMap
 
 /**
  * 系统界面核心 Hook 类
@@ -278,6 +279,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 是否已经使用过缓存刷新功能 */
     private var isUsingCachingMethod = false
+    
+    /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
+    private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
 
     /**
      * 判断通知是否来自系统推送
@@ -531,12 +535,16 @@ object SystemUIHooker : YukiBaseHooker() {
         compatCustomIcon(context, isGrayscaleIcon, if (nf.isOplusPush) nf.packageName else packageName).also { customTriple ->
             when {
                 ConfigData.isEnableNotifyIconForceAppIcon -> iconView.apply {
+                    /** 标记为已处理但非本模块接管 */
+                    moduleStyledIcons[this] = false
                     /** 重新设置图标 */
                     setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))
                     /** 设置默认样式 */
                     setDefaultNotifyIconViewStyle()
                 }
                 (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon -> iconView.apply {
+                    /** 标记为本模块接管（兜底判断/防止重复处理用） */
+                    moduleStyledIcons[this] = true
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
                     /** 重新设置图标 */
@@ -593,6 +601,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     }
                 }
                 else -> iconView.apply {
+                    /** 标记为已处理但非本模块接管 */
+                    moduleStyledIcons[this] = false
                     /** 重新设置图标 */
                     setImageDrawable(nf.compatPushingIcon(drawable))
                     /** 设置默认样式 */
@@ -706,22 +716,22 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /** 获取媒体会话管理器 */
-    fun getMediaSessionManager(context: Context): MediaSessionManager {
+    /*fun getMediaSessionManager(context: Context): MediaSessionManager {
         if (mediaSessionManager == null)
             mediaSessionManager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
 
         return mediaSessionManager!!
-    }
+    }*/
 
     /** 判断是否为媒体通知 */
-    fun isMediaNotificationAOSP(notification: Notification?): Boolean {
+    /*fun isMediaNotificationAOSP(notification: Notification?): Boolean {
         if (notification == null) return false
 
         return notification.javaClass.resolve().firstMethod { name = "isMediaNotification" }.of(notification).invoke<Boolean>() == true
-    }
+    }*/
 
     /** 通过媒体会话和AOSP方法判断是否为媒体通知 */
-    fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
+    /*fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
         if (isMediaNotificationAOSP(notification)) return true
 
         val mediaSessionManager: MediaSessionManager = getMediaSessionManager(context)
@@ -731,7 +741,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 return true
 
         return false
-    }
+    }*/
 
     /**
      * 刷新缓存数据
@@ -819,7 +829,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     NotificationEntryClass.resolve().optional().firstMethodOrNull {
                         name = "getSbn"
                     }?.of(args().first().any())?.invokeQuietly<StatusBarNotification>()?.also { nf ->
-                        if (!isMediaNotification(context, nf.notification, nf.packageName)) nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                        nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                             compatStatusIcon(
                                 context = context,
                                 nf = nf,
@@ -953,7 +963,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                         }?.invoke<StatusBarNotification>()
                                     }.also { nf ->
                                         nf?.notification?.also {
-                                            if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                                 compatNotifyIcon(
                                                     context = context,
                                                     nf = nf,
@@ -987,7 +997,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         compatNotifyIcon(
                                             context = context,
                                             nf = nf,
@@ -1002,19 +1012,25 @@ object SystemUIHooker : YukiBaseHooker() {
                             }
                     }
                 }
+                firstMethodOrNull {
+                    name = "updateIconColor"
+                    emptyParameters()
+                }?.hook()?.before {
+                    if (moduleStyledIcons[headerIconOf(instance)] == true) resultFalse()
+                }
             }
 
             OplusNotificationGroupTemplateWrapperClass?.resolve()?.optional()?.apply {
                 firstMethodOrNull {
                     name = "initIcon"
                 }?.hook()?.before {
-                    val instanceContext = firstFieldOrNull {
+                    /*val instanceContext = firstFieldOrNull {
                         name = "context"
                     }?.of(instance)?.get() as Context?
                     if (instanceContext == null)
-                        return@before
+                        return@before*/
                     resultNull()
-                    NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
+                    /*NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(NotificationViewWrapperClass.resolve().optional().firstFieldOrNull {
@@ -1043,7 +1059,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                     }
                                 }
                             }
-                    }
+                    }*/
                 }
             }
         } else {
@@ -1104,7 +1120,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         /** 执行替换 */
                                         compatNotifyIcon(
                                             context = context,
@@ -1135,7 +1151,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
                                         /** 执行替换 */
                                         fun doParse() {
                                             compatNotifyIcon(
