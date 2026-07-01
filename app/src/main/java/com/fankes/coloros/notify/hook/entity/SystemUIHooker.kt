@@ -291,6 +291,14 @@ object SystemUIHooker : YukiBaseHooker() {
     private val StatusBarNotification.isOplusPush get() = opPkg == PackageName.SYSTEM_FRAMEWORK && opPkg != packageName
 
     /**
+     * 判断通知是否由系统生成 (ColorOS 16.1折叠通知)
+     * @return [Boolean]
+     */
+    private fun isCollapseNotification(nfPackageName: String, contextPackageName: String) : Boolean {
+        return contextPackageName == PackageName.SYSTEMUI && nfPackageName != contextPackageName
+    }
+
+    /**
      * 判断通知背景是否为旧版本
      * @return [Boolean]
      */
@@ -541,13 +549,14 @@ object SystemUIHooker : YukiBaseHooker() {
         iconView: ImageView,
         header: Boolean = false
     ) = runInSafe {
-        compatCustomIcon(context, isGrayscaleIcon, if (nf.isOplusPush) nf.packageName else packageName).also { customTriple ->
+        val realPackageName = if (nf.isOplusPush || isCollapseNotification(nf.packageName, packageName)) nf.packageName else packageName
+        compatCustomIcon(context, isGrayscaleIcon, realPackageName).also { customTriple ->
             when {
                 ConfigData.isEnableNotifyIconForceAppIcon -> iconView.apply {
                     /** 标记为已处理但非本模块接管 */
                     moduleStyledIcons[this] = false
                     /** 重新设置图标 */
-                    setImageDrawable(appIcons[packageName] ?: context.appIconOf(packageName))
+                    setImageDrawable(appIcons[realPackageName] ?: context.appIconOf(realPackageName))
                     /** 设置默认样式 */
                     setDefaultNotifyIconViewStyle()
                 }
