@@ -95,7 +95,7 @@ This project will not be adapted i18n, please stay tuned for my new projects in 
 
 ## Star History
 
-![Star History Chart](https://api.star-history.com/svg?repos=fankes/ColorOSNotifyIcon&type=Date)
+[![Star History Chart](https://api.star-history.com/chart?repos=fankes/ColorOSNotifyIcon&type=date&legend=top-left&sealed_token=6F-xnv_jLhf5xImaia70rtxXh8PS_8jLSvUa6ssR0Sn1KJjeF0zpbVsnuwCp8jXijJ7cA7r_s9uLWb7AoID_ZizuPnhEjtGe2LnLHoucO8QtlQrJbg_t0Q)](https://www.star-history.com/?repos=fankes%2FColorOSNotifyIcon&type=date&legend=top-left)
 
 ## 隐私政策
 
