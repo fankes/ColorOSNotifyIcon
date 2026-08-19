@@ -25,24 +25,27 @@
 
 package com.fankes.coloros.notify.hook.entity
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.WallpaperManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Outline
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.media.session.MediaSessionManager
-import android.os.Build
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.util.ArrayMap
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
@@ -52,6 +55,8 @@ import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.const.PackageName
 import com.fankes.coloros.notify.data.ConfigData
+import com.fankes.coloros.notify.hook.entity.SystemUIHooker.NOTIFY_ICON_PADDING_RATIO_MD3
+import com.fankes.coloros.notify.hook.entity.SystemUIHooker.OplusNotificationHeaderViewWrapperExImpClass
 import com.fankes.coloros.notify.param.IconPackParams
 import com.fankes.coloros.notify.param.factory.isAppNotifyHookAllOf
 import com.fankes.coloros.notify.param.factory.isAppNotifyHookOf
@@ -59,7 +64,6 @@ import com.fankes.coloros.notify.utils.factory.appIconOf
 import com.fankes.coloros.notify.utils.factory.appNameOf
 import com.fankes.coloros.notify.utils.factory.colorAlphaOf
 import com.fankes.coloros.notify.utils.factory.delayedRun
-import com.fankes.coloros.notify.utils.factory.dp
 import com.fankes.coloros.notify.utils.factory.dpFloat
 import com.fankes.coloros.notify.utils.factory.drawableOf
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
@@ -73,6 +77,7 @@ import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
 import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.highcapable.betterandroid.ui.extension.view.outlineProvider
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.kavaref.condition.type.VagueType
@@ -81,7 +86,6 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.log.YLog
 import de.robv.android.xposed.XposedHelpers
-import top.defaults.drawabletoolbox.DrawableBuilder
 import java.util.WeakHashMap
 
 /**
@@ -280,9 +284,20 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 是否已经使用过缓存刷新功能 */
     private var isUsingCachingMethod = false
-    
+
     /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
     private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
+
+    /**
+     * 通知面板图标内边距比例 (MD3 风格) - 内边距占图标视图尺寸的比例 (0f~0.5f)
+     *
+     * 按视图尺寸而非绝对 dp 计算，折叠与展开的图标视图大小不同，等比内边距才能保证缩小比例一致；
+     * 数值越大图标越小，想进一步缩小图标改这里即可
+     */
+    private const val NOTIFY_ICON_PADDING_RATIO_MD3 = 0.17f
+
+    /** 通知面板图标内边距比例 (经典风格) - 含义同 [NOTIFY_ICON_PADDING_RATIO_MD3] */
+    private const val NOTIFY_ICON_PADDING_RATIO_CLASSIC = 0.04f
 
     /**
      * 判断通知是否来自系统推送
@@ -310,14 +325,6 @@ object SystemUIHooker : YukiBaseHooker() {
             } != null
 
     /**
-     * 取通知头部包装器的图标 [ImageView]
-     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
-     * @return [ImageView] or null
-     */
-    private fun headerIconOf(headerWrapperExImp: Any?) =
-        safeOfNull { XposedHelpers.getObjectField(XposedHelpers.callMethod(headerWrapperExImp, "getBase"), "mIcon") as? ImageView }
-
-    /**
      * 判断通知是否为新版本
      * @return [Boolean]
      */
@@ -343,7 +350,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param isCustom 是否为通知优化生效图标
      * @param isGrayscale 是否为灰度图标
      */
-    private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean) {
+    private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean, contextPackageName: String, iconColor: Int) {
         if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
               "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
@@ -351,10 +358,12 @@ object SystemUIHooker : YukiBaseHooker() {
               "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
               "[Package Name]: ${nf?.packageName}\n" +
               "[Sender Package Name]: ${nf?.opPkg}\n" +
+              "[Context Package Name]: $contextPackageName\n" +
               "[Custom Icon]: $isCustom\n" +
               "[Grayscale Icon]: $isGrayscale\n" +
               "[From System Push]: ${nf?.isOplusPush}\n" +
-              "[String]: ${nf?.notification}"
+              "[String]: ${nf?.notification}\n" +
+              "[Color]: $iconColor"
         )
     }
 
@@ -525,7 +534,7 @@ object SystemUIHooker : YukiBaseHooker() {
         drawable: Drawable
     ) = compatCustomIcon(context, isGrayscaleIcon, packageName).let {
         /** 打印日志 */
-        loggerDebug(tag = "Status Bar Icon", context, nf, isCustom = it.first != null && it.third.not(), isGrayscaleIcon)
+        loggerDebug(tag = "Status Bar Icon", context, nf, isCustom = it.first != null && it.third.not(), isGrayscaleIcon, context.packageName, nf.notification.color)
         it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
     }
 
@@ -546,8 +555,7 @@ object SystemUIHooker : YukiBaseHooker() {
         packageName: String,
         drawable: Drawable,
         iconColor: Int,
-        iconView: ImageView,
-        header: Boolean = false
+        iconView: ImageView
     ) = runInSafe {
         val realPackageName = if (nf.isOplusPush || isCollapseNotification(nf.packageName, packageName)) nf.packageName else packageName
         compatCustomIcon(context, isGrayscaleIcon, realPackageName).also { customTriple ->
@@ -563,16 +571,28 @@ object SystemUIHooker : YukiBaseHooker() {
                 (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon -> iconView.apply {
                     /** 标记为本模块接管（兜底判断/防止重复处理用） */
                     moduleStyledIcons[this] = true
-                    /** 设置不要裁切到边界 */
+                    /** 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/内边距/着色，并用 FIT_XY 让 Drawable 充满视图 */
                     clipToOutline = false
-                    /** 重新设置图标 */
-                    setImageDrawable(customTriple.first ?: drawable)
+                    scaleType = ImageView.ScaleType.FIT_XY
+                    background = null
+                    setPadding(0)
+                    clearColorFilter()
+
+                    val isMd3 = ConfigData.isEnableMd3NotifyIconStyle
+                    /** 图标视图尺寸 */
+                    val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
+                    /** 图标相对背景的留白比例，折叠/展开等比一致 */
+                    val padRatio = if (isMd3) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
+                    /** 图标实际显示尺寸 - 位图直接优化到该尺寸，避免二次缩放产生毛边 */
+                    val contentPx = if (viewSizePx > 0) (viewSizePx * (1f - padRatio * 2)).toInt().coerceAtLeast(1) else 0
+                    /** 优化(锐化)后的单色图标 */
+                    val glyph = (customTriple.first ?: drawable).let { d ->
+                        (d as? BitmapDrawable)?.bitmap
+                            ?.let { BitmapCompatTool.optimizeForSize(it, contentPx).toDrawable(resources) } ?: d
+                    }
 
                     /** 旧版风格 */
                     val oldStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
-
-                    /** 新版风格 */
-                    val newStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else Color.WHITE
 
                     /** 原生着色 */
                     val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
@@ -587,36 +607,28 @@ object SystemUIHooker : YukiBaseHooker() {
                     /** 旧版图标着色 */
                     val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
 
-                    /** 新版图标着色 */
+                    /** 新版图标(背景)着色 */
                     val newApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style
 
-                    /** 判断风格并开始 Hook */
-                    if (ConfigData.isEnableMd3NotifyIconStyle) {
-                        /** 通知图标边框圆角大小 */
-                        background = DrawableBuilder()
-                            .rectangle()
-                            .cornerRadius(ConfigData.notifyIconCornerSize.dp(context))
-                            .solidColor(newApplyColor)
-                            .build()
-                        setColorFilter(newStyle)
-                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
-                            if (header)
-                                setPadding(3.2f.dp(context))
-                            else
-                                setPadding(6.dp(context))
-                        else
-                            setPadding(2.dp(context))
-                    } else {
-                        background = null
-                        setColorFilter(oldApplyColor)
-                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
-                            if (header)
-                                setPadding(2.2f.dp(context))
-                            else
-                                setPadding(4.dp(context))
-                        else
-                            setPadding(0.dp(context))
-                    }
+                    /**
+                     * 用自绘 [CustomIconDrawable] 承载“背景 + 着色图标”，其内部把 setColorFilter/setTint 覆盖为重申自身颜色，
+                     * 背景也画在图标自身而非视图 background
+                     */
+                    setImageDrawable(
+                        if (isMd3) CustomIconDrawable(
+                            glyph = glyph,
+                            badgeColor = newApplyColor,
+                            glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
+                            cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
+                            paddingRatio = padRatio
+                        ) else CustomIconDrawable(
+                            glyph = glyph,
+                            badgeColor = Color.TRANSPARENT,
+                            glyphColor = oldApplyColor,
+                            cornerRadiusPx = 0f,
+                            paddingRatio = padRatio
+                        )
+                    )
                 }
                 else -> iconView.apply {
                     /** 标记为已处理但非本模块接管 */
@@ -630,7 +642,43 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 是否为通知优化生效图标 */
             val isCustom = customTriple.first != null && customTriple.third.not()
             /** 打印日志 */
-            loggerDebug(tag = "Notification Panel Icon", iconView.context, nf, isCustom = isCustom, isGrayscaleIcon)
+            loggerDebug(tag = "Notification Panel Icon", iconView.context, nf, isCustom = isCustom, isGrayscaleIcon, realPackageName, customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: 0)
+        }
+    }
+
+    /**
+     * 取通知头部包装器的图标 [ImageView]
+     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
+     * @return [ImageView] or null
+     */
+    private fun headerIconOf(headerWrapperExImp: Any?) =
+        safeOfNull { XposedHelpers.getObjectField(XposedHelpers.callMethod(headerWrapperExImp, "getBase"), "mIcon") as? ImageView }
+
+    /**
+     * 对通知头部图标应用本模块样式
+     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
+     */
+    private fun styleHeaderIcon(headerWrapperExImp: Any?) = runInSafe {
+        val base = headerWrapperExImp?.let { XposedHelpers.callMethod(it, "getBase") } ?: return@runInSafe
+        val iconView = XposedHelpers.getObjectField(base, "mIcon") as? ImageView ?: return@runInSafe
+        val row = NotificationViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mRow" }?.of(base)?.get()
+        val nf = ExpandableNotificationRowClass.resolve().optional().firstMethodOrNull { name = "getEntry" }
+            ?.of(row)?.invokeQuietly()?.let {
+                it.asResolver().optional().firstMethodOrNull { name = "getSbn" }?.invoke<StatusBarNotification>()
+            } ?: return@runInSafe
+        val context = iconView.context
+        nf.notification?.also {
+            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                compatNotifyIcon(
+                    context = context,
+                    nf = nf,
+                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                    packageName = context.packageName,
+                    drawable = iconDrawable,
+                    iconColor = it.color,
+                    iconView = iconView
+                )
+            }
         }
     }
 
@@ -666,17 +714,16 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /** 设置默认通知栏通知图标样式 */
+    @SuppressLint("ReplaceWithViewOutlineProviderExtension")
     private fun ImageView.setDefaultNotifyIconViewStyle() {
         /** 设置裁切到边界 */
         clipToOutline = true
         /** 设置一个圆角轮廓裁切 */
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, out: Outline) {
-                out.setRoundRect(
-                    0, 0,
-                    view.width, view.height, 3.dpFloat(context)
-                )
-            }
+        outlineProvider { view, outline ->
+            outline.setRoundRect(
+                0, 0,
+                view.width, view.height, 3.dpFloat(context)
+            )
         }
         /** 清除图标间距 */
         setPadding(0)
@@ -734,22 +781,22 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /** 获取媒体会话管理器 */
-    /*fun getMediaSessionManager(context: Context): MediaSessionManager {
+    fun getMediaSessionManager(context: Context): MediaSessionManager {
         if (mediaSessionManager == null)
             mediaSessionManager = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
 
         return mediaSessionManager!!
-    }*/
+    }
 
     /** 判断是否为媒体通知 */
-    /*fun isMediaNotificationAOSP(notification: Notification?): Boolean {
+    fun isMediaNotificationAOSP(notification: Notification?): Boolean {
         if (notification == null) return false
 
         return notification.javaClass.resolve().firstMethod { name = "isMediaNotification" }.of(notification).invoke<Boolean>() == true
-    }*/
+    }
 
     /** 通过媒体会话和AOSP方法判断是否为媒体通知 */
-    /*fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
+    fun isMediaNotification(context: Context, notification: Notification, packageName: String): Boolean {
         if (isMediaNotificationAOSP(notification)) return true
 
         val mediaSessionManager: MediaSessionManager = getMediaSessionManager(context)
@@ -759,7 +806,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 return true
 
         return false
-    }*/
+    }
 
     /**
      * 刷新缓存数据
@@ -981,18 +1028,18 @@ object SystemUIHooker : YukiBaseHooker() {
                                         }?.invoke<StatusBarNotification>()
                                     }.also { nf ->
                                         nf?.notification?.also {
-                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                                compatNotifyIcon(
-                                                    context = context,
-                                                    nf = nf,
-                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                                    packageName = context.packageName,
-                                                    drawable = iconDrawable,
-                                                    iconColor = it.color,
-                                                    iconView = this,
-                                                    header = true
-                                                )
-                                            }
+                                            if (!isMediaNotification(context, it, context.packageName))
+                                                it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                                    compatNotifyIcon(
+                                                        context = context,
+                                                        nf = nf,
+                                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                        packageName = context.packageName,
+                                                        drawable = iconDrawable,
+                                                        iconColor = it.color,
+                                                        iconView = this
+                                                    )
+                                                }
                                         }
                                     }
                             }
@@ -1032,8 +1079,17 @@ object SystemUIHooker : YukiBaseHooker() {
                 firstMethodOrNull {
                     name = "updateIconColor"
                     emptyParameters()
-                }?.hook()?.before {
-                    if (moduleStyledIcons[headerIconOf(instance)] == true) resultFalse()
+                }?.hook()?.apply {
+                    before { if (moduleStyledIcons[headerIconOf(instance)] == true) resultFalse() }
+                    after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
+                }
+                firstMethodOrNull {
+                    name = "updateIconRoundness"
+                    parameterCount = 1
+                }?.hook()?.apply {
+                    before { if (moduleStyledIcons[headerIconOf(instance)] == true) resultNull() }
+                    after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
+                    //after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
                 }
             }
 
@@ -1041,13 +1097,13 @@ object SystemUIHooker : YukiBaseHooker() {
                 firstMethodOrNull {
                     name = "initIcon"
                 }?.hook()?.before {
-                    /*val instanceContext = firstFieldOrNull {
+                    val instanceContext = firstFieldOrNull {
                         name = "context"
                     }?.of(instance)?.get() as Context?
                     if (instanceContext == null)
-                        return@before*/
+                        return@before
                     resultNull()
-                    /*NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
+                    NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(NotificationViewWrapperClass.resolve().optional().firstFieldOrNull {
@@ -1063,20 +1119,21 @@ object SystemUIHooker : YukiBaseHooker() {
                                 if (context == null) return@also
 
                                 nf?.notification?.also {
-                                    if (!isMediaNotification(context, it, context.packageName)) it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                        compatNotifyIcon(
-                                            context = context,
-                                            nf = nf,
-                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                            packageName = context.packageName,
-                                            drawable = iconDrawable,
-                                            iconColor = it.color,
-                                            iconView = this
-                                        )
-                                    }
+                                    if (!isMediaNotification(context, it, context.packageName))
+                                        it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                            compatNotifyIcon(
+                                                context = context,
+                                                nf = nf,
+                                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                packageName = context.packageName,
+                                                drawable = iconDrawable,
+                                                iconColor = it.color,
+                                                iconView = this
+                                            )
+                                        }
                                 }
                             }
-                    }*/
+                    }
                 }
             }
         } else {
@@ -1123,7 +1180,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
             /** 替换通知图标和样式 */
             NotificationHeaderViewWrapperClass.resolve().optional().apply {
-                /*method {
+                method {
                     name { it == "updateExpandability" || it == "setExpanded" }
                 }.hookAll().before {
                     firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()?.apply {
@@ -1137,22 +1194,22 @@ object SystemUIHooker : YukiBaseHooker() {
                                 }?.invoke<StatusBarNotification>()
                             }.also { nf ->
                                 nf?.notification?.also {
-                                    it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                        /** 执行替换 */
-                                        compatNotifyIcon(
-                                            context = context,
-                                            nf = nf,
-                                            isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                            packageName = context.packageName,
-                                            drawable = iconDrawable,
-                                            iconColor = it.color,
-                                            iconView = this
-                                        )
-                                    }
+                                    if (!isMediaNotification(context, it, context.packageName))
+                                        it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
+                                            compatNotifyIcon(
+                                                context = context,
+                                                nf = nf,
+                                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
+                                                packageName = context.packageName,
+                                                drawable = iconDrawable,
+                                                iconColor = it.color,
+                                                iconView = this
+                                            )
+                                        }
                                 }
                             }
                     }
-                }*/
+                }
 
                 method {
                     name { it == "resolveHeaderViews" || it == "onContentUpdated" }
@@ -1192,4 +1249,82 @@ object SystemUIHooker : YukiBaseHooker() {
             }
         }
     }
+}
+
+/**
+ * 通知图标自绘 [Drawable] 灵感来源: @1Dot
+ *
+ * @param glyph 单色图标(alpha 蒙版)
+ * @param badgeColor 背景徽章颜色 - 透明则不画背景(经典风格)
+ * @param glyphColor 图标着色
+ * @param cornerRadiusPx 背景圆角 (px)
+ * @param paddingRatio 图标相对背景的内边距比例
+ */
+private class CustomIconDrawable(
+    glyph: Drawable,
+    private val badgeColor: Int,
+    private val glyphColor: Int,
+    private val cornerRadiusPx: Float,
+    private val paddingRatio: Float
+) : Drawable() {
+    private val glyph: Drawable = glyph.mutate()
+
+    private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = badgeColor
+        style = Paint.Style.FILL
+    }
+
+    private var drawableAlpha = 255
+
+    init {
+        this.glyph.setTint(glyphColor)
+    }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val w = b.width()
+        val h = b.height()
+        if (w <= 0 || h <= 0) return
+        val side = minOf(w, h).toFloat()
+        val left = b.left + (w - side) / 2f
+        val top = b.top + (h - side) / 2f
+        val right = left + side
+        val bottom = top + side
+        if (Color.alpha(badgeColor) != 0) {
+            backgroundPaint.alpha = (Color.alpha(badgeColor) * drawableAlpha / 255).coerceIn(0, 255)
+            canvas.drawRoundRect(left, top, right, bottom, cornerRadiusPx, cornerRadiusPx, backgroundPaint)
+        }
+        val pad = side * paddingRatio
+        glyph.setTint(glyphColor)
+        glyph.alpha = drawableAlpha
+        glyph.setBounds((left + pad).toInt(), (top + pad).toInt(), (right - pad).toInt(), (bottom - pad).toInt())
+        glyph.draw(canvas)
+    }
+
+    override fun setAlpha(alpha: Int) {
+        drawableAlpha = alpha.coerceIn(0, 255)
+        invalidateSelf()
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        glyph.setTint(glyphColor)
+        invalidateSelf()
+    }
+
+    override fun setTint(tintColor: Int) {
+        glyph.setTint(glyphColor)
+        invalidateSelf()
+    }
+
+    override fun setTintList(tint: ColorStateList?) {
+        glyph.setTint(glyphColor)
+        invalidateSelf()
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity() = PixelFormat.TRANSLUCENT
+
+    override fun getIntrinsicWidth() = glyph.intrinsicWidth
+
+    override fun getIntrinsicHeight() = glyph.intrinsicHeight
 }

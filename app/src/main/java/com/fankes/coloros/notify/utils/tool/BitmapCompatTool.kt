@@ -32,9 +32,13 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.VectorDrawable
 import android.util.ArrayMap
+import android.util.LruCache
 import androidx.core.graphics.drawable.toBitmap
+import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
 import kotlin.math.abs
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.scale
 
 /**
  * 这是一个从 AOSP 源码中分离出来的功能
@@ -45,6 +49,9 @@ object BitmapCompatTool {
 
     /** 缓存已判断的结果防止卡顿 */
     private var cachedBitmapGrayscales = ArrayMap<Int, Boolean>()
+
+    /** 缓存已优化的位图 */
+    private val optimizedCache = LruCache<String, Bitmap>(64)
 
     private var tempBuffer = intArrayOf(0)
     private var tempCompactBitmap: Bitmap? = null
@@ -77,7 +84,7 @@ object BitmapCompatTool {
             var width = bitmap.width
             if (height > 64 || width > 64) {
                 if (tempCompactBitmap == null) {
-                    tempCompactBitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+                    tempCompactBitmap = createBitmap(64, 64)
                         .also { tempCompactBitmapCanvas = Canvas(it) }
                     tempCompactBitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG).apply { isFilterBitmap = true }
                 }
@@ -119,5 +126,125 @@ object BitmapCompatTool {
      */
     private fun ensureBufferSize(size: Int) {
         if (tempBuffer.size < size) tempBuffer = IntArray(size)
+    }
+
+    /**
+     * 非锐化掩模强度 - 按「相对局部均值」加深对比，是唯一的清晰度旋钮
+     */
+    private const val SHARPEN_AMOUNT = 1.65f
+
+    /** 局部均值半径 - 以「源像素」为单位，取约 1 源像素才能横跨一条笔画+一条缝隙 */
+    private const val LOCAL_MEAN_RADIUS = 1.0f
+
+    /**
+     * 针对图标视图尺寸优化位图清晰度
+     *
+     * @param bitmap 源位图
+     * @param targetPx 目标边长 (px) - 小于等于 0 时不处理
+     * @return [Bitmap]
+     */
+    fun optimizeForSize(bitmap: Bitmap, targetPx: Int) = safeOf(bitmap) {
+        val width = bitmap.width
+        val height = bitmap.height
+        if (targetPx <= 0 || width <= 0 || height <= 0) return@safeOf bitmap
+        val cacheKey = "${bitmap.generationId}:$targetPx"
+        optimizedCache.get(cacheKey)?.let { return@safeOf it }
+        val result = when {
+            maxOf(width, height) >= targetPx -> progressiveScale(bitmap, targetPx)
+            else -> sharpenUpscale(bitmap, targetPx)
+        }
+        optimizedCache.put(cacheKey, result)
+        result
+    }
+
+    /**
+     * 放大低分辨率单色图标并在目标分辨率上锐化
+     *
+     * 1. 双线性平滑放大到目标尺寸（低清源放大只能到此为止，超采样加不出细节，故不超采样）
+     * 2. 求局部均值，在目标分辨率上做非锐化掩模（相对局部对比）——比周围暗的缝隙压透、亮的笔画顶实
+     * 3. 直接钳制到 0..255（保留连续渐变，不阈值化），RGB 置白避免深色色晕
+     *
+     * 只锐化不阈值：相对局部均值即可分开源图里高 alpha 缝隙的相邻笔画（不糊成一坨），
+     * 边是连续渐变而非硬切——图标经视图 FIT_XY/CENTER 缩放时不露锯齿（硬切边才会）。
+     * 锐化必须在目标分辨率做：若先超采样锐化再降采样会把锐化平均掉、反而更糊。
+     * 单色图标最终都会被着色，只有 alpha 决定形状，所以只处理 alpha 即可。
+     * @param src 源位图
+     * @param targetPx 目标边长 (px)
+     * @return [Bitmap]
+     */
+    private fun sharpenUpscale(src: Bitmap, targetPx: Int): Bitmap {
+        val scale = targetPx.toFloat() / maxOf(src.width, src.height)
+        val w = (src.width * scale).toInt().coerceAtLeast(1)
+        val h = (src.height * scale).toInt().coerceAtLeast(1)
+        val up = src.scale(w, h)
+        val size = w * h
+        val pixels = IntArray(size)
+        up.getPixels(pixels, 0, w, 0, 0, w, h)
+        val alpha = IntArray(size) { pixels[it] ushr 24 }
+        val mean = alpha.copyOf()
+        val radius = (scale * LOCAL_MEAN_RADIUS).toInt().coerceIn(1, 12)
+        boxBlurAlpha(mean, w, h, radius, 1)
+        for (i in 0 until size) {
+            val newAlpha = (alpha[i] + SHARPEN_AMOUNT * (alpha[i] - mean[i])).toInt().coerceIn(0, 255)
+            pixels[i] = (newAlpha shl 24) or 0x00FFFFFF
+        }
+        val out = createBitmap(w, h)
+        out.setPixels(pixels, 0, w, 0, 0, w, h)
+        return out
+    }
+
+    /**
+     * 对 alpha 通道做可分离盒式模糊（原地修改）
+     *
+     * 用于估计局部均值以做非锐化掩模；叠加 [passes] 次近似高斯，边界采用就近钳制
+     * @param a alpha 数组 (0..255) - 原地修改
+     * @param w 宽 (px)
+     * @param h 高 (px)
+     * @param radius 模糊半径 (px)
+     * @param passes 叠加次数
+     */
+    private fun boxBlurAlpha(a: IntArray, w: Int, h: Int, radius: Int, passes: Int) {
+        if (radius < 1 || passes < 1) return
+        val window = 2 * radius + 1
+        val tmp = IntArray(a.size)
+        repeat(passes) {
+            for (y in 0 until h) {
+                val base = y * w
+                var sum = 0
+                for (k in -radius..radius) sum += a[base + k.coerceIn(0, w - 1)]
+                tmp[base] = sum / window
+                for (x in 1 until w) {
+                    sum += a[base + (x + radius).coerceIn(0, w - 1)] - a[base + (x - radius - 1).coerceIn(0, w - 1)]
+                    tmp[base + x] = sum / window
+                }
+            }
+            for (x in 0 until w) {
+                var sum = 0
+                for (k in -radius..radius) sum += tmp[k.coerceIn(0, h - 1) * w + x]
+                a[x] = sum / window
+                for (y in 1 until h) {
+                    sum += tmp[(y + radius).coerceIn(0, h - 1) * w + x] - tmp[(y - radius - 1).coerceIn(0, h - 1) * w + x]
+                    a[y * w + x] = sum / window
+                }
+            }
+        }
+    }
+
+    /**
+     * 渐进式 1/2 降采样，避免一步降采样导致模糊
+     * @param bitmap 源位图
+     * @param targetPx 目标边长 (px)
+     * @return [Bitmap]
+     */
+    private fun progressiveScale(bitmap: Bitmap, targetPx: Int): Bitmap {
+        var current = bitmap
+        var w = bitmap.width
+        var h = bitmap.height
+        while (w / 2 >= targetPx && h / 2 >= targetPx) {
+            w /= 2
+            h /= 2
+            current = current.scale(w, h)
+        }
+        return current
     }
 }
