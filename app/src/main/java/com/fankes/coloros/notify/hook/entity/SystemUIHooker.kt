@@ -299,6 +299,9 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 通知面板图标内边距比例 (经典风格) - 含义同 [NOTIFY_ICON_PADDING_RATIO_MD3] */
     private const val NOTIFY_ICON_PADDING_RATIO_CLASSIC = 0.04f
 
+    /** 通知图标圆角设置的最大值；最大值语义为完全圆形，实际半径按当前 Drawable 边长动态计算。 */
+    private const val NOTIFY_ICON_CORNER_MAX_DP = 15
+
     /**
      * 判断通知是否来自系统推送
      * @return [Boolean]
@@ -620,6 +623,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             badgeColor = newApplyColor,
                             glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
                             cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
+                            isCircularBadge = ConfigData.notifyIconCornerSize >= NOTIFY_ICON_CORNER_MAX_DP,
                             paddingRatio = padRatio
                         ) else CustomIconDrawable(
                             glyph = glyph,
@@ -1258,6 +1262,7 @@ object SystemUIHooker : YukiBaseHooker() {
  * @param badgeColor 背景徽章颜色 - 透明则不画背景(经典风格)
  * @param glyphColor 图标着色
  * @param cornerRadiusPx 背景圆角 (px)
+ * @param isCircularBadge 是否按当前 Drawable 实际边长绘制完全圆形背景
  * @param paddingRatio 图标相对背景的内边距比例
  */
 private class CustomIconDrawable(
@@ -1265,6 +1270,7 @@ private class CustomIconDrawable(
     private val badgeColor: Int,
     private val glyphColor: Int,
     private val cornerRadiusPx: Float,
+    private val isCircularBadge: Boolean = false,
     private val paddingRatio: Float
 ) : Drawable() {
     private val glyph: Drawable = glyph.mutate()
@@ -1292,7 +1298,8 @@ private class CustomIconDrawable(
         val bottom = top + side
         if (Color.alpha(badgeColor) != 0) {
             backgroundPaint.alpha = (Color.alpha(badgeColor) * drawableAlpha / 255).coerceIn(0, 255)
-            canvas.drawRoundRect(left, top, right, bottom, cornerRadiusPx, cornerRadiusPx, backgroundPaint)
+            val effectiveCornerRadius = if (isCircularBadge) side / 2f else cornerRadiusPx.coerceIn(0f, side / 2f)
+            canvas.drawRoundRect(left, top, right, bottom, effectiveCornerRadius, effectiveCornerRadius, backgroundPaint)
         }
         val pad = side * paddingRatio
         glyph.setTint(glyphColor)
