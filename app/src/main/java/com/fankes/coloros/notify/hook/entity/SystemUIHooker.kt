@@ -77,6 +77,7 @@ import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
 import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.fankes.coloros.notify.utils.tool.WeakLongMemoCache
 import com.highcapable.betterandroid.ui.extension.view.outlineProvider
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
@@ -288,6 +289,20 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
     private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
 
+    /** SystemUI 通知条目最终状态栏图标决策；不替换也作为显式结果缓存。 */
+    private sealed interface StatusIconDescriptorDecision {
+        data object KeepOriginal : StatusIconDescriptorDecision
+        class Replace(val icon: Icon) : StatusIconDescriptorDecision
+    }
+
+    /**
+     * 以 NotificationEntry 为弱引用 key 缓存最终 getIconDescriptor 替换决策。
+     *
+     * WeakHashMap 不会延长 NotificationEntry 生命周期；Long signature 只由 cheap metadata 构成，
+     * cache hit 不会 loadDrawable、扫描灰度或创建 Bitmap。
+     */
+    private val statusIconDescriptorCache = WeakLongMemoCache<Any, StatusIconDescriptorDecision>()
+
     /**
      * 通知面板图标内边距比例 (MD3 风格) - 内边距占图标视图尺寸的比例 (0f~0.5f)
      *
@@ -343,6 +358,34 @@ object SystemUIHooker : YukiBaseHooker() {
             } != null
 
     /**
+     * 计算状态栏图标源签名。
+     *
+     * 只读取 Notification/Icon 的 cheap metadata。所有 Icon 类型都加入对象 identity，以便通知更新
+     * 替换 smallIcon 时立即 miss；资源/URI 类型再加入稳定元数据。Bitmap/Data 类型没有公开的
+     * 零拷贝内容 getter，因此故意不做 bitmap hash、反射或 Drawable 转换。
+     */
+    private fun statusIconSourceSignature(nf: StatusBarNotification): Long {
+        var signature = 1125899906842597L
+        signature = signature * 31 + nf.packageName.hashCode()
+        signature = signature * 31 + nf.opPkg.hashCode()
+        val smallIcon = nf.notification.smallIcon ?: return signature * 31
+        signature = signature * 31 + smallIcon.type
+        signature = signature * 31 + System.identityHashCode(smallIcon)
+        when (smallIcon.type) {
+            Icon.TYPE_RESOURCE -> {
+                signature = signature * 31 + smallIcon.resPackage.hashCode()
+                signature = signature * 31 + smallIcon.resId
+            }
+            Icon.TYPE_URI, Icon.TYPE_URI_ADAPTIVE_BITMAP ->
+                signature = signature * 31 + smallIcon.uri.hashCode()
+        }
+        return signature
+    }
+
+    /** 清空最终状态栏图标决策。 */
+    private fun invalidateStatusIconDescriptorCache() = statusIconDescriptorCache.clear()
+
+    /**
      * 打印日志
      * @param tag 标识
      * @param context 实例
@@ -375,7 +418,12 @@ object SystemUIHooker : YukiBaseHooker() {
      */
     private fun registerWallpaperColorChanged(view: View) = runInSafe {
         if (isWallpaperColorListenerSetUp.not() && isUpperOfAndroidS) view.apply {
-            WallpaperManager.getInstance(context).addOnColorsChangedListener({ _, _ -> refreshNotificationIcons() }, handler)
+            WallpaperManager.getInstance(context).addOnColorsChangedListener({ _, _ ->
+                /** OPlus 主题/动态图标可能随壁纸配色变化，避免复用旧的最终 Bitmap/Icon。 */
+                invalidateStatusIconDescriptorCache()
+                refreshStatusBarIcons()
+                refreshNotificationIcons()
+            }, handler)
         }
         isWallpaperColorListenerSetUp = true
     }
@@ -536,6 +584,30 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 打印日志 */
         loggerDebug(tag = "Status Bar Icon", context, nf, isCustom = it.first != null && it.third.not(), isGrayscaleIcon, context.packageName, nf.notification.color)
         it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
+    }
+
+    /**
+     * 计算一次最终状态栏图标替换决策。
+     *
+     * 只有 cache miss 才允许进入这里执行 Drawable 加载、灰度扫描和 Bitmap 创建。
+     */
+    private fun buildStatusIconDescriptorDecision(context: Context, nf: StatusBarNotification): StatusIconDescriptorDecision {
+        val iconDrawable = nf.notification.smallIcon?.loadDrawable(context)
+            ?: return StatusIconDescriptorDecision.KeepOriginal
+        val isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
+            /** 缓存第一次的 APP 小图标 */
+            if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
+        }
+        return compatStatusIcon(
+            context = context,
+            nf = nf,
+            isGrayscaleIcon = isGrayscaleIcon,
+            packageName = nf.packageName,
+            drawable = iconDrawable
+        ).let { pair ->
+            if (pair.second) StatusIconDescriptorDecision.Replace(Icon.createWithBitmap(pair.first.toBitmap()))
+            else StatusIconDescriptorDecision.KeepOriginal
+        }
     }
 
     /**
@@ -738,6 +810,10 @@ object SystemUIHooker : YukiBaseHooker() {
         onAppLifecycle {
             /** 解锁后重新刷新状态栏图标防止系统重新设置它 */
             registerReceiver(Intent.ACTION_USER_PRESENT) { _, _ -> if (isUsingCachingMethod) refreshStatusBarIcons() }
+            /** 系统主题、密度等配置变化后旧的资源/APP 图标不能继续复用。 */
+            registerReceiver(Intent.ACTION_CONFIGURATION_CHANGED) { _, _ ->
+                invalidateStatusIconDescriptorCache()
+            }
             /** 注册定时监听 */
             registerReceiver(Intent.ACTION_TIME_TICK) { context, _ ->
                 if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixNotify && ConfigData.isEnableNotifyIconFixAuto)
@@ -755,6 +831,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED).not() &&
                         intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
                     ) return@registerReceiver
+                    /** 包安装/更新/卸载可能改变 smallIcon、APP 图标或第三方图标包资源。 */
+                    invalidateStatusIconDescriptorCache()
                     if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixNotify)
                         when (intent.action) {
                             Intent.ACTION_PACKAGE_ADDED -> {
@@ -819,6 +897,8 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 获取可读写状态 */
         return prefs.isPreferencesAvailable.also {
             isUsingCachingMethod = true
+            /** 设置/图标规则改变后，旧的 replacement 与 negative decision 都必须失效。 */
+            invalidateStatusIconDescriptorCache()
             cachingIconDatas()
             if (isRefreshCacheOnly) return@also
             refreshStatusBarIcons()
@@ -884,35 +964,29 @@ object SystemUIHooker : YukiBaseHooker() {
             }?.hook()?.replaceAny { args().first().cast<ImageView>()?.let { isGrayscaleIcon(it.context, it.drawable) } ?: callOriginal() }
         }
         /** 替换状态栏图标 */
+        val iconBuilderContextField = IconBuilderClass.resolve().optional().firstFieldOrNull { name = "context" }
+        val iconBuilderField = IconManagerClass.resolve().optional().firstFieldOrNull { name = "iconBuilder" }
+        val notificationEntryGetSbnMethod = NotificationEntryClass.resolve().optional().firstMethodOrNull { name = "getSbn" }
+        val statusBarIconField = StatusBarIconClass.resolve().optional().firstFieldOrNull {
+            name = "icon"
+            type = Icon::class
+        }
         IconManagerClass.resolve().optional().firstMethodOrNull {
             name = "getIconDescriptor"
             parameters(NotificationEntryClass, Boolean::class)
         }?.hook()?.after {
-            IconBuilderClass.resolve().optional().firstFieldOrNull { name = "context" }
-                ?.of(IconManagerClass.resolve().optional().firstFieldOrNull { name = "iconBuilder" }?.of(instance)?.get())
-                ?.getQuietly<Context>()?.also { context ->
-                    NotificationEntryClass.resolve().optional().firstMethodOrNull {
-                        name = "getSbn"
-                    }?.of(args().first().any())?.invokeQuietly<StatusBarNotification>()?.also { nf ->
-                        nf.notification.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                            compatStatusIcon(
-                                context = context,
-                                nf = nf,
-                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
-                                    /** 缓存第一次的 APP 小图标 */
-                                    if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
-                                },
-                                packageName = nf.packageName,
-                                drawable = iconDrawable
-                            ).also { pair ->
-                                if (pair.second) StatusBarIconClass.resolve().optional().firstFieldOrNull {
-                                    name = "icon"
-                                    type = Icon::class
-                                }?.of(result)?.set(Icon.createWithBitmap(pair.first.toBitmap()))
-                            }
-                        }
-                    }
+            val entry = args().first().any() ?: return@after
+            val context = iconBuilderContextField
+                ?.of(iconBuilderField?.of(instance)?.get())
+                ?.getQuietly<Context>() ?: return@after
+            val nf = notificationEntryGetSbnMethod?.of(entry)?.invokeQuietly<StatusBarNotification>() ?: return@after
+            val signature = statusIconSourceSignature(nf)
+            val decision = statusIconDescriptorCache.get(entry, signature)
+                ?: buildStatusIconDescriptorDecision(context, nf).also {
+                    statusIconDescriptorCache.put(entry, signature, it)
                 }
+            if (decision is StatusIconDescriptorDecision.Replace)
+                statusBarIconField?.of(result)?.set(decision.icon)
         }
         /** 得到状态栏图标实例 */
         StatusBarIconViewClass.resolve().optional().firstMethodOrNull {
