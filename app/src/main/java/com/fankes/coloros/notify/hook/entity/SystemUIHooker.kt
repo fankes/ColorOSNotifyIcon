@@ -977,16 +977,17 @@ object SystemUIHooker : YukiBaseHooker() {
         }?.hook()?.after {
             val entry = args().first().any() ?: return@after
             val context = iconBuilderContextField
-                ?.of(iconBuilderField?.of(instance)?.get())
+                ?.copy()
+                ?.of(iconBuilderField?.copy()?.of(instance)?.get())
                 ?.getQuietly<Context>() ?: return@after
-            val nf = notificationEntryGetSbnMethod?.of(entry)?.invokeQuietly<StatusBarNotification>() ?: return@after
+            val nf = notificationEntryGetSbnMethod?.copy()?.of(entry)?.invokeQuietly<StatusBarNotification>() ?: return@after
             val signature = statusIconSourceSignature(nf)
             val decision = statusIconDescriptorCache.get(entry, signature)
                 ?: buildStatusIconDescriptorDecision(context, nf).also {
                     statusIconDescriptorCache.put(entry, signature, it)
                 }
             if (decision is StatusIconDescriptorDecision.Replace)
-                statusBarIconField?.of(result)?.set(decision.icon)
+                statusBarIconField?.copy()?.of(result)?.set(decision.icon)
         }
         /** 得到状态栏图标实例 */
         StatusBarIconViewClass.resolve().optional().firstMethodOrNull {
