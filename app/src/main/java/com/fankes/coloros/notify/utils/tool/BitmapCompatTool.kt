@@ -33,12 +33,12 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.VectorDrawable
 import android.util.ArrayMap
 import android.util.LruCache
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.scale
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
 import kotlin.math.abs
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.scale
 
 /**
  * 这是一个从 AOSP 源码中分离出来的功能

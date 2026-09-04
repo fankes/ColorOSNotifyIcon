@@ -27,6 +27,7 @@ package com.fankes.coloros.notify.data
 import android.content.Context
 import com.fankes.coloros.notify.const.IconRuleSourceSyncType
 import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
+import com.highcapable.anip.sdk.config.RemoteSource
 import com.highcapable.yukihookapi.hook.factory.prefs
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
@@ -91,14 +92,11 @@ object ConfigData {
     /** 通知图标优化名单自动更新时间 */
     val NOTIFY_ICON_FIX_AUTO_TIME = PrefsData("_notify_icon_fix_auto_time", "07:00")
 
-    /** 通知图标优化适配数据 */
-    val NOTIFY_ICONS_DATA = PrefsData("_notify_icon_datas", "")
-
     /** 通知图标优化名单同步方式 */
-    val ICON_RULE_SOURCE_SYNC_TYPE = PrefsData("_rule_source_sync_way", IconRuleSourceSyncType.GITHUB_RAW_PROXY_1)
+    val ICON_RULE_SOURCE_SYNC_TYPE = PrefsData("_rule_source_sync_way", IconRuleSourceSyncType.GITHUB_PROXY_1)
 
-    /** 通知图标优化名单同步地址 */
-    val ICON_RULE_SOURCE_SYNC_CUSTOM_URL = PrefsData("_rule_source_sync_way_custom_url", "")
+    /** ANIP GitHub 存储库 */
+    val ICON_RULE_REPOSITORY = PrefsData("_rule_repository", RemoteSource.GITHUB_OFFICIAL_REPO_SLUG)
 
     /** 当前实例 - [Context] or [PackageParam] */
     private var instance: Any? = null
@@ -378,12 +376,12 @@ object ConfigData {
         }
 
     /**
-     * 通知图标优化名单同步地址
+     * ANIP GitHub 存储库
      * @return [String]
      */
-    var iconRuleSourceSyncCustomUrl
-        get() = getString(ICON_RULE_SOURCE_SYNC_CUSTOM_URL)
+    var iconRuleRepository
+        get() = getString(ICON_RULE_REPOSITORY).ifBlank { RemoteSource.GITHUB_OFFICIAL_REPO_SLUG }
         set(value) {
-            putString(ICON_RULE_SOURCE_SYNC_CUSTOM_URL, value)
+            putString(ICON_RULE_REPOSITORY, value)
         }
 }

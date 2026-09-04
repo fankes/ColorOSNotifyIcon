@@ -1,4 +1,3 @@
-
 /*
  * ColorOSNotifyIcon - Optimize notification icons for ColorOS and adapt to native notification icon specifications.
  * Copyright (C) 20174 Fankes Studio(qzmmcn@163.com)
@@ -52,14 +51,12 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.children
 import androidx.core.view.setPadding
 import com.fankes.coloros.notify.R
-import com.fankes.coloros.notify.bean.IconDataBean
 import com.fankes.coloros.notify.const.PackageName
 import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker.NOTIFY_ICON_PADDING_RATIO_MD3
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker.OplusNotificationHeaderViewWrapperExImpClass
-import com.fankes.coloros.notify.param.IconPackParams
-import com.fankes.coloros.notify.param.factory.isAppNotifyHookAllOf
-import com.fankes.coloros.notify.param.factory.isAppNotifyHookOf
+import com.fankes.coloros.notify.param.factory.isAppNotifyEnabledOf
+import com.fankes.coloros.notify.param.factory.isAppNotifyOverlayOf
 import com.fankes.coloros.notify.utils.factory.appIconOf
 import com.fankes.coloros.notify.utils.factory.appNameOf
 import com.fankes.coloros.notify.utils.factory.colorAlphaOf
@@ -72,10 +69,12 @@ import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
 import com.fankes.coloros.notify.utils.factory.safeOfNull
+import com.fankes.coloros.notify.utils.factory.stampToDate
 import com.fankes.coloros.notify.utils.factory.systemAccentColor
 import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
 import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
+import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.betterandroid.ui.extension.view.outlineProvider
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
@@ -86,6 +85,10 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.injectModuleAppResources
 import com.highcapable.yukihookapi.hook.log.YLog
 import de.robv.android.xposed.XposedHelpers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.util.WeakHashMap
 
 /**
@@ -255,8 +258,11 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 缓存的彩色 APP 图标 */
     private var appIcons = ArrayMap<String, Drawable>()
 
-    /** 缓存的通知优化图标数组 */
-    private var iconDatas = ArrayList<IconDataBean>()
+    /** SystemUI 进程上下文 */
+    private var globalContext: Context? = null
+
+    /** SystemUI 进程内用于恢复和更新 ANIP 快照的协程作用域。 */
+    private val iconRuleScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     /** 状态栏通知图标容器 */
     private var notificationIconContainer: ViewGroup? = null
@@ -285,6 +291,9 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 是否已经使用过缓存刷新功能 */
     private var isUsingCachingMethod = false
 
+    /** 上次自动更新 ANIP 资源的日期与分钟标记 */
+    private var lastAutoUpdateIconRuleTime = ""
+
     /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
     private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
 
@@ -309,9 +318,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * 判断通知是否由系统生成 (ColorOS 16.1折叠通知)
      * @return [Boolean]
      */
-    private fun isCollapseNotification(nfPackageName: String, contextPackageName: String) : Boolean {
-        return contextPackageName == PackageName.SYSTEMUI && nfPackageName != contextPackageName
-    }
+    private fun isCollapseNotification(nfPackageName: String, contextPackageName: String): Boolean = contextPackageName == PackageName.SYSTEMUI && nfPackageName != contextPackageName
 
     /**
      * 判断通知背景是否为旧版本
@@ -353,17 +360,17 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun loggerDebug(tag: String, context: Context, nf: StatusBarNotification?, isCustom: Boolean, isGrayscale: Boolean, contextPackageName: String, iconColor: Int) {
         if (ConfigData.isEnableModuleLog) YLog.debug(
             msg = "(Processing $tag) ↓\n" +
-              "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
-              "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
-              "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
-              "[Package Name]: ${nf?.packageName}\n" +
-              "[Sender Package Name]: ${nf?.opPkg}\n" +
-              "[Context Package Name]: $contextPackageName\n" +
-              "[Custom Icon]: $isCustom\n" +
-              "[Grayscale Icon]: $isGrayscale\n" +
-              "[From System Push]: ${nf?.isOplusPush}\n" +
-              "[String]: ${nf?.notification}\n" +
-              "[Color]: $iconColor"
+                "[Title]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TITLE)}\n" +
+                "[Content]: ${nf?.notification?.extras?.getString(Notification.EXTRA_TEXT)}\n" +
+                "[App Name]: ${context.appNameOf(packageName = nf?.packageName ?: "")}\n" +
+                "[Package Name]: ${nf?.packageName}\n" +
+                "[Sender Package Name]: ${nf?.opPkg}\n" +
+                "[Context Package Name]: $contextPackageName\n" +
+                "[Custom Icon]: $isCustom\n" +
+                "[Grayscale Icon]: $isGrayscale\n" +
+                "[From System Push]: ${nf?.isOplusPush}\n" +
+                "[String]: ${nf?.notification}\n" +
+                "[Color]: $iconColor"
         )
     }
 
@@ -503,12 +510,16 @@ object SystemUIHooker : YukiBaseHooker() {
                 customPair = Triple(statSysAdbIcon, 0, false)
             /** 替换自定义通知图标 */
             ConfigData.isEnableNotifyIconFix -> run {
-                iconDatas.takeIf { it.isNotEmpty() }?.forEach {
-                    if (packageName == it.packageName && isAppNotifyHookOf(it)) {
-                        if (isGrayscaleIcon.not() || isAppNotifyHookAllOf(it))
-                            customPair = Triple(it.iconBitmap.toDrawable(context.resources), it.iconColor, false)
-                        return@run
-                    }
+                val snapshot = IconRuleManagerTool.snapshot
+                val icon = snapshot?.getIcon(packageName)
+                if (icon != null) {
+                    if (isAppNotifyEnabledOf(icon) && (isGrayscaleIcon.not() || isAppNotifyOverlayOf(icon)))
+                        customPair = Triple(
+                            snapshot.getBitmap(icon)?.toDrawable(context.resources),
+                            icon.color ?: 0,
+                            false
+                        )
+                    return@run
                 }
                 if (isGrayscaleIcon.not() && ConfigData.isEnableNotifyIconFixPlaceholder)
                     customPair = Triple(context.resources.drawableOf(R.drawable.ic_message), 0, true)
@@ -579,12 +590,16 @@ object SystemUIHooker : YukiBaseHooker() {
                     clearColorFilter()
 
                     val isMd3 = ConfigData.isEnableMd3NotifyIconStyle
+
                     /** 图标视图尺寸 */
                     val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
+
                     /** 图标相对背景的留白比例，折叠/展开等比一致 */
                     val padRatio = if (isMd3) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
+
                     /** 图标实际显示尺寸 - 位图直接优化到该尺寸，避免二次缩放产生毛边 */
                     val contentPx = if (viewSizePx > 0) (viewSizePx * (1f - padRatio * 2)).toInt().coerceAtLeast(1) else 0
+
                     /** 优化(锐化)后的单色图标 */
                     val glyph = (customTriple.first ?: drawable).let { d ->
                         (d as? BitmapDrawable)?.bitmap
@@ -740,8 +755,15 @@ object SystemUIHooker : YukiBaseHooker() {
             registerReceiver(Intent.ACTION_USER_PRESENT) { _, _ -> if (isUsingCachingMethod) refreshStatusBarIcons() }
             /** 注册定时监听 */
             registerReceiver(Intent.ACTION_TIME_TICK) { context, _ ->
-                if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixNotify && ConfigData.isEnableNotifyIconFixAuto)
-                    IconAdaptationTool.prepareAutoUpdateIconRule(context, ConfigData.notifyIconFixAutoTime)
+                if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixAuto) {
+                    val timestamp = System.currentTimeMillis()
+                    val nowTime = timestamp.stampToDate(format = "HH:mm")
+                    val updateMarker = timestamp.stampToDate(format = "yyyy-MM-dd HH:mm")
+                    if (nowTime == ConfigData.notifyIconFixAutoTime && updateMarker != lastAutoUpdateIconRuleTime) {
+                        lastAutoUpdateIconRuleTime = updateMarker
+                        refreshIconData(context)
+                    }
+                }
             }
             /** 注册发送适配新的 APP 图标通知监听 */
             registerReceiver(IntentFilter().apply {
@@ -758,26 +780,52 @@ object SystemUIHooker : YukiBaseHooker() {
                     if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixNotify)
                         when (intent.action) {
                             Intent.ACTION_PACKAGE_ADDED -> {
-                                if (iconDatas.takeIf { e -> e.isNotEmpty() }
-                                        ?.filter { e -> e.packageName == packageName }
-                                        .isNullOrEmpty()
-                                ) IconAdaptationTool.pushNewAppSupportNotify(context, packageName)
+                                val snapshot = IconRuleManagerTool.snapshot ?: return@registerReceiver
+                                if (snapshot.getIcon(packageName) == null)
+                                    IconAdaptationTool.pushNewAppSupportNotify(context, packageName)
                             }
                             Intent.ACTION_PACKAGE_REMOVED -> IconAdaptationTool.removeNewAppSupportNotify(context, packageName)
                         }
                 }
             }
-            /** 注入模块资源 */
-            onCreate { injectModuleAppResources() }
+            onCreate {
+                globalContext = this
+                /** 注入模块资源 */
+                injectModuleAppResources()
+                /** 先恢复 SystemUI 私有缓存，再由 SystemUI 自身检查更新 */
+                globalContext?.let { refreshIconData(it) }
+            }
         }
         /** 刷新图标缓存 */
         SystemUITool.Host.onRefreshSystemUI(param = this) { recachingPrefs(it) }
+        /** 模块进程只传递刷新命令，SystemUI 使用自身缓存获取 ANIP 资源 */
+        SystemUITool.Host.onRefreshIconData(param = this) { result ->
+            recachingPrefs(isRefreshCacheOnly = true)
+            globalContext?.let { refreshIconData(it, result) } ?: result(false)
+        }
     }
 
-    /** 缓存图标数据 */
-    private fun cachingIconDatas() {
-        iconDatas.clear()
-        IconPackParams(param = this).iconDatas.apply { if (isNotEmpty()) forEach { iconDatas.add(it) } }
+    /**
+     * 恢复并更新 SystemUI 进程的 ANIP 快照
+     * @param context SystemUI 上下文
+     * @param result 更新完成回调
+     */
+    private fun refreshIconData(context: Context, result: (Boolean) -> Unit = {}) {
+        iconRuleScope.launch {
+            runCatching {
+                IconRuleManagerTool.reload(context)
+                val fetchResult = IconRuleManagerTool.fetch(context)
+                val isAvailable = IconRuleManagerTool.snapshot?.icons.isNullOrEmpty().not()
+                if (isAvailable) {
+                    refreshStatusBarIcons()
+                    refreshNotificationIcons()
+                }
+                result(fetchResult.isOk && isAvailable)
+            }.onFailure {
+                YLog.error("Failed to refresh ANIP icon resources", it)
+                result(false)
+            }
+        }
     }
 
     /** 获取媒体会话管理器 */
@@ -819,7 +867,6 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 获取可读写状态 */
         return prefs.isPreferencesAvailable.also {
             isUsingCachingMethod = true
-            cachingIconDatas()
             if (isRefreshCacheOnly) return@also
             refreshStatusBarIcons()
             refreshNotificationIcons()
@@ -829,8 +876,6 @@ object SystemUIHooker : YukiBaseHooker() {
     override fun onHook() {
         /** 注册生命周期 */
         registerLifecycle()
-        /** 缓存图标数据 */
-        cachingIconDatas()
         /** 移除开发者警告通知 */
         SystemPromptControllerClass.resolve().optional().firstMethodOrNull {
             name = "updateDeveloperMode"
@@ -1089,7 +1134,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 }?.hook()?.apply {
                     before { if (moduleStyledIcons[headerIconOf(instance)] == true) resultNull() }
                     after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
-                    //after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
+                    // after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
                 }
             }
 
@@ -1151,9 +1196,9 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "updateIconsForLayout"
                     parameterCount = 1
                 }?.apply { way = 1 }
-                ?: firstMethodOrNull {
-                    name = "updateIconsForLayout"
-                }?.apply { way = 2 })?.hook()?.after {
+                    ?: firstMethodOrNull {
+                        name = "updateIconsForLayout"
+                    }?.apply { way = 2 })?.hook()?.after {
                     when (way) {
                         2 -> notificationIconContainer = OplusNotificationIconAreaControllerClass.resolve().optional()
                             .firstMethodOrNull { name = "getNotificationIcons" }
