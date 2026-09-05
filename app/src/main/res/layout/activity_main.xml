@@ -583,7 +583,7 @@
                         android:layout_marginLeft="5dp"
                         android:layout_marginTop="5dp"
                         android:layout_marginRight="5dp"
-                        android:max="15"
+                        android:max="30"
                         android:min="0"
                         android:progress="15" />
 
