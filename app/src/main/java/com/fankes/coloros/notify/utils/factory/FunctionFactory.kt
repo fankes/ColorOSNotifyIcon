@@ -56,12 +56,10 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.net.toUri
 import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.google.android.material.snackbar.Snackbar
-import com.highcapable.yukihookapi.hook.factory.field
-import com.highcapable.yukihookapi.hook.factory.hasClass
-import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.factory.toClassOrNull
+import com.highcapable.kavaref.KavaRef.Companion.resolve
+import com.highcapable.kavaref.extension.hasClass
+import com.highcapable.kavaref.extension.toClassOrNull
 import com.highcapable.yukihookapi.hook.log.YLog
-import com.highcapable.yukihookapi.hook.type.java.StringClass
 import com.highcapable.yukihookapi.hook.xposed.application.ModuleApplication.Companion.appContext
 import com.topjohnwu.superuser.Shell
 import java.text.SimpleDateFormat
@@ -115,7 +113,10 @@ inline val isLowerAndroidP get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
  * 当前设备是否是 ColorOS 定制 Android 系统
  * @return [Boolean] 是否符合条件
  */
-val isColorOS by lazy { "oppo.R".hasClass() || "com.color.os.ColorBuild".hasClass() || "oplus.R".hasClass() }
+val isColorOS by lazy {
+    val loader = object {}.javaClass.classLoader ?: ClassLoader.getSystemClassLoader()
+    loader.hasClass("oppo.R") || loader.hasClass("com.color.os.ColorBuild") || loader.hasClass("oplus.R")
+}
 
 /**
  * 当前设备是否不是 ColorOS 定制 Android 系统
@@ -146,7 +147,8 @@ val isRealmeUI
  */
 val androidVersionCodeName
     get() = when (Build.VERSION.SDK_INT) {
-        36 -> "B"
+        37 -> "C"
+        36 -> "W"
         35 -> "V"
         34 -> "U"
         33 -> "T"
@@ -179,13 +181,22 @@ val colorOSVersion get() = "$colorOSNumberVersion ${Build.DISPLAY}"
 
 /**
  * 获取 ColorOS 数字版本
+ *
+ * 新版 ColorOS (15.0.1+) 的 [getOplusOSVERSION] 直接返回 "ro.build.version.oplus.api" 的值 (大于 33)
+ * 它不再是 VERSIONS 数组的下标，且 VERSIONS 数组只到 V15.0.0，所以这里直接读取 "ro.build.version.oplusrom"
  * @return [String]
  */
 val colorOSNumberVersion
     get() = safeOf(default = "无法获取") {
         "com.oplus.os.OplusBuild".toClassOrNull()?.let {
-            it.field { name = "VERSIONS" }.ignored().get().array<String>().takeIf { e -> e.isNotEmpty() }
-                ?.get(it.method { name = "getOplusOSVERSION" }.ignored().get().int() - 1)
+            val scope = it.resolve().optional(silent = true)
+            val versionIndex = scope.firstMethodOrNull { name = "getOplusOSVERSION" }?.invokeQuietly<Int>() ?: -1
+            if (versionIndex > 33) findPropString("ro.build.version.oplusrom").takeIf { e -> e.isNotBlank() }
+            else scope.firstFieldOrNull {
+                name = "VERSIONS"
+            }?.getQuietly<Array<String>>()
+                ?.takeIf { e -> e.isNotEmpty() }
+                ?.getOrNull(versionIndex)
         } ?: findPropString("ro.system.build.fingerprint", "无法获取").split("ssi:")[1].split("/")[0].trim()
     }
 
@@ -240,6 +251,13 @@ val Context.appVersionName get() = getPackageInfoCompat(packageName)?.versionNam
  * @return [Int]
  */
 val Context.appVersionCode get() = getPackageInfoCompat(packageName)?.versionCodeCompat
+
+/**
+ * 得到 APP 最后更新时间
+ * @param packageName APP 包名
+ * @return [Long] or null
+ */
+fun Context.appLastUpdateTimeOf(packageName: String) = getPackageInfoCompat(packageName)?.lastUpdateTime
 
 /**
  * 得到 APP 名称
@@ -384,10 +402,13 @@ val String.base64: String get() = Base64.encodeToString(toByteArray(), Base64.DE
  * @return [String]
  */
 fun findPropString(key: String, default: String = "") = safeOf(default) {
-    "android.os.SystemProperties".toClassOrNull()?.method {
-        name = "get"
-        param(StringClass, StringClass)
-    }?.get()?.invoke(key, default) ?: default
+    "android.os.SystemProperties".toClassOrNull()
+        ?.resolve()
+        ?.optional(silent = true)
+        ?.firstMethodOrNull {
+            name = "get"
+            parameters(String::class, String::class)
+        }?.invokeQuietly<String>(key, default) ?: default
 }
 
 /**
@@ -456,7 +477,7 @@ fun Context.openBrowser(url: String, packageName: String = "") = runCatching {
         if (packageName.isNotBlank()) setPackage(packageName)
         action = Intent.ACTION_VIEW
         data = url.toUri()
-        /** 防止顶栈一样重叠在自己的 APP 中 */
+        // 防止顶栈一样重叠在自己的 APP 中
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     })
 }.onFailure {

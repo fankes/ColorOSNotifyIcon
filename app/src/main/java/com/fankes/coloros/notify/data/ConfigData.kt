@@ -28,10 +28,10 @@ import android.content.Context
 import com.fankes.coloros.notify.const.IconRuleSourceSyncType
 import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.highcapable.anip.sdk.config.RemoteSource
-import com.highcapable.yukihookapi.hook.factory.prefs
+import com.highcapable.yukihookapi.hook.factory.preferences
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
-import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
+import com.highcapable.yukihookapi.hook.xposed.preference.data.PreferenceData
 
 /**
  * 全局配置存储控制类
@@ -39,64 +39,64 @@ import com.highcapable.yukihookapi.hook.xposed.prefs.data.PrefsData
 object ConfigData {
 
     /** 启用模块 */
-    val ENABLE_MODULE = PrefsData("_enable_module", true)
+    val ENABLE_MODULE = PreferenceData("_enable_module", true)
 
     /** 启用模块日志 */
-    val ENABLE_MODULE_LOG = PrefsData("_enable_module_log", false)
+    val ENABLE_MODULE_LOG = PreferenceData("_enable_module_log", false)
 
     /** 启用通知图标兼容模式 */
-    val ENABLE_COLOR_ICON_COMPAT = PrefsData("_color_icon_compat", false)
+    val ENABLE_COLOR_ICON_COMPAT = PreferenceData("_color_icon_compat", false)
 
     /** 移除开发者选项警告通知 */
-    val ENABLE_REMOVE_DEV_NOTIFY = PrefsData("_remove_dev_notify", true)
+    val ENABLE_REMOVE_DEV_NOTIFY = PreferenceData("_remove_dev_notify", true)
 
     /** 移除充电完成通知 */
-    val ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY = PrefsData("_remove_charge_complete_notify", false)
+    val ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY = PreferenceData("_remove_charge_complete_notify", false)
 
     /** 移除免打扰通知 */
-    val ENABLE_REMOVE_DND_ALERT_NOTIFY = PrefsData("_remove_dndalert_notify", false)
+    val ENABLE_REMOVE_DND_ALERT_NOTIFY = PreferenceData("_remove_dndalert_notify", false)
 
     /** 启用 Material 3 通知图标风格 */
-    val ENABLE_MD3_NOTIFY_ICON_STYLE = PrefsData("_notify_icon_md3_style", isUpperOfAndroidS)
+    val ENABLE_MD3_NOTIFY_ICON_STYLE = PreferenceData("_notify_icon_md3_style", isUpperOfAndroidS)
 
     /** 通知栏中的通知图标圆角程度 */
-    val NOTIFY_ICON_CORNER_SIZE = PrefsData("_notify_icon_corner", 15)
+    val NOTIFY_ICON_CORNER_SIZE = PreferenceData("_notify_icon_corner", 15)
 
     /** 强制通知栏中的通知图标使用系统着色 */
-    val ENABLE_NOTIFY_ICON_FORCE_SYSTEM_COLOR = PrefsData("_notify_icon_force_system_color", false)
+    val ENABLE_NOTIFY_ICON_FORCE_SYSTEM_COLOR = PreferenceData("_notify_icon_force_system_color", false)
 
     /** 强制通知栏中的通知图标为 APP 图标 */
-    val ENABLE_NOTIFY_ICON_FORCE_APP_ICON = PrefsData("_notify_icon_force_app_icon", false)
+    val ENABLE_NOTIFY_ICON_FORCE_APP_ICON = PreferenceData("_notify_icon_force_app_icon", false)
 
     /** 启用媒体通知播放时自动展开 */
-    val ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP = PrefsData("_enable_notify_media_panel_auto_exp", false)
+    val ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP = PreferenceData("_enable_notify_media_panel_auto_exp", false)
 
     /** 启用自定义通知面板背景透明度 */
-    val ENABLE_NOTIFY_PANEL_ALPHA = PrefsData("_enable_notify_panel_alpha_pst", false)
+    val ENABLE_NOTIFY_PANEL_ALPHA = PreferenceData("_enable_notify_panel_alpha_pst", false)
 
     /** 自定义通知面板背景透明度 */
-    val NOTIFY_PANEL_ALPHA_LEVEL = PrefsData("_notify_panel_alpha_pst", 75)
+    val NOTIFY_PANEL_ALPHA_LEVEL = PreferenceData("_notify_panel_alpha_pst", 75)
 
     /** 启用通知图标优化 */
-    val ENABLE_NOTIFY_ICON_FIX = PrefsData("_notify_icon_fix", true)
+    val ENABLE_NOTIFY_ICON_FIX = PreferenceData("_notify_icon_fix", true)
 
     /** 使用占位符修补未适配的通知图标 */
-    val ENABLE_NOTIFY_ICON_FIX_PLACEHOLDER = PrefsData("_notify_icon_fix_placeholder", false)
+    val ENABLE_NOTIFY_ICON_FIX_PLACEHOLDER = PreferenceData("_notify_icon_fix_placeholder", false)
 
     /** 提醒未适配通知图标的新安装应用 */
-    val ENABLE_NOTIFY_ICON_FIX_NOTIFY = PrefsData("_notify_icon_fix_notify", true)
+    val ENABLE_NOTIFY_ICON_FIX_NOTIFY = PreferenceData("_notify_icon_fix_notify", true)
 
     /** 启用通知图标优化名单自动更新 */
-    val ENABLE_NOTIFY_ICON_FIX_AUTO = PrefsData("_enable_notify_icon_fix_auto", true)
+    val ENABLE_NOTIFY_ICON_FIX_AUTO = PreferenceData("_enable_notify_icon_fix_auto", true)
 
     /** 通知图标优化名单自动更新时间 */
-    val NOTIFY_ICON_FIX_AUTO_TIME = PrefsData("_notify_icon_fix_auto_time", "07:00")
+    val NOTIFY_ICON_FIX_AUTO_TIME = PreferenceData("_notify_icon_fix_auto_time", "07:00")
 
     /** 通知图标优化名单同步方式 */
-    val ICON_RULE_SOURCE_SYNC_TYPE = PrefsData("_rule_source_sync_way", IconRuleSourceSyncType.GITHUB_PROXY_1)
+    val ICON_RULE_SOURCE_SYNC_TYPE = PreferenceData("_rule_source_sync_way", IconRuleSourceSyncType.GITHUB_PROXY_1)
 
     /** ANIP GitHub 存储库 */
-    val ICON_RULE_REPOSITORY = PrefsData("_rule_repository", RemoteSource.GITHUB_OFFICIAL_REPO_SLUG)
+    val ICON_RULE_REPOSITORY = PreferenceData("_rule_repository", RemoteSource.GITHUB_OFFICIAL_REPO_SLUG)
 
     /** 当前实例 - [Context] or [PackageParam] */
     private var instance: Any? = null
@@ -118,10 +118,10 @@ object ConfigData {
      * @param data 键值数据模板
      * @return [String]
      */
-    private fun getString(data: PrefsData<String>) = when (instance) {
-        is Context -> (instance as Context).prefs().get(data)
-        is PackageParam -> (instance as PackageParam).prefs.get(data)
-        else -> error("Unknown type for get prefs data")
+    private fun getString(data: PreferenceData<String>) = when (instance) {
+        is Context -> (instance as Context).preferences().get(data)
+        is PackageParam -> (instance as PackageParam).preferences.get(data)
+        else -> error("Unknown type for get preferences data")
     }
 
     /**
@@ -129,11 +129,11 @@ object ConfigData {
      * @param data 键值数据模板
      * @param value 键值内容
      */
-    private fun putString(data: PrefsData<String>, value: String) {
+    private fun putString(data: PreferenceData<String>, value: String) {
         when (instance) {
-            is Context -> (instance as Context).prefs().edit { put(data, value) }
+            is Context -> (instance as Context).preferences().edit { put(data, value) }
             is PackageParam -> YLog.warn("Not support for this method")
-            else -> error("Unknown type for put prefs data")
+            else -> error("Unknown type for put preferences data")
         }
     }
 
@@ -142,10 +142,10 @@ object ConfigData {
      * @param data 键值数据模板
      * @return [Int]
      */
-    internal fun getInt(data: PrefsData<Int>) = when (instance) {
-        is Context -> (instance as Context).prefs().get(data)
-        is PackageParam -> (instance as PackageParam).prefs.get(data)
-        else -> error("Unknown type for get prefs data")
+    internal fun getInt(data: PreferenceData<Int>) = when (instance) {
+        is Context -> (instance as Context).preferences().get(data)
+        is PackageParam -> (instance as PackageParam).preferences.get(data)
+        else -> error("Unknown type for get preferences data")
     }
 
     /**
@@ -153,11 +153,11 @@ object ConfigData {
      * @param data 键值数据模板
      * @param value 键值内容
      */
-    internal fun putInt(data: PrefsData<Int>, value: Int) {
+    internal fun putInt(data: PreferenceData<Int>, value: Int) {
         when (instance) {
-            is Context -> (instance as Context).prefs().edit { put(data, value) }
+            is Context -> (instance as Context).preferences().edit { put(data, value) }
             is PackageParam -> YLog.warn("Not support for this method")
-            else -> error("Unknown type for put prefs data")
+            else -> error("Unknown type for put preferences data")
         }
     }
 
@@ -166,10 +166,10 @@ object ConfigData {
      * @param data 键值数据模板
      * @return [Boolean]
      */
-    internal fun getBoolean(data: PrefsData<Boolean>) = when (instance) {
-        is Context -> (instance as Context).prefs().get(data)
-        is PackageParam -> (instance as PackageParam).prefs.get(data)
-        else -> error("Unknown type for get prefs data")
+    internal fun getBoolean(data: PreferenceData<Boolean>) = when (instance) {
+        is Context -> (instance as Context).preferences().get(data)
+        is PackageParam -> (instance as PackageParam).preferences.get(data)
+        else -> error("Unknown type for get preferences data")
     }
 
     /**
@@ -177,11 +177,11 @@ object ConfigData {
      * @param data 键值数据模板
      * @param value 键值内容
      */
-    internal fun putBoolean(data: PrefsData<Boolean>, value: Boolean) {
+    internal fun putBoolean(data: PreferenceData<Boolean>, value: Boolean) {
         when (instance) {
-            is Context -> (instance as Context).prefs().edit { put(data, value) }
+            is Context -> (instance as Context).preferences().edit { put(data, value) }
             is PackageParam -> YLog.warn("Not support for this method")
-            else -> error("Unknown type for put prefs data")
+            else -> error("Unknown type for put preferences data")
         }
     }
 

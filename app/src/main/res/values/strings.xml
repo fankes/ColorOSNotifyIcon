@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ColorOS 通知图标增强</string>
     <string name="tile_name">通知图标</string>
+    <string name="module_description">为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeUI\n开发者：酷安 @星夜不荟</string>
 </resources>

@@ -31,6 +31,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Bundle
 import androidx.core.graphics.drawable.toBitmap
 import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.utils.factory.appIconOf
@@ -48,12 +49,26 @@ object ActivationPromptTool {
     /** 推送通知的渠道名称 */
     private const val NOTIFY_CHANNEL = "activationPromptId"
 
+    /** 通知中标记新版本已通过热重载生效的键值 */
+    private const val EXTRA_IS_RELOADED = "isReloaded"
+
+    /**
+     * 当前是否正在显示等待激活的提醒通知
+     * @param context 当前实例
+     * @return [Boolean]
+     */
+    fun isPrompting(context: Context) =
+        context.getSystemService(NotificationManager::class.java)?.activeNotifications?.any {
+            it.id == MODULE_PACKAGE_NAME.hashCode() && it.notification.extras.getBoolean(EXTRA_IS_RELOADED).not()
+        } == true
+
     /**
      * 推送提醒通知
      * @param context 当前实例
      * @param packageName 当前 APP 包名
+     * @param isReloaded 新版本是否已通过热重载生效 - 默认：否
      */
-    fun prompt(context: Context, packageName: String) {
+    fun prompt(context: Context, packageName: String, isReloaded: Boolean = false) {
         if (packageName != BuildConfigWrapper.APPLICATION_ID) return
         context.getSystemService(NotificationManager::class.java)?.apply {
             createNotificationChannel(
@@ -66,11 +81,13 @@ object ActivationPromptTool {
                 setShowWhen(true)
                 setSubText(context.appNameOf(MODULE_PACKAGE_NAME))
                 setContentTitle("模块已更新")
-                setContentText("点按通知打开模块以完成新版本激活。")
+                setContentText(if (isReloaded) "模块已完成更新，点按通知打开模块。" else "点按通知打开模块以完成新版本激活。")
+                setOnlyAlertOnce(true)
                 setColor(0xFF4E8A5A.toInt())
                 setAutoCancel(true)
                 setSmallIcon(Icon.createWithResource(MODULE_PACKAGE_NAME, R.drawable.ic_notify_update))
                 setLargeIcon(context.appIconOf(packageName)?.toBitmap())
+                setExtras(Bundle().apply { putBoolean(EXTRA_IS_RELOADED, isReloaded) })
                 setContentIntent(
                     PendingIntent.getActivity(
                         context, packageName.hashCode(),

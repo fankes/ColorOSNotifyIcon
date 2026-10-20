@@ -24,6 +24,8 @@ package com.fankes.coloros.notify.hook.entity
 
 import android.app.Notification
 import com.highcapable.kavaref.KavaRef.Companion.resolve
+import com.highcapable.yukihookapi.extension.kavaref.hook
+import com.highcapable.yukihookapi.extension.kavaref.lazyClassOrNull
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 
 /**
@@ -35,7 +37,7 @@ object FrameworkHooker : YukiBaseHooker() {
     private val OplusNotificationFixHelperClass by lazyClassOrNull("com.android.server.notification.OplusNotificationFixHelper")
 
     override fun onHook() {
-        /** 拦截 ColorOS 覆盖应用通知图标 */
+        // 拦截 ColorOS 覆盖应用通知图标
         OplusNotificationFixHelperClass?.resolve()?.optional()?.firstMethodOrNull {
             name = "fixSmallIcon"
             parameters(Notification::class, String::class, String::class, Boolean::class)

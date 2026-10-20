@@ -1,22 +1,33 @@
 name: 问题与 BUG 反馈
 description: 问题反馈必须使用此模板进行提交
-labels: [bug]
+labels: [ bug ]
 title: "[问题与 BUG 反馈] (在这里简要描述问题原因)"
 body:
   - type: markdown
     attributes:
       value: |
         ### 请在下方填写问题发生的具体原因和复现步骤。
-        
+
         RealmeUI 与 OxygenOS ≥ 12 都是基于 ColorOS 进行修改而来，理论功能是通用的，请额外注意在下方选择正确的系统类型。
-        
+
         我们只接受 ColorOS/RealmeUI/OxygenOS 正规官方版本系统，如果你正在使用官改(第三方修改版)请不要提交任何 BUG 与问题，我们无义务去解决，请自求多福。
-        
+
         发生异常、崩溃、闪退或功能性问题，必须提交问题 Log (日志)，没有 Log 的 issues 将直接被关闭。
   - type: input
     attributes:
       label: 模块版本
       description: 请填写当前使用的模块完整版本号，例如：**2.0**
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: 模块类型
+      description: |
+        请选择当前安装的模块类型，可以从安装包的文件名中查看，例如：**ColorOSNotifyIcon-vXxx(Xxx)-modern-release.apk**
+        **modern** 适用于支持 libxposed API 的 Xposed 框架，**legacy** 适用于仅支持 Xposed API 82 的传统 Xposed 框架
+      options:
+        - modern
+        - legacy
     validations:
       required: true
   - type: dropdown

@@ -27,22 +27,20 @@ import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.hook.entity.FrameworkHooker
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker
 import com.fankes.coloros.notify.utils.factory.isNotColorOS
-import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
-import com.highcapable.yukihookapi.hook.factory.configs
+import com.highcapable.yukihookapi.hook.factory.configure
 import com.highcapable.yukihookapi.hook.factory.encase
 import com.highcapable.yukihookapi.hook.log.YLog
-import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
+import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
 
-@InjectYukiHookWithXposed
-object HookEntry : IYukiHookXposedInit {
+object HookEntry : YukiHookXposedModule {
 
-    override fun onInit() = configs {
-        debugLog {
+    override fun onInit() = configure {
+        logging {
             tag = "ColorOSNotifyIcon"
-            isRecord = true
+            recording = true
             elements(PRIORITY)
         }
-        isDebug = false
+        debug = false
     }
 
     override fun onHook() = encase {
