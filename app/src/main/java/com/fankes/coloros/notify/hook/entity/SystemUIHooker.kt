@@ -255,6 +255,15 @@ object SystemUIHooker : YukiBaseHooker() {
         )
     )
 
+    /** ColorOS 16+ 存在的类 - 全屏应用通知轻反馈 */
+    private val FullScreenBannerHelperClass by lazyClassOrNull("com.oplus.systemui.notification.interruption.fullscreenbanner.FullScreenBannerHelper")
+
+    /** ColorOS 16+ 存在的类 - 需要合成头像与应用图标角标的应用名单 */
+    private val NotificationIconBadgePackagesClass by lazyClassOrNull("com.oplus.systemui.notification.NotificationIconBadgePackages")
+
+    /** ColorOS 16+ 存在的类 - 头像与应用图标角标的合成图标 */
+    private val DrawableWithBadgeClass by lazyClassOrNull("com.oplus.systemui.notification.utlils.DrawableWithBadge")
+
     /** ColorOS 16+ 存在的类 - 锁屏岛 (锁屏胶囊) 图标数据 */
     private val CapsuleNotificationIconDataClass by lazyClassOrNull(
         $$"com.oplus.systemui.notification.lockscreen.notification.CapsuleNotificationDataController$NotificationIconData"
@@ -674,6 +683,11 @@ object SystemUIHooker : YukiBaseHooker() {
         iconColor: Int,
         iconView: ImageView
     ) = runInSafe {
+        // 系统已将头像和应用图标合成，此处只替换角标，不覆盖整个图标
+        if (DrawableWithBadgeClass?.isInstance(iconView.drawable) == true) {
+            moduleStyledIcons[iconView] = false
+            return@runInSafe
+        }
         val realPackageName = if (nf.isOplusPush || isCollapseNotification(nf.packageName, packageName)) nf.packageName else packageName
         compatCustomIcon(context, isGrayscaleIcon, realPackageName).also { customTriple ->
             when {
@@ -730,16 +744,81 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun compatCapsuleIcon(args: Array<Any?>) = safeOfNull {
         val context = globalContext ?: return@safeOfNull null
         val smallIcon = (args[3] as? Icon)?.loadDrawable(context) ?: return@safeOfNull null
-        val nf = NotificationEntryClass.resolve().optional(silent = true).firstMethodOrNull {
+        val nf = statusBarNotificationOfEntry(args[6]) ?: return@safeOfNull null
+        compatSmallIconDrawable(context, nf, smallIcon, capsuleIconSizeOf(context))
+    }
+
+    /**
+     * 自动适配全屏应用通知轻反馈图标
+     *
+     * 只替换应用图标，头像保持不变：有头像时 [builder] 的图标是头像的角标，没有头像时就是主图标
+     * @param context 实例
+     * @param entry 通知实体
+     * @param builder 系统生成的 `FullScreenBanner.Builder`
+     */
+    private fun compatBannerBuilder(context: Context?, entry: Any?, builder: Any?) = runInSafe {
+        val nf = statusBarNotificationOfEntry(entry) ?: return@runInSafe
+        val realContext = globalContext ?: context ?: return@runInSafe
+        val smallIcon = nf.notification.smallIcon?.loadDrawable(realContext) ?: return@runInSafe
+        val icon = compatSmallIconDrawable(realContext, nf, smallIcon, sizePx = 0) ?: return@runInSafe
+        val resolver = builder?.asResolver()?.optional(silent = true) ?: return@runInSafe
+        resolver.firstFieldOrNull { name = "mIcon" }?.setQuietly(icon)
+        resolver.firstFieldOrNull { name = "mLargeIconWithBadge" }?.getQuietly<Drawable>()
+            ?.takeIf { DrawableWithBadgeClass?.isInstance(it) == true }
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                name = "setBadge"
+                parameterCount = 2
+            }?.invokeQuietly(icon, null)
+    }
+
+    /**
+     * 取通知实体的通知实例
+     * @param entry `NotificationEntry` 实例
+     * @return [StatusBarNotification] or null
+     */
+    private fun statusBarNotificationOfEntry(entry: Any?) =
+        NotificationEntryClass.resolve().optional(silent = true).firstMethodOrNull {
             name = "getSbn"
-        }?.of(args[6])?.invokeQuietly<StatusBarNotification>() ?: return@safeOfNull null
-        if (isMediaNotification(context, nf.notification, context.packageName)) return@safeOfNull null
+        }?.of(entry)?.invokeQuietly<StatusBarNotification>()
+
+    /**
+     * 自动适配通知头像右下角的应用图标角标
+     *
+     * 系统会把头像和应用图标合成为一个 [DrawableWithBadgeClass]，此处只替换其中的角标，头像保持不变
+     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
+     * @param drawable 系统合成后的图标
+     */
+    private fun compatHeaderBadge(headerWrapperExImp: Any?, drawable: Drawable?) = runInSafe {
+        if (DrawableWithBadgeClass?.isInstance(drawable) != true) return@runInSafe
+        val (base, iconView) = headerIconOfEx(headerWrapperExImp)
+        val nf = statusBarNotificationOf(base) ?: return@runInSafe
+        val context = iconView?.context ?: return@runInSafe
+        val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@runInSafe
+        val badge = compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0) ?: return@runInSafe
+        drawable?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+            name = "setBadge"
+            parameterCount = 2
+        }?.invokeQuietly(badge, null)
+    }
+
+    /**
+     * 自动适配通知小图标 - 通知栏、锁屏岛、头像角标等需要小图标的位置共用
+     *
+     * 处理方式与 [compatNotifyIcon] 保持一致
+     * @param context 实例
+     * @param nf 通知实例
+     * @param smallIcon 原始小图标
+     * @param sizePx 图标视图尺寸 (px) - 未知时为 0
+     * @return [Drawable] or null - 为 null 时交还系统处理
+     */
+    private fun compatSmallIconDrawable(context: Context, nf: StatusBarNotification, smallIcon: Drawable, sizePx: Int): Drawable? {
+        if (isMediaNotification(context, nf.notification, context.packageName)) return null
         val isGrayscaleIcon = isGrayscaleIcon(context, smallIcon)
         val customTriple = compatCustomIcon(context, isGrayscaleIcon, nf.packageName)
-        when {
+        return when {
             ConfigData.isEnableNotifyIconForceAppIcon -> appIcons[nf.packageName] ?: context.appIconOf(nf.packageName)
             (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon ->
-                customNotifyIconOf(context, customTriple, smallIcon, nf.notification.color, capsuleIconSizeOf(context))
+                customNotifyIconOf(context, customTriple, smallIcon, nf.notification.color, sizePx)
             nf.isOplusPush -> nf.compatPushingIcon(smallIcon)
             else -> null
         }
@@ -776,6 +855,38 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /**
+     * 判断通知头部是否由系统合成头像与应用图标角标
+     *
+     * 名单内的应用带有头像大图标时，系统会把头像和应用图标合成为头部图标
+     * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
+     * @return [Boolean]
+     */
+    private fun isHeaderBadgeComposite(headerWrapperExImp: Any?) = safeOfFalse {
+        val hasAvatar = headerWrapperExImp?.asResolver()?.optional(silent = true)?.firstFieldOrNull {
+            name = "mRightIcon"
+        }?.getQuietly<ImageView>()?.drawable != null
+        val packageName = statusBarNotificationOf(headerIconOfEx(headerWrapperExImp).first)?.packageName
+        if (hasAvatar.not() || packageName == null) return@safeOfFalse false
+        NotificationIconBadgePackagesClass?.resolve()?.optional(silent = true)
+            ?.firstMethodOrNull { name = "getInstance" }?.invokeQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "contains" }
+            ?.invokeQuietly<Boolean>(packageName) == true
+    }
+
+    /**
+     * 取通知头部包装器所属的通知实例
+     * @param base [NotificationHeaderViewWrapperClass] 实例
+     * @return [StatusBarNotification] or null
+     */
+    private fun statusBarNotificationOf(base: Any?): StatusBarNotification? {
+        val row = NotificationViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mRow" }?.of(base)?.get()
+        return ExpandableNotificationRowClass.resolve().optional().firstMethodOrNull { name = "getEntry" }
+            ?.of(row)?.invokeQuietly()?.let {
+                it.asResolver().optional().firstMethodOrNull { name = "getSbn" }?.invoke<StatusBarNotification>()
+            }
+    }
+
+    /**
      * 取通知头部包装器的图标 [ImageView]
      * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
      * @return [ImageView] or null
@@ -789,11 +900,11 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun styleHeaderIcon(headerWrapperExImp: Any?) = runInSafe {
         val (base, iconView) = headerIconOfEx(headerWrapperExImp)
         if (base == null || iconView == null) return@runInSafe
-        val row = NotificationViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mRow" }?.of(base)?.get()
-        val nf = ExpandableNotificationRowClass.resolve().optional().firstMethodOrNull { name = "getEntry" }
-            ?.of(row)?.invokeQuietly()?.let {
-                it.asResolver().optional().firstMethodOrNull { name = "getSbn" }?.invoke<StatusBarNotification>()
-            } ?: return@runInSafe
+        if (isHeaderBadgeComposite(headerWrapperExImp)) {
+            moduleStyledIcons[iconView] = false
+            return@runInSafe
+        }
+        val nf = statusBarNotificationOf(base) ?: return@runInSafe
         val context = iconView.context
         nf.notification?.also {
             it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
@@ -1198,6 +1309,16 @@ object SystemUIHooker : YukiBaseHooker() {
             }
         }
 
+        // 替换通知头像右下角的应用图标角标 - ColorOS 16+
+        OplusNotificationHeaderViewWrapperExImpClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = "applyExpandedCanvasIconWithBadge"
+            parameterCount = 4
+        }?.hook()?.before { compatHeaderBadge(instance, firstArg().get<Drawable>()) }
+        // 替换全屏应用通知轻反馈图标 - ColorOS 16+
+        FullScreenBannerHelperClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = "buildNotification"
+            parameterCount = 2
+        }?.hook()?.after { compatBannerBuilder(firstArg().get<Context>(), lastArg().get(), result) }
         // 替换锁屏岛 (锁屏胶囊) 图标 - ColorOS 16+
         CapsuleNotificationIconDataClass?.resolve()?.optional(silent = true)?.constructor {
             parameterCount = 8
@@ -1263,6 +1384,11 @@ object SystemUIHooker : YukiBaseHooker() {
                     parameterCount = 1
                 }?.hook()?.after {
                     headerIconOf(instance)?.apply {
+                        // 系统会合成头像与应用图标角标，此处不覆盖
+                        if (isHeaderBadgeComposite(instance)) {
+                            moduleStyledIcons[this] = false
+                            return@apply
+                        }
                         ExpandableNotificationRowClass.resolve().optional()
                             .firstMethodOrNull { name = "getEntry" }
                             ?.of(args[0])?.invokeQuietly()?.let {
@@ -1290,14 +1416,14 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "updateIconColor"
                     emptyParameters()
                 }?.hook()?.apply {
-                    before { if (moduleStyledIcons[headerIconOf(instance)] == true) result = false }
+                    before { if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) result = false }
                     after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
                 }
                 firstMethodOrNull {
                     name = "updateIconRoundness"
                     parameterCount = 1
                 }?.hook()?.apply {
-                    before { if (moduleStyledIcons[headerIconOf(instance)] == true) result = null }
+                    before { if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) result = null }
                     after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
                     // after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
                 }
