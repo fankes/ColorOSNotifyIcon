@@ -61,6 +61,7 @@ import com.fankes.coloros.notify.utils.factory.appLastUpdateTimeOf
 import com.fankes.coloros.notify.utils.factory.appNameOf
 import com.fankes.coloros.notify.utils.factory.colorAlphaOf
 import com.fankes.coloros.notify.utils.factory.delayedRun
+import com.fankes.coloros.notify.utils.factory.dp
 import com.fankes.coloros.notify.utils.factory.dpFloat
 import com.fankes.coloros.notify.utils.factory.drawableOf
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
@@ -254,6 +255,18 @@ object SystemUIHooker : YukiBaseHooker() {
             "${PackageName.SYSTEMUI}.statusbar.notification.NotificationHeaderViewWrapper"
         )
     )
+
+    /** ColorOS 16+ 存在的类 - 息屏时钟的通知图标布局 */
+    private val AodNotificationLayoutClass by lazyClassOrNull("com.oplus.systemui.aod.aodclock.off.notification.NotificationLayout")
+
+    /** ColorOS 16+ 存在的类 - 息屏插件 */
+    private val AodPluginCallImplClass by lazyClassOrNull("com.oplus.systemui.aod.plugin.AodPluginCallImpl")
+
+    /** ColorOS 16+ 存在的类 - 锁屏通知分发器 */
+    private val LockScreenNotificationDispatcherClass by lazyClassOrNull("com.android.systemui.statusbar.LockScreenNotificationDispatcher")
+
+    /** ColorOS 16+ 存在的类 - 系统依赖注入入口 */
+    private val DependencyExClass by lazyClassOrNull("com.android.systemui.DependencyEx")
 
     /** ColorOS 16+ 存在的类 - 全屏应用通知轻反馈 */
     private val FullScreenBannerHelperClass by lazyClassOrNull("com.oplus.systemui.notification.interruption.fullscreenbanner.FullScreenBannerHelper")
@@ -654,7 +667,8 @@ object SystemUIHooker : YukiBaseHooker() {
             badgeColor = newApplyColor,
             glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
             cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
-            paddingRatio = padRatio
+            paddingRatio = padRatio,
+            referenceSidePx = if (viewSizePx > 0) viewSizePx.toFloat() else headerIconSizeOf(context).toFloat()
         ) else CustomIconDrawable(
             glyph = glyph,
             badgeColor = Color.TRANSPARENT,
@@ -772,6 +786,65 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /**
+     * 自动适配息屏通知图标
+     *
+     * 系统在把图标交给息屏插件之前，会从锁屏通知分发器取出图标数据列表，此处直接替换其中的图标
+     */
+    private fun compatAodIconData() = runInSafe {
+        val context = globalContext ?: return@runInSafe
+        val dispatcher = DependencyExClass?.resolve()?.optional(silent = true)
+            ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                name = "getDependency"
+                parameters(Class::class)
+            }?.invokeQuietly<Any>(LockScreenNotificationDispatcherClass)?.asResolver()?.optional(silent = true)
+            ?: return@runInSafe
+        val iconDataList = dispatcher.firstMethodOrNull { name = "getLockScreenNotificationIconData" }?.invokeQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getValue" }?.invokeQuietly<List<*>>()
+            ?: return@runInSafe
+        val entries = dispatcher.firstMethodOrNull { name = "getNotificationListOnKg" }?.invokeQuietly<List<*>>()
+            ?: return@runInSafe
+        iconDataList.forEach { iconData ->
+            val data = iconData?.asResolver()?.optional(silent = true) ?: return@forEach
+            val key = data.firstMethodOrNull { name = "getKey" }?.invokeQuietly<String>() ?: return@forEach
+            val nf = statusBarNotificationOfKey(entries, key) ?: return@forEach
+            val bitmap = compatAodBitmap(context, nf) ?: return@forEach
+            data.firstMethodOrNull { name = "setIcon" }?.invokeQuietly(bitmap.toDrawable(context.resources))
+        }
+    }
+
+    /**
+     * 自动适配息屏通知图标并转换为位图，息屏的各个位置共用
+     * @param context 实例
+     * @param nf 通知实例
+     * @return [Bitmap] or null - 为 null 时交还系统处理
+     */
+    private fun compatAodBitmap(context: Context, nf: StatusBarNotification) = safeOfNull {
+        val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@safeOfNull null
+        compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0)?.toBitmap()
+    }
+
+    /**
+     * 按息屏图标数据的 key 从锁屏通知列表里取通知实例
+     *
+     * key 由 “包名 + uid + 通知 ID” 拼接，被折叠成组的通知取不到同 ID 的实例时按 “包名 + uid” 匹配
+     * @param entries 锁屏通知列表 (`PipelineEntry`)
+     * @param key 息屏图标数据的 key
+     * @return [StatusBarNotification] or null
+     */
+    private fun statusBarNotificationOfKey(entries: List<*>, key: String): StatusBarNotification? {
+        val notifications = entries.mapNotNull { entry ->
+            statusBarNotificationOfEntry(
+                entry?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                    name = "getRepresentativeEntry"
+                }?.invokeQuietly<Any>()
+            )
+        }
+        return notifications.firstOrNull { "${it.packageName}${it.uid}${it.id}" == key }
+            ?: notifications.firstOrNull { key.startsWith("${it.packageName}${it.uid}") }
+    }
+
+    /**
      * 取通知实体的通知实例
      * @param entry `NotificationEntry` 实例
      * @return [StatusBarNotification] or null
@@ -823,6 +896,15 @@ object SystemUIHooker : YukiBaseHooker() {
             else -> null
         }
     }
+
+    /**
+     * 取通知面板头部图标尺寸 - 圆角设置针对的图标大小
+     * @param context 实例
+     * @return [Int] 图标尺寸 (px)
+     */
+    private fun headerIconSizeOf(context: Context) =
+        context.resources.getIdentifier("notification_header_icon_size", "dimen", context.packageName)
+            .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 40.dp(context)
 
     /**
      * 取锁屏岛图标尺寸
@@ -1314,6 +1396,29 @@ object SystemUIHooker : YukiBaseHooker() {
             name = "applyExpandedCanvasIconWithBadge"
             parameterCount = 4
         }?.hook()?.before { compatHeaderBadge(instance, firstArg().get<Drawable>()) }
+        // 替换息屏时钟布局的通知图标 - ColorOS 16+
+        AodNotificationLayoutClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = "updateNotificationView"
+            parameters(StatusBarNotification::class)
+        }?.hook()?.intercept {
+            val nf = firstArg().get<StatusBarNotification>()
+            val bitmap = nf?.let { compatAodBitmap(globalContext ?: instance<View>().context, it) }
+            // 系统直接读取通知的小图标，这里只在方法执行期间临时替换，执行完立刻还原
+            val field = nf?.notification?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "mSmallIcon" }
+            if (nf == null || bitmap == null || field == null) return@intercept callOriginal()
+            val original = nf.notification.smallIcon
+            field.set(Icon.createWithBitmap(bitmap))
+            try {
+                callOriginal()
+            } finally {
+                field.set(original)
+            }
+        }
+        // 替换息屏通知图标 - ColorOS 16+
+        AodPluginCallImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = "updateNotificationIconData"
+            emptyParameters()
+        }?.hook()?.before { compatAodIconData() }
         // 替换全屏应用通知轻反馈图标 - ColorOS 16+
         FullScreenBannerHelperClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
             name = "buildNotification"
@@ -1593,6 +1698,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param badgeColor 背景徽章颜色 - 透明则不画背景 (经典风格)
      * @param glyphColor 图标着色
      * @param cornerRadiusPx 背景圆角 (px)
+     * @param referenceSidePx 背景圆角对应的图标边长 (px) - 实际绘制边长不同时圆角按比例缩放，为 0 则不缩放
      * @param paddingRatio 图标相对背景的内边距比例
      */
     private class CustomIconDrawable(
@@ -1600,7 +1706,8 @@ object SystemUIHooker : YukiBaseHooker() {
         private val badgeColor: Int,
         private val glyphColor: Int,
         private val cornerRadiusPx: Float,
-        private val paddingRatio: Float
+        private val paddingRatio: Float,
+        private val referenceSidePx: Float = 0f
     ) : Drawable() {
 
         private val glyph: Drawable = glyph.mutate()
@@ -1628,7 +1735,8 @@ object SystemUIHooker : YukiBaseHooker() {
             val bottom = top + side
             if (Color.alpha(badgeColor) != 0) {
                 backgroundPaint.alpha = (Color.alpha(badgeColor) * drawableAlpha / 255).coerceIn(0, 255)
-                canvas.drawRoundRect(left, top, right, bottom, cornerRadiusPx, cornerRadiusPx, backgroundPaint)
+                val radius = if (referenceSidePx > 0f) cornerRadiusPx * side / referenceSidePx else cornerRadiusPx
+                canvas.drawRoundRect(left, top, right, bottom, radius, radius, backgroundPaint)
             }
             val pad = side * paddingRatio
             glyph.setTint(glyphColor)
