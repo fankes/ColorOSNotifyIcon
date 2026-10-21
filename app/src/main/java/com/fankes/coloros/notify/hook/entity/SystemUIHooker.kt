@@ -68,6 +68,7 @@ import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
+import com.fankes.coloros.notify.utils.factory.safeOfNull
 import com.fankes.coloros.notify.utils.factory.stampToDate
 import com.fankes.coloros.notify.utils.factory.systemAccentColor
 import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
@@ -252,6 +253,11 @@ object SystemUIHooker : YukiBaseHooker() {
             "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationHeaderViewWrapper",
             "${PackageName.SYSTEMUI}.statusbar.notification.NotificationHeaderViewWrapper"
         )
+    )
+
+    /** ColorOS 16+ 存在的类 - 锁屏岛 (锁屏胶囊) 图标数据 */
+    private val CapsuleNotificationIconDataClass by lazyClassOrNull(
+        $$"com.oplus.systemui.notification.lockscreen.notification.CapsuleNotificationDataController$NotificationIconData"
     )
 
     /** 根据多个版本存在不同的方法相同的类 */
@@ -584,6 +590,72 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /**
+     * 创建通知栏自绘图标 - 背景与着色图标都由自绘 [Drawable] 承载
+     * @param context 实例
+     * @param customTriple [compatCustomIcon] 的结果
+     * @param drawable 原始图标
+     * @param iconColor 原生图标颜色
+     * @param viewSizePx 图标视图尺寸 (px) - 未知时为 0
+     * @return [Drawable]
+     */
+    private fun customNotifyIconOf(
+        context: Context,
+        customTriple: Triple<Drawable?, Int, Boolean>,
+        drawable: Drawable,
+        iconColor: Int,
+        viewSizePx: Int
+    ): Drawable {
+        val isMd3 = ConfigData.isEnableMd3NotifyIconStyle
+
+        // 图标相对背景的留白比例，折叠/展开等比一致
+        val padRatio = if (isMd3) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
+
+        // 图标实际显示尺寸 - 位图直接优化到该尺寸，避免二次缩放产生毛边
+        val contentPx = if (viewSizePx > 0) (viewSizePx * (1f - padRatio * 2)).toInt().coerceAtLeast(1) else 0
+
+        // 优化 (锐化) 后的单色图标
+        val glyph = (customTriple.first ?: drawable).let { d ->
+            (d as? BitmapDrawable)?.bitmap
+                ?.let { BitmapCompatTool.optimizeForSize(it, contentPx).toDrawable(context.resources) } ?: d
+        }
+
+        // 旧版风格
+        val oldStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
+
+        // 原生着色
+        val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
+            (if (context.isSystemInDarkMode) 0xFF707173.toInt() else oldStyle)
+
+        // 原生通知图标颜色
+        val nativeIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else iconColor
+
+        // 自定义通知图标颜色
+        val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else customTriple.second
+
+        // 旧版图标着色
+        val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
+
+        // 新版图标 (背景) 着色
+        val newApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style
+
+        // 用自绘 [CustomIconDrawable] 承载 “背景 + 着色图标”，其内部把 setColorFilter/setTint 覆盖为重申自身颜色，
+        // 背景也画在图标自身而非视图 background
+        return if (isMd3) CustomIconDrawable(
+            glyph = glyph,
+            badgeColor = newApplyColor,
+            glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
+            cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
+            paddingRatio = padRatio
+        ) else CustomIconDrawable(
+            glyph = glyph,
+            badgeColor = Color.TRANSPARENT,
+            glyphColor = oldApplyColor,
+            cornerRadiusPx = 0f,
+            paddingRatio = padRatio
+        )
+    }
+
+    /**
      * 自动适配通知栏小图标
      * @param context 实例
      * @param nf 通知实例
@@ -622,60 +694,9 @@ object SystemUIHooker : YukiBaseHooker() {
                     background = null
                     setPadding(0)
                     clearColorFilter()
-
-                    val isMd3 = ConfigData.isEnableMd3NotifyIconStyle
-
                     // 图标视图尺寸
                     val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
-
-                    // 图标相对背景的留白比例，折叠/展开等比一致
-                    val padRatio = if (isMd3) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
-
-                    // 图标实际显示尺寸 - 位图直接优化到该尺寸，避免二次缩放产生毛边
-                    val contentPx = if (viewSizePx > 0) (viewSizePx * (1f - padRatio * 2)).toInt().coerceAtLeast(1) else 0
-
-                    // 优化 (锐化) 后的单色图标
-                    val glyph = (customTriple.first ?: drawable).let { d ->
-                        (d as? BitmapDrawable)?.bitmap
-                            ?.let { BitmapCompatTool.optimizeForSize(it, contentPx).toDrawable(resources) } ?: d
-                    }
-
-                    // 旧版风格
-                    val oldStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
-
-                    // 原生着色
-                    val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
-                        (if (context.isSystemInDarkMode) 0xFF707173.toInt() else oldStyle)
-
-                    // 原生通知图标颜色
-                    val nativeIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else iconColor
-
-                    // 自定义通知图标颜色
-                    val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else customTriple.second
-
-                    // 旧版图标着色
-                    val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
-
-                    // 新版图标 (背景) 着色
-                    val newApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style
-
-                    // 用自绘 [CustomIconDrawable] 承载 “背景 + 着色图标”，其内部把 setColorFilter/setTint 覆盖为重申自身颜色，
-                    // 背景也画在图标自身而非视图 background
-                    setImageDrawable(
-                        if (isMd3) CustomIconDrawable(
-                            glyph = glyph,
-                            badgeColor = newApplyColor,
-                            glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
-                            cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
-                            paddingRatio = padRatio
-                        ) else CustomIconDrawable(
-                            glyph = glyph,
-                            badgeColor = Color.TRANSPARENT,
-                            glyphColor = oldApplyColor,
-                            cornerRadiusPx = 0f,
-                            paddingRatio = padRatio
-                        )
-                    )
+                    setImageDrawable(customNotifyIconOf(context, customTriple, drawable, iconColor, viewSizePx))
                 }
                 else -> iconView.apply {
                     // 标记为已处理但非本模块接管
@@ -698,6 +719,40 @@ object SystemUIHooker : YukiBaseHooker() {
                 customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: 0)
         }
     }
+
+    /**
+     * 自动适配锁屏岛 (锁屏胶囊) 图标
+     *
+     * 处理方式与 [compatNotifyIcon] 保持一致
+     * @param args 锁屏岛图标数据的构造方法参数
+     * @return [Drawable] or null - 为 null 时交还系统处理
+     */
+    private fun compatCapsuleIcon(args: Array<Any?>) = safeOfNull {
+        val context = globalContext ?: return@safeOfNull null
+        val smallIcon = (args[3] as? Icon)?.loadDrawable(context) ?: return@safeOfNull null
+        val nf = NotificationEntryClass.resolve().optional(silent = true).firstMethodOrNull {
+            name = "getSbn"
+        }?.of(args[6])?.invokeQuietly<StatusBarNotification>() ?: return@safeOfNull null
+        if (isMediaNotification(context, nf.notification, context.packageName)) return@safeOfNull null
+        val isGrayscaleIcon = isGrayscaleIcon(context, smallIcon)
+        val customTriple = compatCustomIcon(context, isGrayscaleIcon, nf.packageName)
+        when {
+            ConfigData.isEnableNotifyIconForceAppIcon -> appIcons[nf.packageName] ?: context.appIconOf(nf.packageName)
+            (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon ->
+                customNotifyIconOf(context, customTriple, smallIcon, nf.notification.color, capsuleIconSizeOf(context))
+            nf.isOplusPush -> nf.compatPushingIcon(smallIcon)
+            else -> null
+        }
+    }
+
+    /**
+     * 取锁屏岛图标尺寸
+     * @param context 实例
+     * @return [Int] 图标尺寸 (px) - 获取失败为 0
+     */
+    private fun capsuleIconSizeOf(context: Context) =
+        context.resources.getIdentifier("capsule_icon_size", "dimen", context.packageName)
+            .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 0
 
     /**
      * 取通知头部包装器的图标 EX [ImageView]
@@ -1141,6 +1196,15 @@ object SystemUIHooker : YukiBaseHooker() {
                     emptyParameters()
                 }?.of(holder)?.invokeQuietly<View>()?.performClick()
             }
+        }
+
+        // 替换锁屏岛 (锁屏胶囊) 图标 - ColorOS 16+
+        CapsuleNotificationIconDataClass?.resolve()?.optional(silent = true)?.constructor {
+            parameterCount = 8
+        }?.hookAll()?.before {
+            // 排除带默认参数的合成构造方法
+            if (args[7] !is Boolean) return@before
+            compatCapsuleIcon(args)?.also { arg(2).set(it) }
         }
 
         if (isNewNotification) {
