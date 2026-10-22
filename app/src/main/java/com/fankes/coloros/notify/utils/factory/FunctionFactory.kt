@@ -110,6 +110,14 @@ inline val isUpperOfAndroidS get() = Build.VERSION.SDK_INT > Build.VERSION_CODES
 inline val isLowerAndroidP get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.P
 
 /**
+ * 系统版本是否高于或等于 ColorOS 17
+ * @return [Boolean] 是否符合条件
+ */
+val isUpperOfColorOS17 by lazy {
+    (colorOSNumberVersion.removePrefix("V").substringBefore(".").toIntOrNull() ?: 0) >= 17
+}
+
+/**
  * 当前设备是否是 ColorOS 定制 Android 系统
  * @return [Boolean] 是否符合条件
  */

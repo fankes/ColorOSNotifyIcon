@@ -66,6 +66,7 @@ import com.fankes.coloros.notify.utils.factory.dpFloat
 import com.fankes.coloros.notify.utils.factory.drawableOf
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
 import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
+import com.fankes.coloros.notify.utils.factory.isUpperOfColorOS17
 import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
@@ -644,8 +645,8 @@ object SystemUIHooker : YukiBaseHooker() {
                 ?.let { BitmapCompatTool.optimizeForSize(it, contentPx).toDrawable(context.resources) } ?: d
         }
 
-        // 旧版风格
-        val oldStyle = if (context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
+        // 旧版风格 - ColorOS 17+ 通知面板为液态玻璃背景，浅色模式下的深色图标看不清，始终使用夜间模式颜色
+        val oldStyle = if (isUpperOfColorOS17 || context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
 
         // 原生着色
         val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
