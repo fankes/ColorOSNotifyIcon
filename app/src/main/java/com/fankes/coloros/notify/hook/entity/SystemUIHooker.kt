@@ -282,6 +282,9 @@ object SystemUIHooker : YukiBaseHooker() {
         $$"com.oplus.systemui.notification.lockscreen.notification.CapsuleNotificationDataController$NotificationIconData"
     )
 
+    /** 系统配置变化分发器 */
+    private val ConfigurationControllerClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.policy.ConfigurationController")
+
     /** 根据多个版本存在不同的方法相同的类 */
     private val StatusBarIconControllerClass by lazyClass(
         VariousClass(
@@ -1122,12 +1125,33 @@ object SystemUIHooker : YukiBaseHooker() {
     fun onReloaded() {
         if (isHooked.not()) return
         iconRuleScope.launch {
+            restoreNotificationPresenter()
             hostApplication?.apply {
                 onHostCreated()
                 if (ActivationPromptTool.isPrompting(this))
                     ActivationPromptTool.prompt(this, BuildConfigWrapper.APPLICATION_ID, isReloaded = true)
             }
         }
+    }
+
+    /**
+     * 热重载后通知控制器的构造方法不会再次执行，[notificationPresenter] 会一直为空直到下一个实例被创建
+     *
+     * 通知控制器在 attach 时会把自己注册到 ConfigurationController，这里从它的监听列表中找回已存在的实例
+     */
+    private fun restoreNotificationPresenter() = runInSafe {
+        if (notificationPresenter != null) return@runInSafe
+        val presenterClass = (if (isNotificationPresenter) StatusBarNotificationPresenterClass else ViewConfigCoordinatorClass)
+            ?: return@runInSafe
+        val listeners = DependencyExClass?.resolve()?.optional(silent = true)
+            ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                name = "getDependency"
+                parameters(Class::class)
+            }?.invokeQuietly<Any>(ConfigurationControllerClass)
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getListeners" }?.invokeQuietly<List<*>>()
+        notificationPresenter = listeners?.let { synchronized(it) { it.firstOrNull { e -> presenterClass.isInstance(e) } } }
+        if (notificationPresenter == null) YLog.warn("Failed to restore notification presenter after reloaded")
     }
 
     /** 释放当前模块实例在宿主中启动的协程和监听 */
