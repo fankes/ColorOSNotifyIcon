@@ -23,7 +23,12 @@
 package com.fankes.coloros.notify.hook.entity
 
 import android.app.Notification
+import android.content.Intent
+import com.fankes.coloros.notify.const.PackageName
+import com.fankes.coloros.notify.service.IconRuleUpdateService
+import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.highcapable.kavaref.KavaRef.Companion.resolve
+import com.highcapable.kavaref.extension.classOf
 import com.highcapable.yukihookapi.extension.kavaref.hook
 import com.highcapable.yukihookapi.extension.kavaref.lazyClassOrNull
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
@@ -36,11 +41,26 @@ object FrameworkHooker : YukiBaseHooker() {
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationFixHelperClass by lazyClassOrNull("com.android.server.notification.OplusNotificationFixHelper")
 
+    /** ColorOS 存在的类 - 自启动管理 */
+    private val OplusAppStartupManagerClass by lazyClassOrNull("com.android.server.am.OplusAppStartupManager")
+
     override fun onHook() {
         // 拦截 ColorOS 覆盖应用通知图标
         OplusNotificationFixHelperClass?.resolve()?.optional()?.firstMethodOrNull {
             name = "fixSmallIcon"
             parameters(Notification::class, String::class, String::class, Boolean::class)
         }?.hook()?.intercept()
+        // ColorOS 自启动管理会拦截 SystemUI 冷启动模块的定时更新服务，这里只放行这一个服务
+        OplusAppStartupManagerClass?.resolve()?.optional()?.firstMethodOrNull {
+            name = "isAllowStartFromStartService"
+            parameterCount = 6
+        }?.hook()?.before {
+            val callerPackageName = arg(3).get<String>()
+            val component = arg(5).get<Intent>()?.component
+            if (callerPackageName == PackageName.SYSTEMUI &&
+                component?.packageName == BuildConfigWrapper.APPLICATION_ID &&
+                component.className == classOf<IconRuleUpdateService>().name
+            ) result = true
+        }
     }
 }
