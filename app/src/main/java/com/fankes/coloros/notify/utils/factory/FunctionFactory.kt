@@ -46,6 +46,7 @@ import android.os.Build
 import android.os.Handler
 import android.provider.Settings
 import android.util.Base64
+import android.view.View
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
@@ -54,6 +55,7 @@ import androidx.core.content.getSystemService
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.net.toUri
+import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.google.android.material.snackbar.Snackbar
 import com.highcapable.kavaref.KavaRef.Companion.resolve
@@ -195,7 +197,7 @@ val colorOSVersion get() = "$colorOSNumberVersion ${Build.DISPLAY}"
  * @return [String]
  */
 val colorOSNumberVersion
-    get() = safeOf(default = "无法获取") {
+    get() = safeOf(default = "Unavailable") {
         "com.oplus.os.OplusBuild".toClassOrNull()?.let {
             val scope = it.resolve().optional(silent = true)
             val versionIndex = scope.firstMethodOrNull { name = "getOplusOSVERSION" }?.invokeQuietly<Int>() ?: -1
@@ -205,7 +207,7 @@ val colorOSNumberVersion
             }?.getQuietly<Array<String>>()
                 ?.takeIf { e -> e.isNotEmpty() }
                 ?.getOrNull(versionIndex)
-        } ?: findPropString("ro.system.build.fingerprint", "无法获取").split("ssi:")[1].split("/")[0].trim()
+        } ?: findPropString("ro.system.build.fingerprint", "Unavailable").split("ssi:")[1].split("/")[0].trim()
     }
 
 /**
@@ -470,6 +472,8 @@ inline fun <reified T : Activity> Context.navigate() = runInSafe {
  */
 fun Context.snake(msg: String, actionText: String = "", callback: () -> Unit = {}) =
     Snackbar.make((this as Activity).findViewById(android.R.id.content), msg, Snackbar.LENGTH_LONG).apply {
+        // 有底栏时显示在底栏上方，避免挡住底栏
+        (findViewById<View>(R.id.main_bottom_nav) ?: findViewById<View>(R.id.config_bottom_bar))?.let { anchorView = it }
         if (actionText.isBlank()) return@apply
         setActionTextColor(if (isSystemInDarkMode) Color.BLACK else Color.WHITE)
         setAction(actionText) { callback() }
@@ -489,8 +493,8 @@ fun Context.openBrowser(url: String, packageName: String = "") = runCatching {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
     })
 }.onFailure {
-    if (packageName.isNotBlank()) snake(msg = "启动 $packageName 失败")
-    else snake(msg = "启动系统浏览器失败")
+    if (packageName.isNotBlank()) snake(msg = getString(R.string.common_launch_failed, packageName))
+    else snake(msg = getString(R.string.common_launch_browser_failed))
 }
 
 /**
@@ -504,8 +508,8 @@ fun Context.openSelfSetting(packageName: String = appContext.packageName) = runC
             action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
             data = Uri.fromParts("package", packageName, null)
         })
-    else toast(msg = "你没有安装此应用")
-}.onFailure { toast(msg = "启动 $packageName 应用信息失败") }
+    else toast(msg = getString(R.string.common_app_not_installed))
+}.onFailure { toast(msg = getString(R.string.common_launch_app_info_failed, packageName)) }
 
 /** 跳转通知设置界面 */
 fun Context.openNotifySetting() = runCatching {
@@ -515,7 +519,7 @@ fun Context.openNotifySetting() = runCatching {
         intent.putExtra(Notification.EXTRA_CHANNEL_ID, applicationInfo.uid)
         startActivity(intent)
     }
-}.onFailure { snake(msg = "跳转通知设置失败") }
+}.onFailure { snake(msg = getString(R.string.common_open_notify_settings_failed)) }
 
 /**
  * 复制到剪贴板
@@ -525,7 +529,7 @@ fun Context.copyToClipboard(content: String) = runInSafe {
     (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).apply {
         setPrimaryClip(ClipData.newPlainText(null, content))
         (primaryClip?.getItemAt(0)?.text ?: "").also {
-            if (it != content) snake(msg = "复制失败") else snake(msg = "已复制")
+            if (it != content) snake(msg = getString(R.string.common_copy_failed)) else snake(msg = getString(R.string.common_copied))
         }
     }
 }

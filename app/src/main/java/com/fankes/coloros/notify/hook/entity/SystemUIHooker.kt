@@ -1104,7 +1104,8 @@ object SystemUIHooker : YukiBaseHooker() {
                 intent.data?.schemeSpecificPart?.also { packageName ->
                     if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED)) ActivationPromptTool.prompt(
                         context, packageName,
-                        isReloaded = moduleLastUpdateTime != null && context.appLastUpdateTimeOf(packageName) == moduleLastUpdateTime
+                        isReloaded = moduleLastUpdateTime != null && context.appLastUpdateTimeOf(packageName) == moduleLastUpdateTime,
+                        resources = module.resources
                     )
                     if (intent.action.equals(Intent.ACTION_PACKAGE_REPLACED).not() &&
                         intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
@@ -1114,7 +1115,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             Intent.ACTION_PACKAGE_ADDED -> {
                                 val snapshot = IconRuleManagerTool.snapshot ?: return@registerReceiver
                                 if (snapshot.getIcon(packageName) == null)
-                                    IconAdaptationTool.pushNewAppSupportNotify(context, packageName)
+                                    IconAdaptationTool.pushNewAppSupportNotify(context, packageName, module.resources)
                             }
                             Intent.ACTION_PACKAGE_REMOVED -> IconAdaptationTool.removeNewAppSupportNotify(context, packageName)
                         }
@@ -1154,7 +1155,7 @@ object SystemUIHooker : YukiBaseHooker() {
             hostApplication?.apply {
                 onHostCreated()
                 if (ActivationPromptTool.isPrompting(this))
-                    ActivationPromptTool.prompt(this, BuildConfigWrapper.APPLICATION_ID, isReloaded = true)
+                    ActivationPromptTool.prompt(this, BuildConfigWrapper.APPLICATION_ID, isReloaded = true, resources = module.resources)
             }
         }
     }
@@ -1197,7 +1198,8 @@ object SystemUIHooker : YukiBaseHooker() {
         /** 提醒用户手动同步 */
         fun notifyManualUpdate() = runCatching {
             IconRuleManagerTool.notifyFetchResult(
-                context, Anip.FetchResult("无法自动启动模块进行同步，点击手动同步", Anip.FetchResult.Status.FAILED)
+                context, Anip.FetchResult(module.resources.getString(R.string.sync_cannot_start_module), Anip.FetchResult.Status.FAILED),
+                module.resources
             )
         }.onFailure { YLog.error("Failed to notify icon resource update", it) }
         iconRuleUpdateFallbackJob?.cancel()
@@ -1271,7 +1273,7 @@ object SystemUIHooker : YukiBaseHooker() {
             val previousVersion = IconRuleManagerTool.snapshotVersion
             val fetchResult = runCatching {
                 IconRuleManagerTool.reload(context)
-                IconRuleManagerTool.fetch(context).also {
+                IconRuleManagerTool.fetch(context, module.resources).also {
                     val isAvailable = IconRuleManagerTool.snapshot?.icons.isNullOrEmpty().not()
                     if (isAvailable && previousVersion != IconRuleManagerTool.snapshotVersion) {
                         refreshStatusBarIcons()
@@ -1285,7 +1287,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 result(false)
                 Anip.FetchResult(it.message ?: "Failed to get ANIP icon resources", Anip.FetchResult.Status.FAILED)
             }
-            if (isNotifyResult) runCatching { IconRuleManagerTool.notifyFetchResult(context, fetchResult) }
+            if (isNotifyResult) runCatching { IconRuleManagerTool.notifyFetchResult(context, fetchResult, module.resources) }
                 .onFailure { YLog.error("Failed to notify icon resource update", it) }
         }
     }
