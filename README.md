@@ -1,4 +1,4 @@
-# ColorOS 通知图标增强
+# ColorOS Notification Icon Enhancer
 
 [![GitHub license](https://img.shields.io/github/license/fankes/ColorOSNotifyIcon?color=blue&style=flat-square)](https://github.com/fankes/ColorOSNotifyIcon/blob/master/LICENSE)
 [![GitHub CI](https://img.shields.io/github/actions/workflow/status/fankes/ColorOSNotifyIcon/commit_ci.yml?label=CI%20builds&style=flat-square)](https://github.com/fankes/ColorOSNotifyIcon/actions/workflows/commit_ci.yml)
@@ -7,104 +7,113 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/Xposed-Modules-Repo/com.fankes.coloros.notify/total?label=LSPosed%20downloads&labelColor=F48FB1&style=flat-square)
 
 [![Telegram CI](https://img.shields.io/badge/CI%20builds-Telegram-blue.svg?logo=telegram&style=flat-square)](https://t.me/ColorOSNotifyIcon_CI)
+[![Telegram Channel](https://img.shields.io/badge/channel-Telegram-blue.svg?logo=telegram&style=flat-square)](https://t.me/XiaofangDaily)
 [![Telegram](https://img.shields.io/badge/discussion-Telegram-blue.svg?logo=telegram&style=flat-square)](https://t.me/XiaofangInternet)
 [![QQ](https://img.shields.io/badge/discussion-QQ-blue.svg?logo=tencent-qq&logoColor=red&style=flat-square)](https://qm.qq.com/cgi-bin/qm/qr?k=dp2h5YhWiga9WWb_Oh7kSHmx01X8I8ii&jump_from=webapi&authKey=Za5CaFP0lk7+Zgsk2KpoBD7sSaYbeXbsDgFjiWelOeH4VSionpxFJ7V0qQBSqvFM)
-[![QQ 频道](https://img.shields.io/badge/discussion-QQ%20频道-blue.svg?logo=tencent-qq&logoColor=red&style=flat-square)](https://pd.qq.com/s/44gcy28h)
+[![QQ Channel](https://img.shields.io/badge/discussion-QQ%20频道-blue.svg?logo=tencent-qq&logoColor=red&style=flat-square)](https://pd.qq.com/s/44gcy28h)
 
 <img src="img-src/icon.png" width = "100" height = "100" alt="LOGO"/>
 
+English | [简体中文](README-zh-CN.md)
+
 Optimize notification icons for ColorOS and adapt to native notification icon specifications.
 
-为 ColorOS 优化通知图标以及适配原生通知图标规范，理论支持 OxygenOS 和 RealmeUI。
+## Project Migration Notice
 
-## For Non-Chinese Users
+Maintaining two modules for both **HyperOS/MIUI** and **ColorOS** at the same time is very inconvenient, so I plan to gradually merge and decouple the
+two
+projects into a new one, with plans to support more systems and devices, such as AOSP and AOSP-like systems.
 
-This project will not be adapted i18n, please stay tuned for my new projects in the future.
+Once the new project is settled, its link will be added here. At that time I will stop maintaining this project and recommend that everyone move to
+the new project.
 
-## 项目迁移公告
+## Compatibility Notes
 
-由于本人同时维护 **MIUI** 与 **ColorOS** 两个系统需要同时维护两个模块，十分不方便，所以我决定在后期逐渐合并两个项目并解耦合为一个新项目并计划适配更多系统与设备，例如原生与类原生系统。
+- **LSPosed** (scope: "System UI") is recommended
+- It has only been tested on ColorOS 11, 12, 12.1, 13 and 17. If you have problems,
+  please [submit an issue](https://github.com/fankes/ColorOSNotifyIcon/issues)
+- It is recommended to use ColorOS 11 or above
 
-在新的项目确定后，会在这里添加新项目的链接，届时我会终止维护这个项目并建议大家转移到新项目。
+### Compatibility Changes
 
-## 适配说明
+Because ColorOS 15 changed the system notification icon behavior and forcibly replaces icons with the colored app icon during icon initialization,
+the "System Framework" scope has been added. If this scope is not checked automatically after the module is installed, please check it manually and
+restart the system to fix this breakage. Systems older than ColorOS 15 do not need to check it.
 
-- 此模块仅支持 **LSPosed** (作用域“系统界面”)、**~~EdXposed(随时停止支持)~~**
-- 目前仅在 ColorOS 12、12.1、13 for OnePlus 和 17 上测试通过，如有问题请提交 `issues`
-- 建议在不低于 ColorOS 11 的版本上使用
+Thanks to [Nep-Timeline](https://github.com/Nep-Timeline) for providing the solution.
 
-## 注意事项
+## Background
 
-由于 ColorOS 15 版本的系统性通知图标行为变更，系统强制在通知图标初始化阶段就将图标强制替换为 APP 彩色图标进行破坏，所以目前加入了 “系统框架”
-作用域，如果在模块安装后没有自动勾选此作用域，请手动进行勾选并重新启动系统以修复此破坏行为，ColorOS 15 以下版本的系统无需勾选。
+ColorOS, the second-largest system after MIUI, supports native notification icons, but it has not been adapted for the colorful icons pushed by third
+parties, and even the system's own icons are colored, which is extremely unfriendly.
 
-感谢 [Nep-Timeline](https://github.com/Nep-Timeline) 提供的解决方案。
+Moreover, starting from ColorOS 12 the native icons lost their tint attribute, which is also a kind of damage to the native Android ecosystem. In
+ColorOS 15 and later, the system even forcibly replaces icons with the colored app icon during icon initialization.
 
-## 历史背景
+## Contribute to the ANIP
 
-继 MIUI 之后的第二大系统 ColorOS 虽然支持原生通知图标，但是第三方推送五颜六色的图标系统并没有做适配，甚至系统自己的图标都是彩色的，极其不友好。
+The notification icons of this project come from the ANIP project. [Click here](https://github.com/BetterAndroid/android-notification-icon-project)
+for details.
 
-而且从 ColorOS 12 开始，原生图标丢失了着色属性，这也是一种对原生 Android 生态的破坏。
+## Release Channels
 
-## 贡献通知图标优化名单
+| <img src="https://avatars.githubusercontent.com/in/15368?s=64&v=4" width = "30" height = "30" alt="LOGO"/> | [GitHub CI](https://github.com/fankes/ColorOSNotifyIcon/actions/workflows/commit_ci.yml) | CI automatic builds (beta) |
+|------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|----------------------------|
 
-此项目是 `ANIP` 项目的一部分，详情请参考下方。
+| <img src="https://github.com/peter-iakovlev/Telegram/blob/public/Icon.png?raw=true" width = "30" height = "30" alt="LOGO"/> | [Telegram CI Channel](https://t.me/ColorOSNotifyIcon_CI) | CI automatic builds (beta) |
+|-----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|----------------------------|
 
-- [ANIP](https://github.com/BetterAndroid/android-notification-icon-project)
+| <img src="https://avatars.githubusercontent.com/in/15368?s=64&v=4" width = "30" height = "30" alt="LOGO"/> | [GitHub Releases](https://github.com/fankes/ColorOSNotifyIcon/releases) | Official releases (stable) |
+|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|----------------------------|
 
-## 发行渠道
+| <img src="https://avatars.githubusercontent.com/u/78217009?s=200&v=4?raw=true" width = "30" height = "30" alt="LOGO"/> | [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases) | Official releases (stable) |
+|------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|----------------------------|
 
-| <img src="https://avatars.githubusercontent.com/in/15368?s=64&v=4" width = "30" height = "30" alt="LOGO"/> | [GitHub CI](https://github.com/fankes/ColorOSNotifyIcon/actions/workflows/commit_ci.yml) | CI 自动构建 (测试版) |
-|------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|---------------|
+The release addresses of this module are limited to those listed above. We are not responsible for any impact caused by versions downloaded from other
+unofficial channels.
 
-| <img src="https://github.com/peter-iakovlev/Telegram/blob/public/Icon.png?raw=true" width = "30" height = "30" alt="LOGO"/> | [Telegram CI 频道](https://t.me/ColorOSNotifyIcon_CI) | CI 自动构建 (测试版) |
-|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|---------------|
+### Choose a Module Version by Scenario
 
-| <img src="https://avatars.githubusercontent.com/in/15368?s=64&v=4" width = "30" height = "30" alt="LOGO"/> | [GitHub Releases](https://github.com/fankes/ColorOSNotifyIcon/releases) | 正式版 (稳定版) |
-|------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|-----------|
+The installation packages of this project come in two tracks: **modern** and **legacy**.
 
-| <img src="https://avatars.githubusercontent.com/u/78217009?s=200&v=4?raw=true" width = "30" height = "30" alt="LOGO"/> | [Xposed-Modules-Repo](https://github.com/Xposed-Modules-Repo/com.fankes.coloros.notify/releases) | 正式版 (稳定版) |
-|------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|-----------|
+- Versions marked **modern** are for Xposed frameworks that support the libxposed API, such as LSPosed
+- Versions marked **legacy** are for Xposed frameworks that support the Xposed Framework API, such as old LSPosed (≤ 1.9.0), EdXposed, etc.
 
-本模块发布地址仅限于上述所列出的地址，从其他非正规渠道下载到的版本或对您造成任何影响均与我们无关。
+The **modern** version supports automatic hot reload on LSPosed 2.1.0+. After the first installation, later module updates take effect without
+restarting System UI.
 
-## 注意事项
+## Notes
 
-<h3>1.&nbsp;本软件免费、由兴趣驱动开发，仅供学习交流使用。如果你是从其他非官方渠道付费获得本软件，可能已遭遇欺诈，欢迎向我们举报可疑行为。</h3>
+1. This software is free and developed out of interest, for learning and communication only. If you obtained it from an unofficial channel by paying
+   for it, you may have been defrauded, and you are welcome to report suspicious behavior to us.
+2. This software is licensed under the **GNU Affero General Public License (AGPL 3.0)**. According to the license:
+    1. Any derivative work must use the same AGPLv3 license
+    2. The complete source code must be provided when distributing this software or its modified versions
+    3. The original copyright notice and license information must be retained
+    4. No additional restrictions may be imposed to limit others' free use of this software
+3. We encourage free distribution and improvement under the terms of AGPLv3, but please respect the author's attribution and do not impersonate the
+   original author
 
-<h3>2.&nbsp;本软件采用 <strong>GNU Affero General Public License (AGPL 3.0)</strong> 许可证。根据该许可证的要求：</h3>
-
-- 任何衍生作品必须采用相同的 AGPL 许可证
-- 分发本软件或其修改版本时，必须提供完整的源代码
-- 必须保留原始的版权声明及许可证信息
-- 不得额外施加限制来限制他人对本软件的自由使用
-
-<h3>3.&nbsp;我们鼓励在遵守 AGPL 3.0 条款的前提下进行自由传播和改进，但请尊重作者署名权，勿冒用原作者名义。</h3>
-
-## 更多项目
+## More Projects
 
 <!--suppress HtmlDeprecatedAttribute -->
 <div align="center">
-    <h2>嘿，还请君留步！👋</h2>
-    <h3>如果你觉得这个项目能给你提供帮助，不妨继续往下看看我的更多项目吧！</h3>
-    <h3>如果这些项目能为你提供帮助，不妨为我点个关注或者 star ⭐️ 吧！</h3>
-    <h1><a href="https://github.com/fankes/fankes/blob/main/project-promote/README-zh-CN.md">→ 查看更多关于我的项目，请点击这里 ←</a></h1>
+    <h2>Hey, please stay a moment! 👋</h2>
+    <h3>If you find this project helpful, take a look at my other projects below!</h3>
+    <h3>If these projects help you, consider giving me a follow or a star ⭐️!</h3>
+    <h1><a href="https://github.com/fankes/fankes/blob/main/project-promote/README.md">→ Click here to see more of my projects ←</a></h1>
 </div>
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/chart?repos=fankes/ColorOSNotifyIcon&type=date&legend=top-left&sealed_token=6F-xnv_jLhf5xImaia70rtxXh8PS_8jLSvUa6ssR0Sn1KJjeF0zpbVsnuwCp8jXijJ7cA7r_s9uLWb7AoID_ZizuPnhEjtGe2LnLHoucO8QtlQrJbg_t0Q)](https://www.star-history.com/?repos=fankes%2FColorOSNotifyIcon&type=date&legend=top-left)
 
-## 隐私政策
-
-- [PRIVACY](PRIVACY.md)
-
-## 许可证
+## License
 
 - [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html)
 
 ```
-Copyright (C) 20174 Fankes Studio(qzmmcn@163.com)
+Copyright (C) 2017 Fankes Studio(qzmmcn@163.com)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -122,4 +131,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 Powered by [YukiHook](https://github.com/HighCapable/YukiHook)
 
-版权所有 © 20174 Fankes Studio(qzmmcn@163.com)
+Copyright © 2017 Fankes Studio(qzmmcn@163.com)
