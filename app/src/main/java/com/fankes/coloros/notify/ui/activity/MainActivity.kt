@@ -109,6 +109,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     }
 
     private fun onCreate(available: Boolean) {
+        initConfigBindings()
         // 设置可用性
         isActivityLive = true
         when {
@@ -191,11 +192,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         // 通知面板背景透明度功能仅支持 ColorOS 12、12.1、13、13.1
         configBinding.notifyPanelConfigItem.isVisible = colorOSNumberVersion.let { it == "V12" || it == "V12.1" || it == "V13" || it == "V13.1" }
-        configBinding.notifyIconAutoSyncText.text = ConfigData.notifyIconFixAutoTime
     }
 
-    /** 初始化各个设置项和按钮的点击事件，它们不依赖模块是否激活 */
-    private fun initListeners() {
+    /** 初始化读写偏好设置的状态文本和开关绑定 */
+    private fun initConfigBindings() {
+        configBinding.notifyIconAutoSyncText.text = ConfigData.notifyIconFixAutoTime
         homeBinding.moduleEnableSwitch.bind(ConfigData.ENABLE_MODULE) {
             onInitialize {
                 homeBinding.moduleEnableLogItem.isVisible = it
@@ -347,6 +348,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         configBinding.notifyIconCustomCornerSeekbar.bind(ConfigData.NOTIFY_ICON_CORNER_SIZE, configBinding.notifyIconCustomCornerText, suffix = " dp") {
             SystemUITool.refreshSystemUI(context = this)
         }
+    }
+
+    /** 初始化按钮的点击事件，它们不依赖模块是否激活 */
+    private fun initListeners() {
         // 导出全部日志按钮点击事件
         homeBinding.expAllDebugLogButton.setOnClickListener { SystemUITool.obtainAndExportDebugLogs(context = this) }
         // 通知图标优化名单按钮点击事件
