@@ -476,7 +476,11 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新状态栏小图标 */
     private fun refreshStatusBarIcons() = runInSafe {
-        if (isNewNotification) return@runInSafe
+        // 新版本的状态栏图标由 IconManager 创建，交给它重新创建
+        if (isNewNotification) {
+            refreshEntryIcons()
+            return@runInSafe
+        }
         val nfField = StatusBarIconViewClass.resolve().optional().firstFieldOrNull { name = "mNotification" }
         val sRadiusField = StatusBarIconViewClass.resolve().optional(silent = true).firstFieldOrNull {
             name = "sIconRadiusFraction"
@@ -1205,7 +1209,6 @@ object SystemUIHooker : YukiBaseHooker() {
         // 此时进程资源还没有全部应用新配置，延迟到本次配置处理完成后再刷新
         delayedRun {
             refreshStatusBarIcons()
-            refreshEntryIcons()
             refreshNotificationIcons()
         }
     }
