@@ -33,6 +33,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
@@ -44,7 +45,6 @@ import android.graphics.drawable.Icon
 import android.media.session.MediaSessionManager
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
-import android.util.ArrayMap
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -58,7 +58,6 @@ import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.param.factory.isAppNotifyEnabledOf
 import com.fankes.coloros.notify.param.factory.isAppNotifyOverlayOf
 import com.fankes.coloros.notify.service.IconRuleUpdateService
-import com.fankes.coloros.notify.utils.factory.appIconOf
 import com.fankes.coloros.notify.utils.factory.appLastUpdateTimeOf
 import com.fankes.coloros.notify.utils.factory.appNameOf
 import com.fankes.coloros.notify.utils.factory.colorAlphaOf
@@ -69,6 +68,8 @@ import com.fankes.coloros.notify.utils.factory.drawableOf
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
 import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.fankes.coloros.notify.utils.factory.isUpperOfColorOS17
+import com.fankes.coloros.notify.utils.factory.launcherActivitiesOf
+import com.fankes.coloros.notify.utils.factory.launcherIconOf
 import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.factory.safeOf
 import com.fankes.coloros.notify.utils.factory.safeOfFalse
@@ -294,6 +295,9 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 系统配置变化分发器 */
     private val ConfigurationControllerClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.policy.ConfigurationController")
 
+    /** ColorOS 进程应用新系统配置时的通用注入类 */
+    private val OplusCommonInjectorClass by lazyClassOrNull("oplus.android.OplusCommonInjector")
+
     /** 根据多个版本存在不同的方法相同的类 */
     private val StatusBarIconControllerClass by lazyClass(
         VariousClass(
@@ -301,9 +305,6 @@ object SystemUIHooker : YukiBaseHooker() {
             "com.oplus.systemui.statusbar.phone.StatusBarIconControllerExImpl"
         )
     )
-
-    /** 缓存的彩色 APP 图标 */
-    private var appIcons = ArrayMap<String, Drawable>()
 
     /** SystemUI 进程上下文 */
     private var globalContext: Context? = null
@@ -328,6 +329,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 通知栏通知控制器 */
     private var notificationPresenter: Any? = null
+
+    /** 通知图标管理器 - 状态栏、息屏等位置的通知图标由它创建 */
+    private var iconManager: Any? = null
 
     /** 通知面板默认背景着色 [ColorStateList] */
     private var defaultNotifyPanelTintList: ColorStateList? = null
@@ -372,6 +376,12 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 等待模块定时更新服务响应的最长时间 */
     private const val ICON_RULE_UPDATE_TIMEOUT = 60_000L
+
+    /** 系统主题变化的配置标志位 - 同 `OplusExtraConfiguration.THEME_OLD_SKIN_CHANGED` */
+    private const val THEME_CHANGED = 0x8000000
+
+    /** 桌面图标样式或图标包变化的配置标志位 - 同 `OplusExtraConfiguration.UX_ICON_CONFIG_CHANGED` */
+    private const val UX_ICON_CONFIG_CHANGED = 0x800000
 
     /**
      * 判断通知是否来自系统推送
@@ -550,16 +560,48 @@ object SystemUIHooker : YukiBaseHooker() {
         } else BitmapCompatTool.isGrayscaleDrawable(drawable)
 
     /**
-     * 适配通知栏、状态栏来自系统推送的彩色 APP 图标
+     * 取 APP 当前在桌面上显示的图标 - 系统主题生效时为主题图标
      *
-     * 适配第三方图标包对系统包管理器更换图标后的彩色图标
+     * 统一使用 SystemUI 自身的上下文获取，ColorOS 只给白名单内的调用方返回主题图标，
+     * 通知视图的上下文可能是通知所属 APP 的上下文
+     * @param context 实例
+     * @param packageName APP 包名
+     * @return [Drawable] or null
+     */
+    private fun hostLauncherIconOf(context: Context, packageName: String) = (globalContext ?: context).launcherIconOf(packageName)
+
+    /**
+     * 判断通知小图标是否就是 APP 的桌面图标
+     *
+     * 只有资源图标能确认来源：对比资源 ID 与桌面启动 Activity、APP 声明的图标 (含圆形图标)，
+     * 位图图标无法确认，一律视为不是
+     * @param context 实例
+     * @return [Boolean]
+     */
+    private fun StatusBarNotification.isLauncherSmallIcon(context: Context) = safeOfFalse {
+        val icon = notification.smallIcon ?: return@safeOfFalse false
+        if (icon.type != Icon.TYPE_RESOURCE || icon.resPackage != packageName) return@safeOfFalse false
+        val activities = (globalContext ?: context).launcherActivitiesOf(packageName)
+        val appInfo = activities.firstOrNull()?.applicationInfo ?: return@safeOfFalse false
+        // iconRes、roundIconRes 为隐藏字段，分别是 Manifest 中声明的 icon 与 roundIcon
+        val hiddenResIds = listOf("iconRes", "roundIconRes").mapNotNull { name ->
+            appInfo.asResolver().optional(silent = true).firstFieldOrNull { this.name = name }?.getQuietly<Int>()
+        }
+        val resIds = activities.map { it.iconResource } + appInfo.icon + hiddenResIds
+        resIds.any { it != 0 && it == icon.resId }
+    }
+
+    /**
+     * 将系统推送和以桌面图标作为小图标的通知替换为 APP 当前的桌面图标，使其跟随系统主题
+     *
+     * 系统推送本身没有图标，其余无法确认来源的彩色图标保持原样
+     * @param context 实例
      * @param iconDrawable 原始图标
      * @return [Drawable] 适配的图标
      */
-    private fun StatusBarNotification.compatPushingIcon(iconDrawable: Drawable) = safeOf(iconDrawable) {
-        // 给系统推送设置 APP 自己的图标
-        if (isOplusPush && opPkg.isNotBlank())
-            appIcons[packageName] ?: iconDrawable
+    private fun StatusBarNotification.compatLauncherIcon(context: Context, iconDrawable: Drawable) = safeOf(iconDrawable) {
+        if (isOplusPush || isLauncherSmallIcon(context))
+            hostLauncherIconOf(context, packageName) ?: iconDrawable
         else iconDrawable
     }
 
@@ -629,7 +671,7 @@ object SystemUIHooker : YukiBaseHooker() {
             isGrayscaleIcon,
             context.packageName,
             nf.notification.color)
-        it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatPushingIcon(drawable), isGrayscaleIcon.not())
+        it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatLauncherIcon(context, drawable), isGrayscaleIcon.not())
     }
 
     /**
@@ -730,7 +772,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     // 标记为已处理但非本模块接管
                     moduleStyledIcons[this] = false
                     // 重新设置图标
-                    setImageDrawable(appIcons[realPackageName] ?: context.appIconOf(realPackageName))
+                    setImageDrawable(hostLauncherIconOf(context, realPackageName))
                     // 设置默认样式
                     setDefaultNotifyIconViewStyle()
                 }
@@ -751,7 +793,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     // 标记为已处理但非本模块接管
                     moduleStyledIcons[this] = false
                     // 重新设置图标
-                    setImageDrawable(nf.compatPushingIcon(drawable))
+                    setImageDrawable(nf.compatLauncherIcon(context, drawable))
                     // 设置默认样式
                     setDefaultNotifyIconViewStyle()
                 }
@@ -910,10 +952,10 @@ object SystemUIHooker : YukiBaseHooker() {
         val isGrayscaleIcon = isGrayscaleIcon(context, smallIcon)
         val customTriple = compatCustomIcon(context, isGrayscaleIcon, nf.packageName)
         return when {
-            ConfigData.isEnableNotifyIconForceAppIcon -> appIcons[nf.packageName] ?: context.appIconOf(nf.packageName)
+            ConfigData.isEnableNotifyIconForceAppIcon -> hostLauncherIconOf(context, nf.packageName)
             (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon ->
                 customNotifyIconOf(context, customTriple, smallIcon, nf.notification.color, sizePx)
-            nf.isOplusPush -> nf.compatPushingIcon(smallIcon)
+            nf.isOplusPush || nf.isLauncherSmallIcon(context) -> hostLauncherIconOf(context, nf.packageName)
             else -> null
         }
     }
@@ -923,6 +965,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param context 实例
      * @return [Int] 图标尺寸 (px)
      */
+    @Suppress("DiscouragedApi")
     private fun headerIconSizeOf(context: Context) =
         context.resources.getIdentifier("notification_header_icon_size", "dimen", context.packageName)
             .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 40.dp(context)
@@ -932,6 +975,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param context 实例
      * @return [Int] 图标尺寸 (px) - 获取失败为 0
      */
+    @Suppress("DiscouragedApi")
     private fun capsuleIconSizeOf(context: Context) =
         context.resources.getIdentifier("capsule_icon_size", "dimen", context.packageName)
             .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 0
@@ -1147,6 +1191,44 @@ object SystemUIHooker : YukiBaseHooker() {
         globalContext?.let { refreshIconData(it) }
     }
 
+    /**
+     * 系统主题或桌面图标样式变化后刷新通知图标
+     *
+     * 切换主题或图标样式只改变 Oplus 扩展配置 (`OplusExtraConfiguration`)，公开配置没有变化时
+     * `android.app.ConfigurationController` 不会回调 SystemUI 的 onConfigurationChanged，已显示的通知不会重新获取桌面图标，
+     * 所以在 `OplusCommonInjector.applyConfigurationToResourcesForResourcesManager` 收到的配置变化中判断
+     * @param changes 本次配置变化的标志位
+     */
+    private fun refreshIconsIfThemeChanged(changes: Int) {
+        if (changes and (THEME_CHANGED or UX_ICON_CONFIG_CHANGED) == 0) return
+        if (ConfigData.isEnableModuleLog) YLog.debug("Theme or icon style changed, refreshing notification icons")
+        // 此时进程资源还没有全部应用新配置，延迟到本次配置处理完成后再刷新
+        delayedRun {
+            refreshStatusBarIcons()
+            refreshEntryIcons()
+            refreshNotificationIcons()
+        }
+    }
+
+    /**
+     * 重新创建全部通知的状态栏、息屏等位置的图标
+     *
+     * 与系统 `IconManager.recalculateForImportantConversationChange` 的做法一致，逐个调用 `updateIcons`，
+     * 它会清除已缓存的图标并重新调用 `getIconDescriptor`
+     */
+    private fun refreshEntryIcons() = runInSafe {
+        val manager = iconManager?.asResolver()?.optional(silent = true) ?: return@runInSafe
+        val updateIcons = manager.firstMethodOrNull {
+            name = "updateIcons"
+            parameters(NotificationEntryClass, Boolean::class)
+        } ?: return@runInSafe
+        manager.firstFieldOrNull { name = "notifCollection" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                name = "getAllNotifs"
+                emptyParameters()
+            }?.invokeQuietly<Collection<*>>()?.forEach { entry -> runInSafe { updateIcons.invoke(entry, false) } }
+    }
+
     /** 模块热重载完成后重新执行宿主初始化，热重载不会重放 [Application.onCreate] */
     fun onReloaded() {
         if (isHooked.not()) return
@@ -1344,6 +1426,11 @@ object SystemUIHooker : YukiBaseHooker() {
         if (isSharedCacheAvailable) IconRuleManagerTool.attachHost(sharedFiles)
         // 注册生命周期
         registerLifecycle()
+        // 系统主题或桌面图标样式变化后刷新通知图标
+        OplusCommonInjectorClass?.resolve()?.optional()?.firstMethodOrNull {
+            name = "applyConfigurationToResourcesForResourcesManager"
+            parameters(Configuration::class, Int::class)
+        }?.hook()?.after { refreshIconsIfThemeChanged(lastArg().get<Int>() ?: 0) }
         // 移除开发者警告通知
         SystemPromptControllerClass.resolve().optional().firstMethodOrNull {
             name = "updateDeveloperMode"
@@ -1399,6 +1486,7 @@ object SystemUIHooker : YukiBaseHooker() {
             name = "getIconDescriptor"
             parameters(NotificationEntryClass, Boolean::class)
         }?.hook()?.after {
+            iconManager = instance
             IconBuilderClass.resolve().optional().firstFieldOrNull { name = "context" }
                 ?.of(IconManagerClass.resolve().optional().firstFieldOrNull { name = "iconBuilder" }?.of(instance)?.get())
                 ?.getQuietly<Context>()?.also { context ->
@@ -1409,10 +1497,7 @@ object SystemUIHooker : YukiBaseHooker() {
                             compatStatusIcon(
                                 context = context,
                                 nf = nf,
-                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable).also {
-                                    // 缓存第一次的 APP 小图标
-                                    if (it.not()) context.appIconOf(nf.packageName)?.also { e -> appIcons[nf.packageName] = e }
-                                },
+                                isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
                                 packageName = nf.packageName,
                                 drawable = iconDrawable
                             ).also { pair ->

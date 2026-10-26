@@ -33,6 +33,7 @@ import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -283,6 +284,29 @@ fun Context.appNameOf(packageName: String = getPackageName()) =
  * @return [Drawable] or null
  */
 fun Context.appIconOf(packageName: String = getPackageName()) = getPackageInfoCompat(packageName)?.applicationInfo?.loadIcon(packageManager)
+
+/**
+ * 得到 APP 在桌面上的启动 Activity
+ * @param packageName APP 包名
+ * @return [List]<[ActivityInfo]>
+ */
+fun Context.launcherActivitiesOf(packageName: String) = runCatching {
+    val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(packageName)
+    @Suppress("DEPRECATION", "KotlinRedundantDiagnosticSuppress", "QueryPermissionsNeeded")
+    if (Build.VERSION.SDK_INT >= 33)
+        packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+    else packageManager.queryIntentActivities(intent, 0)
+}.getOrNull()?.mapNotNull { it.activityInfo } ?: emptyList()
+
+/**
+ * 得到 APP 在桌面上显示的图标
+ *
+ * ColorOS 会在 [ActivityInfo.loadIcon] 中返回当前主题的图标，没有启动 Activity 时回退到 [appIconOf]
+ * @param packageName APP 包名
+ * @return [Drawable] or null
+ */
+fun Context.launcherIconOf(packageName: String) =
+    runCatching { launcherActivitiesOf(packageName).firstOrNull()?.loadIcon(packageManager) }.getOrNull() ?: appIconOf(packageName)
 
 /**
  * 获取 APP 是否为 DEBUG 版本
