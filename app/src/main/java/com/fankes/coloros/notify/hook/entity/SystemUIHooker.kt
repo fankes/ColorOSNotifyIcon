@@ -96,7 +96,6 @@ import com.highcapable.yukihookapi.extension.kavaref.lazyClass
 import com.highcapable.yukihookapi.extension.kavaref.lazyClassOrNull
 import com.highcapable.yukihookapi.extension.kavaref.toClass
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.factory.injectModuleResources
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.runtime.YukiHookRuntime
 import kotlinx.coroutines.CoroutineScope
@@ -617,8 +616,6 @@ object SystemUIHooker : YukiBaseHooker() {
      * @return [Triple] - ([Drawable] 位图,[Int] 颜色,[Boolean] 是否为占位符图标)
      */
     private fun compatCustomIcon(context: Context, isGrayscaleIcon: Boolean, packageName: String): Triple<Drawable?, Int, Boolean> {
-        // 防止模块资源注入失败重新注入
-        context.injectModuleResources()
         var customPair: Triple<Drawable?, Int, Boolean>? = null
         val statSysAdbIcon = runCatching {
             val resId = $$"com.android.internal.R$drawable".toClass()
@@ -626,7 +623,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 .firstField { name = "stat_sys_adb" }
                 .get<Int>() ?: error("Resource not found")
             context.resources.drawableOf(resId)
-        }.getOrNull() ?: context.resources.drawableOf(R.drawable.ic_unsupported)
+        }.getOrNull() ?: module.resources.drawableOf(R.drawable.ic_unsupported)
         when {
             // 替换系统图标为 Android 默认
             (packageName == PackageName.SYSTEM_FRAMEWORK || packageName == PackageName.SYSTEMUI) && isGrayscaleIcon.not() ->
@@ -645,7 +642,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     return@run
                 }
                 if (isGrayscaleIcon.not() && ConfigData.isEnableNotifyIconFixPlaceholder)
-                    customPair = Triple(context.resources.drawableOf(R.drawable.ic_message), 0, true)
+                    customPair = Triple(module.resources.drawableOf(R.drawable.ic_message), 0, true)
             }
         }
         return customPair ?: Triple(null, 0, false)
@@ -1189,8 +1186,6 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun Application.onHostCreated() {
         globalContext = this
         moduleLastUpdateTime = appLastUpdateTimeOf(BuildConfigWrapper.APPLICATION_ID)
-        // 注入模块资源
-        injectModuleResources()
         // 从模块共享文件恢复 ANIP 快照
         globalContext?.let { refreshIconData(it) }
     }
