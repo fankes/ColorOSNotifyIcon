@@ -34,6 +34,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorFilter
@@ -64,9 +65,7 @@ import com.fankes.coloros.notify.utils.factory.colorAlphaOf
 import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.factory.dp
 import com.fankes.coloros.notify.utils.factory.dpFloat
-import com.fankes.coloros.notify.utils.factory.drawableOf
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
-import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.fankes.coloros.notify.utils.factory.isUpperOfColorOS17
 import com.fankes.coloros.notify.utils.factory.launcherActivitiesOf
 import com.fankes.coloros.notify.utils.factory.launcherIconOf
@@ -83,6 +82,8 @@ import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.highcapable.anip.sdk.Anip
+import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
+import com.highcapable.betterandroid.ui.extension.component.base.getDrawableCompat
 import com.highcapable.betterandroid.ui.extension.view.outlineProvider
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
@@ -306,6 +307,7 @@ object SystemUIHooker : YukiBaseHooker() {
     )
 
     /** SystemUI 进程上下文 */
+    @SuppressLint("StaticFieldLeak")
     private var globalContext: Context? = null
 
     /** SystemUI 进程内用于恢复和更新 ANIP 快照的协程作用域。 */
@@ -315,6 +317,7 @@ object SystemUIHooker : YukiBaseHooker() {
     private val isSharedCacheAvailable get() = YukiHook.Status.runtime == YukiHookRuntime.LIBXPOSED
 
     /** 状态栏通知图标容器 */
+    @SuppressLint("StaticFieldLeak")
     private var notificationIconContainer: ViewGroup? = null
 
     /** 状态栏通知图标数组 */
@@ -324,6 +327,7 @@ object SystemUIHooker : YukiBaseHooker() {
     private var mediaSessionManager: MediaSessionManager? = null
 
     /** 媒体通知 [View] */
+    @SuppressLint("StaticFieldLeak")
     private var notificationPlayerView: View? = null
 
     /** 通知栏通知控制器 */
@@ -464,7 +468,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param view 实例
      */
     private fun registerWallpaperColorChanged(view: View) = runInSafe {
-        if (isWallpaperColorListenerSetUp.not() && isUpperOfAndroidS) view.apply {
+        if (isWallpaperColorListenerSetUp.not() && AndroidVersion.isGreaterThan(AndroidVersion.R)) view.apply {
             val manager = WallpaperManager.getInstance(context)
             val listener = WallpaperManager.OnColorsChangedListener { _, _ -> refreshNotificationIcons() }
             manager.addOnColorsChangedListener(listener, handler)
@@ -622,8 +626,8 @@ object SystemUIHooker : YukiBaseHooker() {
                 .resolve()
                 .firstField { name = "stat_sys_adb" }
                 .get<Int>() ?: error("Resource not found")
-            context.resources.drawableOf(resId)
-        }.getOrNull() ?: module.resources.drawableOf(R.drawable.ic_unsupported)
+            context.resources.getDrawableCompat(resId)
+        }.getOrNull() ?: module.resources.getDrawableCompat(R.drawable.ic_unsupported)
         when {
             // 替换系统图标为 Android 默认
             (packageName == PackageName.SYSTEM_FRAMEWORK || packageName == PackageName.SYSTEMUI) && isGrayscaleIcon.not() ->
@@ -642,7 +646,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     return@run
                 }
                 if (isGrayscaleIcon.not() && ConfigData.isEnableNotifyIconFixPlaceholder)
-                    customPair = Triple(module.resources.drawableOf(R.drawable.ic_message), 0, true)
+                    customPair = Triple(module.resources.getDrawableCompat(R.drawable.ic_message), 0, true)
             }
         }
         return customPair ?: Triple(null, 0, false)
@@ -709,7 +713,7 @@ object SystemUIHooker : YukiBaseHooker() {
         val oldStyle = if (isUpperOfColorOS17 || context.isSystemInDarkMode) 0xFFDCDCDC.toInt() else 0xFF707173.toInt()
 
         // 原生着色
-        val md3Style = if (isUpperOfAndroidS) context.systemAccentColor else
+        val md3Style = if (AndroidVersion.isGreaterThan(AndroidVersion.R)) context.systemAccentColor else
             (if (context.isSystemInDarkMode) 0xFF707173.toInt() else oldStyle)
 
         // 原生通知图标颜色

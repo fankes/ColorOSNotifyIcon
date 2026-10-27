@@ -26,8 +26,8 @@ package com.fankes.coloros.notify.data
 
 import android.content.Context
 import com.fankes.coloros.notify.const.IconRuleSourceSyncType
-import com.fankes.coloros.notify.utils.factory.isUpperOfAndroidS
 import com.highcapable.anip.sdk.config.RemoteSource
+import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.yukihookapi.hook.factory.preferences
 import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.param.PackageParam
@@ -57,7 +57,7 @@ object ConfigData {
     val ENABLE_REMOVE_DND_ALERT_NOTIFY = PreferenceData("_remove_dndalert_notify", false)
 
     /** 启用 Material 3 通知图标风格 */
-    val ENABLE_MD3_NOTIFY_ICON_STYLE = PreferenceData("_notify_icon_md3_style", isUpperOfAndroidS)
+    val ENABLE_MD3_NOTIFY_ICON_STYLE = PreferenceData("_notify_icon_md3_style", AndroidVersion.isGreaterThan(AndroidVersion.R))
 
     /** 通知栏中的通知图标圆角程度 */
     val NOTIFY_ICON_CORNER_SIZE = PreferenceData("_notify_icon_corner", 15)

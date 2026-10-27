@@ -24,11 +24,11 @@
 
 package com.fankes.coloros.notify.ui.activity
 
+import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
-import androidx.viewpager.widget.PagerAdapter
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import com.fankes.coloros.notify.R
 import com.fankes.coloros.notify.const.ModuleVersion
 import com.fankes.coloros.notify.data.ConfigData
@@ -45,7 +45,6 @@ import com.fankes.coloros.notify.utils.factory.hideOrShowLauncherIcon
 import com.fankes.coloros.notify.utils.factory.isLauncherIconShowing
 import com.fankes.coloros.notify.utils.factory.isNotColorOS
 import com.fankes.coloros.notify.utils.factory.isNotNoificationEnabled
-import com.fankes.coloros.notify.utils.factory.navigate
 import com.fankes.coloros.notify.utils.factory.openBrowser
 import com.fankes.coloros.notify.utils.factory.openNotifySetting
 import com.fankes.coloros.notify.utils.factory.showDialog
@@ -54,8 +53,13 @@ import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.fankes.projectpromote.ProjectPromote
+import com.highcapable.betterandroid.ui.component.adapter.factory.bindAdapter
+import com.highcapable.betterandroid.ui.component.adapter.viewholder.delegate.base.ViewHolderDelegate
 import com.highcapable.betterandroid.ui.extension.component.base.getColorCompat
 import com.highcapable.betterandroid.ui.extension.component.runDelayed
+import com.highcapable.betterandroid.ui.extension.component.startActivity
+import com.highcapable.betterandroid.ui.extension.insets.factory.removeWindowInsetsListener
+import com.highcapable.betterandroid.ui.extension.view.walkThroughChildren
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.runtime.YukiHookRuntime
 import kotlinx.coroutines.Job
@@ -83,6 +87,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         private const val COOLAPK_PROFILE_URL = "https://www.coolapk.com/u/876977"
         private const val COOLAPK_PACKAGE_NAME = "com.coolapk.market"
         private const val AFDIAN_URL = "https://afdian.com/a/fankes"
+        private const val BETTERANDROID_URL = "https://github.com/BetterAndroid/BetterAndroid"
         private const val YUKIHOOK_URL = "https://github.com/HighCapable/YukiHook"
         private const val KAVAREF_URL = "https://github.com/HighCapable/KavaRef"
     }
@@ -132,7 +137,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         showDialog {
                             title = getString(R.string.main_config_optimize_list_title)
                             msg = getString(R.string.main_config_optimize_list_first_msg)
-                            confirmButton(text = getString(R.string.common_go)) { navigate<ConfigureActivity>() }
+                            confirmButton(text = getString(R.string.common_go)) { startActivity<ConfigureActivity>() }
                             cancelButton()
                             noCancelable()
                         }
@@ -355,7 +360,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         // 导出全部日志按钮点击事件
         homeBinding.expAllDebugLogButton.setOnClickListener { SystemUITool.obtainAndExportDebugLogs(context = this) }
         // 通知图标优化名单按钮点击事件
-        configBinding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
+        configBinding.notifyIconFixButton.setOnClickListener { startActivity<ConfigureActivity>() }
         // 自动更新在线规则修改时间按钮点击事件
         configBinding.notifyIconAutoSyncButton.setOnClickListener {
             showTimePicker(ConfigData.notifyIconFixAutoTime) {
@@ -390,6 +395,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         aboutBinding.linkSupportMe.setOnClickListener { openBrowser(url = AFDIAN_URL) }
         // 基于项目构建
         aboutBinding.linkAnip.setOnClickListener { openBrowser(url = IconRuleManagerTool.ANIP_REPOSITORY_URL) }
+        aboutBinding.linkBetterandroid.setOnClickListener { openBrowser(url = BETTERANDROID_URL) }
         aboutBinding.linkYukihook.setOnClickListener { openBrowser(url = YUKIHOOK_URL) }
         aboutBinding.linkKavaref.setOnClickListener { openBrowser(url = KAVAREF_URL) }
         // 设置桌面图标显示隐藏
@@ -402,15 +408,30 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     /** 初始化底栏和页面 (主页 | 配置 | 关于) */
     private fun initPager() {
+        // 根布局已由 SystemBarsController 处理边距，避免底栏重复追加导航栏高度
+        binding.mainBottomNav.removeWindowInsetsListener()
         val pages = listOf(homeBinding.root, configBinding.root, aboutBinding.root)
         val navIds = listOf(R.id.nav_home, R.id.nav_config, R.id.nav_about)
-        binding.mainViewPager.adapter = object : PagerAdapter() {
-            override fun getCount() = pages.size
-            override fun isViewFromObject(view: View, `object`: Any) = view === `object`
-            override fun instantiateItem(container: ViewGroup, position: Int) = pages[position].also { container.addView(it) }
-            override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) = container.removeView(`object` as View)
+        // ViewPager2 不允许页面的布局动画影响父层级，否则滑动时可能抛出异常。
+        pages.forEach { page ->
+            page.walkThroughChildren().filterIsInstance<ViewGroup>().forEach { it.layoutTransition?.setAnimateParentHierarchy(false) }
         }
-        binding.mainViewPager.addOnPageChangeListener(object : ViewPager.SimpleOnPageChangeListener() {
+        // 每个页面使用独立类型并常驻，保留现有绑定和页面状态。
+        binding.mainViewPager.offscreenPageLimit = pages.lastIndex
+        binding.mainViewPager.bindAdapter<View> {
+            onBindData { pages }
+            onBindViewType { _, position -> position }
+            pages.forEachIndexed { index, page ->
+                onBindItemView(
+                    delegate = object : ViewHolderDelegate<View>() {
+                        override fun create(context: Context, parent: ViewGroup?) = page
+                        override fun getView(instance: View) = instance
+                    },
+                    viewType = index
+                )
+            }
+        }
+        binding.mainViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 binding.mainBottomNav.selectedItemId = navIds[position]
             }
