@@ -316,20 +316,6 @@ val Context.isNetWorkSuccess
     }
 
 /**
- * dp 转换为 pxInt
- * @param context 使用的实例
- * @return [Int]
- */
-fun Number.dp(context: Context) = dpFloat(context).toInt()
-
-/**
- * dp 转换为 pxFloat
- * @param context 使用的实例
- * @return [Float]
- */
-fun Number.dpFloat(context: Context) = toFloat() * context.resources.displayMetrics.density
-
-/**
  * 获取系统主题色
  *
  * 由于 ColorOS 阉割了 [android.R.color.system_accent1_600] 这里取系统壁纸颜色做补偿

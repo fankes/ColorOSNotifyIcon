@@ -63,8 +63,6 @@ import com.fankes.coloros.notify.utils.factory.appLastUpdateTimeOf
 import com.fankes.coloros.notify.utils.factory.appNameOf
 import com.fankes.coloros.notify.utils.factory.colorAlphaOf
 import com.fankes.coloros.notify.utils.factory.delayedRun
-import com.fankes.coloros.notify.utils.factory.dp
-import com.fankes.coloros.notify.utils.factory.dpFloat
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
 import com.fankes.coloros.notify.utils.factory.isUpperOfColorOS17
 import com.fankes.coloros.notify.utils.factory.launcherActivitiesOf
@@ -84,6 +82,7 @@ import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.highcapable.anip.sdk.Anip
 import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
 import com.highcapable.betterandroid.ui.extension.component.base.getDrawableCompat
+import com.highcapable.betterandroid.ui.extension.component.base.toPx
 import com.highcapable.betterandroid.ui.extension.view.outlineProvider
 import com.highcapable.kavaref.KavaRef.Companion.asResolver
 import com.highcapable.kavaref.KavaRef.Companion.resolve
@@ -734,7 +733,7 @@ object SystemUIHooker : YukiBaseHooker() {
             glyph = glyph,
             badgeColor = newApplyColor,
             glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
-            cornerRadiusPx = ConfigData.notifyIconCornerSize.dpFloat(context),
+            cornerRadiusPx = ConfigData.notifyIconCornerSize.toPx(context).toFloat(),
             paddingRatio = padRatio,
             referenceSidePx = if (viewSizePx > 0) viewSizePx.toFloat() else headerIconSizeOf(context).toFloat()
         ) else CustomIconDrawable(
@@ -973,7 +972,7 @@ object SystemUIHooker : YukiBaseHooker() {
     @Suppress("DiscouragedApi")
     private fun headerIconSizeOf(context: Context) =
         context.resources.getIdentifier("notification_header_icon_size", "dimen", context.packageName)
-            .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 40.dp(context)
+            .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 40.toPx(context)
 
     /**
      * 取锁屏岛图标尺寸
@@ -1113,7 +1112,7 @@ object SystemUIHooker : YukiBaseHooker() {
         outlineProvider { view, outline ->
             outline.setRoundRect(
                 0, 0,
-                view.width, view.height, 3.dpFloat(context)
+                view.width, view.height, 3.toPx(context).toFloat()
             )
         }
         // 清除图标间距

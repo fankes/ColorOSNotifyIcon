@@ -38,7 +38,6 @@ import com.fankes.coloros.notify.ui.activity.base.BaseActivity
 import com.fankes.coloros.notify.utils.factory.addOnBackPressedEvent
 import com.fankes.coloros.notify.utils.factory.callOnBackPressed
 import com.fankes.coloros.notify.utils.factory.copyToClipboard
-import com.fankes.coloros.notify.utils.factory.dp
 import com.fankes.coloros.notify.utils.factory.openBrowser
 import com.fankes.coloros.notify.utils.factory.showDialog
 import com.fankes.coloros.notify.utils.factory.snake
@@ -142,7 +141,7 @@ class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
         binding.configTitleSync.setOnClickListener { onStartRefresh() }
         // 设置列表元素和 Adapter
         binding.configListView.apply {
-            bindAdapter<NotificationIcon>(RecyclerCosmetic.fromLinearVertical(context, rowSpacing = 15.dp(context))) {
+            bindAdapter<NotificationIcon>(RecyclerCosmetic.fromLinearVertical(context, rowSpacing = 15.dp)) {
                 onBindDiffer(
                     areItemsTheSame = { oldItem, newItem -> oldItem.packageName == newItem.packageName },
                     // 同一快照的图标不可变，重新装载后的新实例也需要刷新位图。
