@@ -23,21 +23,22 @@
 package com.fankes.coloros.notify.utils.tool
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Build
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.fankes.coloros.notify.R
+import com.fankes.coloros.notify.bean.InstalledAppBean
 import com.fankes.coloros.notify.const.PackageName
-import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.ui.activity.MainActivity
 import com.fankes.coloros.notify.utils.factory.colorOSFullVersion
 import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.factory.execShell
 import com.fankes.coloros.notify.utils.factory.showDialog
 import com.fankes.coloros.notify.utils.factory.snake
-import com.google.android.material.snackbar.Snackbar
 import com.highcapable.betterandroid.system.extension.utils.AndroidVersion
+import com.highcapable.betterandroid.ui.extension.graphics.decodeToBitmapOrNull
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.hook.factory.dataChannel
 import com.highcapable.yukihookapi.hook.log.YLog
@@ -56,6 +57,10 @@ object SystemUITool {
     private val CALL_HOST_REFRESH_ICON_DATA = ChannelData("call_host_refresh_icon_data", "" to 0L)
     private val CALL_MODULE_REFRESH_ICON_DATA_RESULT = ChannelData("call_module_refresh_icon_data_result", false)
     private const val CALL_HOST_ICON_RULE_UPDATE_STARTED = "call_host_icon_rule_update_started"
+    private const val CALL_HOST_INSTALLED_APPS_GET = "call_host_installed_apps_get"
+    private val CALL_MODULE_INSTALLED_APPS_RESULT = ChannelData<ArrayList<InstalledAppBean>>("call_module_installed_apps_result")
+    private val CALL_HOST_APP_ICONS_GET = ChannelData<ArrayList<String>>("call_host_app_icons_get")
+    private val CALL_MODULE_APP_ICON_RESULT = ChannelData<Pair<String, ByteArray>>("call_module_app_icon_result")
 
     /** 当前全部调试日志 */
     private var debugLogs = listOf<YLogData>()
@@ -97,6 +102,59 @@ object SystemUITool {
          */
         fun onIconRuleUpdateStarted(param: PackageParam, callback: () -> Unit) {
             param.dataChannel.wait(CALL_HOST_ICON_RULE_UPDATE_STARTED, callback = callback)
+        }
+
+        /**
+         * 监听模块获取已安装的应用请求
+         * @param param 当前宿主参数
+         * @param result 回调已安装的应用
+         */
+        fun onPushInstalledApps(param: PackageParam, result: () -> ArrayList<InstalledAppBean>) {
+            param.dataChannel.with { wait(CALL_HOST_INSTALLED_APPS_GET) { put(CALL_MODULE_INSTALLED_APPS_RESULT, result()) } }
+        }
+
+        /**
+         * 监听模块获取应用图标请求，图标逐个发送，避免一次传输的数据过大
+         * @param param 当前宿主参数
+         * @param result 回调 PNG 格式的应用图标数据
+         */
+        fun onPushAppIcons(param: PackageParam, result: (String) -> ByteArray?) {
+            param.dataChannel.with {
+                wait(CALL_HOST_APP_ICONS_GET) { packages ->
+                    packages.forEach { packageName -> result(packageName)?.also { put(CALL_MODULE_APP_ICON_RESULT, packageName to it) } }
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取系统界面中的应用图标
+     *
+     * 模块自身没有查看全部应用的权限，由系统界面逐个推送
+     * @param context 模块上下文
+     * @param packages APP 包名
+     * @param result 每收到一个图标回调一次 - (APP 包名, 图标)
+     */
+    fun obtainAppIcons(context: Context, packages: List<String>, result: (String, Bitmap) -> Unit) {
+        context.dataChannel(PackageName.SYSTEMUI).with {
+            wait(CALL_MODULE_APP_ICON_RESULT) { (packageName, data) ->
+                data.decodeToBitmapOrNull(0, data.size)?.also { result(packageName, it) }
+            }
+            put(CALL_HOST_APP_ICONS_GET, ArrayList(packages))
+        }
+    }
+
+    /**
+     * 获取系统界面中已安装的应用
+     *
+     * 模块自身没有查看全部应用的权限，由系统界面推送
+     * @param context 模块上下文
+     * @param result 成功后回调
+     */
+    fun obtainInstalledApps(context: Context, result: (List<InstalledAppBean>) -> Unit) {
+        context.dataChannel(PackageName.SYSTEMUI).with {
+            wait(CALL_MODULE_INSTALLED_APPS_RESULT) { result(it) }
+            put(CALL_HOST_INSTALLED_APPS_GET)
         }
     }
 
@@ -174,7 +232,7 @@ object SystemUITool {
      */
     fun restartSystemUI(context: Context) {
         /** 动态刷新功能是否可用 */
-        val isDynamicAvailable = ConfigData.isEnableModule && MainActivity.isModuleRegular && MainActivity.isModuleValied
+        val isDynamicAvailable = MainActivity.isModuleRegular && MainActivity.isModuleValied
 
         /** 当 Root 权限获取失败时显示对话框 */
         fun showWhenAccessRootFail() =
@@ -261,13 +319,4 @@ object SystemUITool {
             else -> doRefresh { if (it) callback() }
         }
     }
-
-    /**
-     * 显示需要重启系统界面的 [Snackbar]
-     * @param context 实例
-     */
-    fun showNeedRestartSnake(context: Context) =
-        if (YukiHook.Status.isModuleActive)
-            context.snake(msg = context.getString(R.string.tool_restart_to_apply), actionText = context.getString(R.string.tool_restart_now)) { restartSystemUI(context) }
-        else context.snake(msg = context.getString(R.string.tool_module_not_active_no_effect))
 }

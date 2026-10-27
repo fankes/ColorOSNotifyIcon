@@ -48,9 +48,7 @@ object HookEntry : YukiHookXposedModule {
         loadSystem(FrameworkHooker)
         loadApp(PackageName.SYSTEMUI) {
             ConfigData.init(instance = this)
-            if (ConfigData.isEnableModule)
-                loadHooker(SystemUIHooker)
-            else YLog.warn("Aborted Hook -> Hook Closed")
+            loadHooker(SystemUIHooker)
         }
     }
 }
