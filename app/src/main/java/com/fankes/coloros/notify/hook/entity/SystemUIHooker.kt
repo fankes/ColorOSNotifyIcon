@@ -65,6 +65,7 @@ import com.fankes.coloros.notify.utils.factory.colorAlphaOf
 import com.fankes.coloros.notify.utils.factory.delayedRun
 import com.fankes.coloros.notify.utils.factory.isSystemInDarkMode
 import com.fankes.coloros.notify.utils.factory.isUpperOfColorOS17
+import com.fankes.coloros.notify.utils.factory.isWhiteColor
 import com.fankes.coloros.notify.utils.factory.launcherActivitiesOf
 import com.fankes.coloros.notify.utils.factory.launcherIconOf
 import com.fankes.coloros.notify.utils.factory.runInSafe
@@ -125,6 +126,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 原生存在的类 */
     private val NotificationEntryClass by lazyClass("${PackageName.SYSTEMUI}.statusbar.notification.collection.NotificationEntry")
+
+    /** 原生存在的类 */
+    private val ImageViewClass by lazyClass("android.widget.ImageView")
 
     /** 原生存在的类 */
     private val StatusBarIconClass by lazyClass("com.android.internal.statusbar.StatusBarIcon")
@@ -364,6 +368,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
     private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
+
+    /** 模块接管后的图标 [Drawable] - 系统再次设置图标时强制换回 */
+    private val moduleStyledDrawables = WeakHashMap<ImageView, Drawable>()
 
     /**
      * 通知面板图标内边距比例 (MD3 风格) - 内边距占图标视图尺寸的比例 (0f~0.5f)
@@ -721,25 +728,27 @@ object SystemUIHooker : YukiBaseHooker() {
         // 自定义通知图标颜色
         val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else customTriple.second
 
-        // 旧版图标着色
+        // 旧版图标着色 - 浅色面板上白色 / 浅色字会看不见，按面板明暗回退
         val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
+        val oldReadableColor = if (oldApplyColor.isWhiteColor && context.isSystemInDarkMode.not()) oldStyle else oldApplyColor
 
-        // 新版图标 (背景) 着色
-        val newApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style
+        // 新版图标 (背景) 着色 - 颜色透明时兜底，避免只有白色图标没有背景
+        val newApplyColor = (customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: md3Style)
+            .takeIf { Color.alpha(it) != 0 } ?: md3Style.takeIf { Color.alpha(it) != 0 } ?: 0xFF707173.toInt()
 
         // 用自绘 [CustomIconDrawable] 承载 “背景 + 着色图标”，其内部把 setColorFilter/setTint 覆盖为重申自身颜色，
         // 背景也画在图标自身而非视图 background
         return if (isMd3) CustomIconDrawable(
             glyph = glyph,
             badgeColor = newApplyColor,
-            glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,
+            glyphColor = if (newApplyColor.isWhiteColor) Color.BLACK else Color.WHITE,
             cornerRadiusPx = ConfigData.notifyIconCornerSize.toPx(context).toFloat(),
             paddingRatio = padRatio,
             referenceSidePx = if (viewSizePx > 0) viewSizePx.toFloat() else headerIconSizeOf(context).toFloat()
         ) else CustomIconDrawable(
             glyph = glyph,
             badgeColor = Color.TRANSPARENT,
-            glyphColor = oldApplyColor,
+            glyphColor = oldReadableColor,
             cornerRadiusPx = 0f,
             paddingRatio = padRatio
         )
@@ -791,7 +800,16 @@ object SystemUIHooker : YukiBaseHooker() {
                     clearColorFilter()
                     // 图标视图尺寸
                     val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
-                    setImageDrawable(customNotifyIconOf(context, customTriple, drawable, iconColor, viewSizePx))
+                    val styled = customNotifyIconOf(context, customTriple, drawable, iconColor, viewSizePx)
+                    moduleStyledDrawables[this] = styled
+                    setImageDrawable(styled)
+                    // ColorOS 16 会在布局/颜色刷新后把系统图标重新设回来，下一帧检查并补一次
+                    post {
+                        if (drawable !== styled) {
+                            YLog.debug("Icon drawable was replaced by system, re-applying: $realPackageName")
+                            setImageDrawable(styled)
+                        }
+                    }
                 }
                 else -> iconView.apply {
                     // 标记为已处理但非本模块接管
@@ -962,6 +980,30 @@ object SystemUIHooker : YukiBaseHooker() {
             nf.isOplusPush || nf.isLauncherSmallIcon(context) -> hostLauncherIconOf(context, nf.packageName)
             else -> null
         }
+    }
+
+    /**
+     * 把替换用的图标缩放到状态栏图标尺寸
+     *
+     * ColorOS 16 起状态栏图标由 IconManager 创建，旧的重绘路径不再执行，
+     * 位图的固有尺寸（ANIP 72px / 桌面图标 108dp）会直接参与系统缩放
+     * @param context 实例
+     * @return [Bitmap]
+     */
+    @Suppress("DiscouragedApi")
+    private fun Drawable.toStatusBarBitmap(context: Context): Bitmap {
+        val res = context.resources
+        fun dimenOf(name: String, pkg: String) =
+            res.getIdentifier(name, "dimen", pkg).takeIf { it != 0 }?.let { res.getDimensionPixelSize(it) } ?: 0
+        // ColorOS 16 的状态栏槽位是 20dp（不是 AOSP 的 22dp），且系统按 0.75 缩放应用图标，
+        // 蒙版直接铺满槽位会比系统图标大一圈，这里按槽位的 0.8 倍出图
+        val slot = dimenOf("status_bar_icon_size", "com.android.systemui").takeIf { it > 0 }
+            ?: dimenOf("status_bar_icon_size", "android").takeIf { it > 0 }
+            ?: (20 * res.displayMetrics.density).toInt()
+        val target = (slot * 0.8f).toInt().coerceAtLeast(1)
+        val bitmap = toBitmap()
+        return if (bitmap.width != target || bitmap.height != target)
+            Bitmap.createScaledBitmap(bitmap, target, target, true) else bitmap
     }
 
     /**
@@ -1510,10 +1552,13 @@ object SystemUIHooker : YukiBaseHooker() {
                                 packageName = nf.packageName,
                                 drawable = iconDrawable
                             ).also { pair ->
-                                if (pair.second) StatusBarIconClass.resolve().optional().firstFieldOrNull {
-                                    name = "icon"
-                                    type = Icon::class
-                                }?.of(result)?.set(Icon.createWithBitmap(pair.first.toBitmap()))
+                                if (pair.second) {
+                                    val bitmap = pair.first.toStatusBarBitmap(context)
+                                    StatusBarIconClass.resolve().optional().firstFieldOrNull {
+                                        name = "icon"
+                                        type = Icon::class
+                                    }?.of(result)?.set(Icon.createWithBitmap(bitmap))
+                                }
                             }
                         }
                     }
@@ -1742,6 +1787,25 @@ object SystemUIHooker : YukiBaseHooker() {
                     before { if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) result = null }
                     after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
                     // after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
+                }
+                // ColorOS 16 对带会话头像的通知（如 QQ）会单独走这个方法把图标换回去，处理完再套一次模块样式
+                firstMethodOrNull {
+                    name = "updateIconWithAppIconIfNeeded"
+                }?.hook()?.after {
+                    runInSafe { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
+                }
+            }
+
+            // 系统会在任意时机把通知图标重新设成自己的 drawable，这里在框架层兜住
+            ImageViewClass.resolve().optional().firstMethodOrNull {
+                name = "setImageDrawable"
+                parameters(Drawable::class)
+            }?.hook()?.before {
+                val iconView = instance<ImageView>()
+                if (moduleStyledIcons[iconView] == true) {
+                    moduleStyledDrawables[iconView]?.let { styled ->
+                        if (arg(0).get<Drawable>() !== styled) arg(0).set(styled)
+                    }
                 }
             }
 
