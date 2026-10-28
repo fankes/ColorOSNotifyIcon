@@ -46,10 +46,14 @@ object FrameworkHooker : YukiBaseHooker() {
 
     override fun onHook() {
         // 拦截 ColorOS 覆盖应用通知图标
-        OplusNotificationFixHelperClass?.resolve()?.optional()?.firstMethodOrNull {
-            name = "fixSmallIcon"
-            parameters(Notification::class, String::class, String::class, Boolean::class)
-        }?.hook()?.intercept()
+        OplusNotificationFixHelperClass?.resolve()?.optional()?.apply {
+            firstMethodOrNull {
+                name = "fixSmallIcon"
+                parameters(Notification::class, String::class, String::class, Boolean::class)
+            }?.hook()?.intercept()
+            // ColorOS 16 起改用 fixAppIcon 继续把通知图标替换成应用图标
+            firstMethodOrNull { name = "fixAppIcon" }?.hook()?.intercept()
+        }
         // ColorOS 自启动管理会拦截 SystemUI 冷启动模块的定时更新服务，这里只放行这一个服务
         OplusAppStartupManagerClass?.resolve()?.optional()?.firstMethodOrNull {
             name = "isAllowStartFromStartService"
