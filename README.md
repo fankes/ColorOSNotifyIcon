@@ -16,7 +16,7 @@
 
 English | [简体中文](README-zh-CN.md)
 
-Optimize notification icons for ColorOS and adapt to native notification icon specifications.
+Optimize notification icons for ColorOS and adapt to stock notification icon specifications.
 
 ## Project Migration Notice
 
@@ -24,8 +24,11 @@ Maintaining two modules for both **HyperOS/MIUI** and **ColorOS** at the same ti
 two
 projects into a new one, with plans to support more systems and devices, such as AOSP and AOSP-like systems.
 
-Once the new project is settled, its link will be added here. At that time I will stop maintaining this project and recommend that everyone move to
-the new project.
+The new project is [Sumi](https://github.com/fankes/Sumi), which is currently in development. After the new project publishes its official
+release, I will stop maintaining this project and recommend that everyone move to the new project.
+
+Features of this module that are unrelated to notification icons (for example, removing the developer options warning notification and the
+charging complete notification) will not be migrated to the new project.
 
 ## Compatibility Notes
 
