@@ -144,10 +144,11 @@
     <string name="common_copied">已复制</string>
     <string name="common_copy_failed">复制失败</string>
     <string name="common_open_notify_settings_failed">跳转通知设置失败</string>
+    <string name="common_launch_browser_failed">启动系统浏览器失败</string>
+    <string name="common_launch_failed">启动 %1$s 失败，你可能没有安装此应用</string>
     <string name="common_launch_app_info_failed">启动 %1$s 应用信息失败</string>
     <string name="common_app_not_installed">你没有安装此应用</string>
-    <string name="common_launch_browser_failed">启动系统浏览器失败</string>
-    <string name="common_launch_failed">启动 %1$s 失败</string>
+    <string name="app_coolapk">酷安</string>
     <string name="release_enable">去开启</string>
     <string name="release_network_unavailable_msg">应用的联网权限可能已被禁用，请开启联网权限以定期检查更新。</string>
     <string name="release_network_unavailable">网络不可用</string>
