@@ -64,6 +64,9 @@
     <string name="main_hide_launcher_icon">Hide module icon from launcher</string>
     <string name="main_hide_launcher_icon_desc">Hiding the module icon may close this screen, and the module will no longer appear on the launcher. You can still find the module in your Xposed manager and open its settings from there.</string>
     <string name="main_hide_launcher_icon_warn">In LSPosed, make sure \"Force apps to show launcher icons\" is turned off.</string>
+    <string name="main_group_promotion">Promotion Settings</string>
+    <string name="main_show_project_promotion">Show “Project Promotion” at launch</string>
+    <string name="main_show_project_promotion_desc">Project promotion is shown at launch every time after the module is first installed and after each version update. You can turn it off permanently here until the module is uninstalled and reinstalled.</string>
     <string name="main_group_help">Help &amp; Instructions</string>
     <string name="main_help_q1_coloros_q">Q. How was this module born?</string>
     <string name="main_help_q1_coloros_a">A. ColorOS, the second-largest system after MIUI, supports native notification icons, but it does not handle the colorful icons pushed by third-party apps, and even the system\'s own icons are colored, which is extremely unfriendly. Moreover, starting with ColorOS 12 the native icons lost their tint attribute, which also undermines the native Android ecosystem.</string>

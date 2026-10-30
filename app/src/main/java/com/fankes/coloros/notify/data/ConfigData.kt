@@ -38,6 +38,9 @@ import com.highcapable.yukihookapi.hook.xposed.preference.data.PreferenceData
  */
 object ConfigData {
 
+    /** 启动时展示项目推广 */
+    val SHOW_PROJECT_PROMOTION = PreferenceData("_show_project_promotion", true)
+
     /** 启用模块日志 */
     val ENABLE_MODULE_LOG = PreferenceData("_enable_module_log", false)
 
@@ -181,6 +184,16 @@ object ConfigData {
             else -> error("Unknown type for put preferences data")
         }
     }
+
+    /**
+     * 是否在启动时展示项目推广
+     * @return [Boolean]
+     */
+    var isShowProjectPromotion
+        get() = getBoolean(SHOW_PROJECT_PROMOTION)
+        set(value) {
+            putBoolean(SHOW_PROJECT_PROMOTION, value)
+        }
 
     /**
      * 是否启用模块日志
