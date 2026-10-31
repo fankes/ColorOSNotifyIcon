@@ -34,7 +34,6 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.ConnectivityManager
 import android.net.Uri
@@ -411,7 +410,6 @@ fun Context.snake(msg: String, actionText: String = "", callback: () -> Unit = {
         // 有底栏时显示在底栏上方，避免挡住底栏
         (findViewById(R.id.main_bottom_nav) ?: findViewById<View>(R.id.config_bottom_bar))?.let { anchorView = it }
         if (actionText.isBlank()) return@apply
-        setActionTextColor(if (isSystemInDarkMode) Color.BLACK else Color.WHITE)
         setAction(actionText) { callback() }
     }.show()
 
