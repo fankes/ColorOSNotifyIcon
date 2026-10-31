@@ -64,12 +64,13 @@ object BitmapCompatTool {
      * @param drawable 要判断的 [Drawable]
      * @return [Boolean] 是否灰度
      */
-    fun isGrayscaleDrawable(drawable: Drawable) = safeOfFalse {
+    fun isGrayscaleDrawable(drawable: Drawable): Boolean = safeOfFalse {
         when (drawable) {
             is BitmapDrawable -> isGrayscaleBitmap(drawable.bitmap)
-            is AnimationDrawable -> !(drawable.numberOfFrames <= 0 || !isGrayscaleBitmap(drawable.getFrame(0).toBitmap()))
+            is AnimationDrawable -> drawable.numberOfFrames > 0 && isGrayscaleDrawable(drawable.getFrame(0))
             is VectorDrawable -> true
-            else -> isGrayscaleBitmap(drawable.toBitmap())
+            // 灰度检查最多需要 64×64 像素，直接按检查尺寸绘制，避免先生成原始尺寸的大位图
+            else -> isGrayscaleBitmap(drawable.toBitmap(drawable.intrinsicWidth.coerceIn(1, 64), drawable.intrinsicHeight.coerceIn(1, 64)))
         }
     }
 
@@ -82,6 +83,7 @@ object BitmapCompatTool {
         cachedBitmapGrayscales[bitmap.generationId] ?: let {
             var height = bitmap.height
             var width = bitmap.width
+            var sampledBitmap = bitmap
             if (height > 64 || width > 64) {
                 if (tempCompactBitmap == null) {
                     tempCompactBitmap = createBitmap(64, 64)
@@ -92,12 +94,13 @@ object BitmapCompatTool {
                 tempMatrix.setScale(64f / width, 64f / height, 0f, 0f)
                 tempCompactBitmapCanvas?.drawColor(0, PorterDuff.Mode.SRC)
                 tempCompactBitmapCanvas?.drawBitmap(bitmap, tempMatrix, tempCompactBitmapPaint)
+                sampledBitmap = tempCompactBitmap ?: return@let false
                 height = 64
                 width = 64
             }
             val size = height * width
             ensureBufferSize(size)
-            tempCompactBitmap?.getPixels(tempBuffer, 0, width, 0, 0, width, height)
+            sampledBitmap.getPixels(tempBuffer, 0, width, 0, 0, width, height)
             for (i in 0 until size)
                 if (isGrayscaleColor(tempBuffer[i]).not()) {
                     cachedBitmapGrayscales[bitmap.generationId] = false

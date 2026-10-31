@@ -971,6 +971,25 @@ object SystemUIHooker : YukiBaseHooker() {
             .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) } ?: 40.toPx(context)
 
     /**
+     * 按系统状态栏通知图标尺寸生成位图，保留原始宽高比，不放大小图标
+     * @param context 系统界面实例
+     * @param drawable 要转换的图标
+     * @return [Bitmap] 状态栏图标位图
+     */
+    @Suppress("DiscouragedApi")
+    private fun statusIconBitmapOf(context: Context, drawable: Drawable): Bitmap {
+        val size = listOf("notification_round_rect_icon_zoom_size", "status_bar_icon_size").firstNotNullOfOrNull { name ->
+            context.resources.getIdentifier(name, "dimen", context.packageName)
+                .takeIf { it != 0 }?.let { context.resources.getDimensionPixelSize(it) }?.takeIf { it > 0 }
+        } ?: 24.toPx(context)
+        val width = drawable.intrinsicWidth
+        val height = drawable.intrinsicHeight
+        if (width <= 0 || height <= 0) return drawable.toBitmap(size, size)
+        val scale = minOf(1.0, size.toDouble() / maxOf(width, height))
+        return drawable.toBitmap((width * scale).toInt().coerceAtLeast(1), (height * scale).toInt().coerceAtLeast(1))
+    }
+
+    /**
      * 取锁屏岛图标尺寸
      * @param context 实例
      * @return [Int] 图标尺寸 (px) - 获取失败为 0
@@ -1498,7 +1517,7 @@ object SystemUIHooker : YukiBaseHooker() {
                                 if (pair.second) StatusBarIconClass.resolve().optional().firstFieldOrNull {
                                     name = "icon"
                                     type = Icon::class
-                                }?.of(result)?.set(Icon.createWithBitmap(pair.first.toBitmap()))
+                                }?.of(result)?.set(Icon.createWithBitmap(statusIconBitmapOf(context, pair.first)))
                             }
                         }
                     }
