@@ -14,9 +14,11 @@
         <item name="colorOnSurface">@color/colorTextGray</item>
         <item name="colorSurfaceVariant">@color/colorPrimaryTint</item>
         <item name="colorOnSurfaceVariant">@color/colorTextDark</item>
+        <item name="colorOutline">@color/colorPrimaryTint</item>
         <item name="colorSecondaryContainer">@color/colorPrimaryTintTertiary</item>
         <item name="colorOnSecondaryContainer">@color/colorTextGray</item>
         <item name="chipStyle">@style/Widget.ColorOSNotifyIcon.Chip</item>
+        <item name="popupMenuStyle">@style/Widget.ColorOSNotifyIcon.PopupMenu</item>
         <item name="checkboxStyle">@style/Widget.ColorOSNotifyIcon.CheckBox</item>
         <item name="radioButtonStyle">@style/Widget.ColorOSNotifyIcon.RadioButton</item>
         <item name="android:textColorPrimary">@color/colorTextGray</item>

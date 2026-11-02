@@ -629,12 +629,11 @@ object SystemUIHooker : YukiBaseHooker() {
                 customPair = Triple(statSysAdbIcon, 0, false)
             // 替换自定义通知图标
             ConfigData.isEnableNotifyIconFix -> run {
-                val snapshot = IconRuleManagerTool.snapshot
-                val icon = snapshot?.getIcon(packageName)
+                val icon = IconRuleManagerTool.getIcon(packageName)
                 if (icon != null) {
                     if (isAppNotifyEnabledOf(icon) && (isGrayscaleIcon.not() || isAppNotifyOverlayOf(icon)))
                         customPair = Triple(
-                            snapshot.getBitmap(icon)?.toDrawable(context.resources),
+                            IconRuleManagerTool.getBitmap(icon)?.toDrawable(context.resources),
                             icon.color ?: 0,
                             false
                         )
@@ -1176,8 +1175,7 @@ object SystemUIHooker : YukiBaseHooker() {
                     if (ConfigData.isEnableNotifyIconFix && ConfigData.isEnableNotifyIconFixNotify)
                         when (intent.action) {
                             Intent.ACTION_PACKAGE_ADDED -> {
-                                val snapshot = IconRuleManagerTool.snapshot ?: return@registerReceiver
-                                if (snapshot.getIcon(packageName) == null)
+                                if (IconRuleManagerTool.getIcon(packageName) == null)
                                     IconAdaptationTool.pushNewAppSupportNotify(context, packageName, module.resources)
                             }
                             Intent.ACTION_PACKAGE_REMOVED -> IconAdaptationTool.removeNewAppSupportNotify(context, packageName)
@@ -1335,7 +1333,7 @@ object SystemUIHooker : YukiBaseHooker() {
             val previousVersion = IconRuleManagerTool.snapshotVersion
             runCatching {
                 IconRuleManagerTool.reload(context)
-                val isAvailable = IconRuleManagerTool.snapshot?.icons.isNullOrEmpty().not()
+                val isAvailable = IconRuleManagerTool.icons.isNotEmpty()
                 if (isAvailable && previousVersion != IconRuleManagerTool.snapshotVersion) {
                     refreshStatusBarIcons()
                     refreshNotificationIcons()
@@ -1370,7 +1368,7 @@ object SystemUIHooker : YukiBaseHooker() {
             val fetchResult = runCatching {
                 IconRuleManagerTool.reload(context)
                 IconRuleManagerTool.fetch(context, module.resources).also {
-                    val isAvailable = IconRuleManagerTool.snapshot?.icons.isNullOrEmpty().not()
+                    val isAvailable = IconRuleManagerTool.icons.isNotEmpty()
                     if (isAvailable && previousVersion != IconRuleManagerTool.snapshotVersion) {
                         refreshStatusBarIcons()
                         refreshNotificationIcons()
