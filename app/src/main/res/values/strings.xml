@@ -93,7 +93,7 @@
     <string name="sync_additional_static_hint">Enter static hosting base URL</string>
     <string name="sync_additional_custom_hint">Enter resource manifest URL</string>
     <string name="sync_additional_invalid">Enter a valid additional source parameter</string>
-    <string name="sync_source_github">GitHub</string>
+    <string name="sync_source_github">GitHub (Direct)</string>
     <string name="sync_repository_hint">GitHub repository to use</string>
     <string name="sync_restore_default">Restore Default</string>
     <string name="sync_repository_helper">You can change this to your own repository if needed.</string>
