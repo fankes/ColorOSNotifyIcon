@@ -55,6 +55,7 @@ object SystemUITool {
 
     private val CALL_HOST_REFRESH_CACHING = ChannelData("call_host_refresh_caching", false)
     private val CALL_MODULE_REFRESH_RESULT = ChannelData("call_module_refresh_result", false)
+    private const val CALL_HOST_REFRESH_NOTIFICATION_PANEL = "call_host_refresh_notification_panel"
     private val CALL_HOST_REFRESH_ICON_DATA = ChannelData("call_host_refresh_icon_data", "" to 0L)
     private val CALL_MODULE_REFRESH_ICON_DATA_RESULT = ChannelData("call_module_refresh_icon_data_result", false)
     private const val CALL_HOST_DISMISS_ACTIVATION_PROMPT = "call_host_dismiss_activation_prompt"
@@ -83,6 +84,14 @@ object SystemUITool {
         fun onRefreshSystemUI(param: PackageParam, result: (Boolean) -> Boolean) {
             param.dataChannel.with { wait(CALL_HOST_REFRESH_CACHING) { put(CALL_MODULE_REFRESH_RESULT, result(it)) } }
         }
+
+        /**
+         * 监听仅刷新通知面板的请求
+         * @param param 实例
+         * @param result 回调是否成功
+         */
+        fun onRefreshNotificationPanel(param: PackageParam, result: () -> Boolean) =
+            param.dataChannel.with { wait(CALL_HOST_REFRESH_NOTIFICATION_PANEL) { put(CALL_MODULE_REFRESH_RESULT, result()) } }
 
         /**
          * 监听通知图标数据刷新请求
@@ -281,12 +290,14 @@ object SystemUITool {
      * @param context 实例
      * @param isRefreshCacheOnly 仅刷新缓存不刷新图标和通知改变 - 默认：否
      * @param isRefreshIconData 是否刷新通知图标数据 - 默认：否
+     * @param isRefreshNotificationPanelOnly 仅刷新通知面板 - 默认：否
      * @param callback 成功后回调
      */
     fun refreshSystemUI(
         context: Context? = null,
         isRefreshCacheOnly: Boolean = false,
         isRefreshIconData: Boolean = false,
+        isRefreshNotificationPanelOnly: Boolean = false,
         callback: () -> Unit = {}
     ) {
         /**
@@ -298,6 +309,9 @@ object SystemUITool {
                 if (isRefreshIconData) {
                     wait(CALL_MODULE_REFRESH_ICON_DATA_RESULT) { result(it) }
                     put(CALL_HOST_REFRESH_ICON_DATA, IconRuleManagerTool.snapshotVersion ?: ("" to 0L))
+                } else if (isRefreshNotificationPanelOnly) {
+                    wait(CALL_MODULE_REFRESH_RESULT) { result(it) }
+                    put(CALL_HOST_REFRESH_NOTIFICATION_PANEL)
                 } else {
                     wait(CALL_MODULE_REFRESH_RESULT) { result(it) }
                     put(CALL_HOST_REFRESH_CACHING, isRefreshCacheOnly)

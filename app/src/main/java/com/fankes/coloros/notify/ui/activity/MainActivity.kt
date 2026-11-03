@@ -209,20 +209,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun initConfigBindings() {
         homeBinding.moduleEnableLogSwitch.bind(ConfigData.ENABLE_MODULE_LOG) {
             onInitialize { homeBinding.expAllDebugLogButton.isVisible = it }
-            onChanged {
-                reinitialize()
-                SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true)
-            }
+            onChanged { reinitialize() }
         }
-        configBinding.devNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DEV_NOTIFY) {
-            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
-        }
-        configBinding.crcpNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY) {
-            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
-        }
-        configBinding.dndNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DND_ALERT_NOTIFY) {
-            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
-        }
+        configBinding.devNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DEV_NOTIFY)
+        configBinding.crcpNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY)
+        configBinding.dndNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DND_ALERT_NOTIFY)
         configBinding.colorIconCompatSwitch.bind(ConfigData.ENABLE_COLOR_ICON_COMPAT) {
             isAutoApplyChanges = false
             onChanged {
@@ -293,14 +284,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             }
             onChanged {
                 reinitialize()
-                SystemUITool.refreshSystemUI(context = this@MainActivity)
+                SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshNotificationPanelOnly = true)
             }
         }
-        configBinding.notifyMediaPanelAutoExpSwitch.bind(ConfigData.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP) {
-            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
-        }
+        configBinding.notifyMediaPanelAutoExpSwitch.bind(ConfigData.ENABLE_NOTIFY_MEDIA_PANEL_AUTO_EXP)
         configBinding.notifyPanelConfigSeekbar.bind(ConfigData.NOTIFY_PANEL_ALPHA_LEVEL, configBinding.notifyPanelConfigText, suffix = "%") {
-            SystemUITool.refreshSystemUI(context = this)
+            SystemUITool.refreshSystemUI(context = this, isRefreshNotificationPanelOnly = true)
         }
         configBinding.notifyIconCustomCornerSeekbar.bind(ConfigData.NOTIFY_ICON_CORNER_SIZE, configBinding.notifyIconCustomCornerText, suffix = " dp") {
             SystemUITool.refreshSystemUI(context = this)

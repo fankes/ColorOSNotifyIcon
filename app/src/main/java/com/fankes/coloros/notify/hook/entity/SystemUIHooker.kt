@@ -1201,6 +1201,8 @@ object SystemUIHooker : YukiBaseHooker() {
         }
         // 刷新图标缓存
         SystemUITool.Host.onRefreshSystemUI(param = this) { recachingPrefs(it) }
+        // 透明度设置只刷新通知面板
+        SystemUITool.Host.onRefreshNotificationPanel(param = this) { recachingPrefs(isRefreshNotificationPanelOnly = true) }
         // 模块获取资源并写入共享文件后发送刷新命令，SystemUI 从共享文件重新装载
         SystemUITool.Host.onRefreshIconData(param = this) { version, result ->
             recachingPrefs(isRefreshCacheOnly = true)
@@ -1422,16 +1424,17 @@ object SystemUIHooker : YukiBaseHooker() {
     /**
      * 刷新缓存数据
      * @param isRefreshCacheOnly 仅刷新缓存不刷新图标和通知改变 - 默认：否
+     * @param isRefreshNotificationPanelOnly 仅刷新通知面板 - 默认：否
      * @return [Boolean] 是否成功
      */
-    private fun recachingPrefs(isRefreshCacheOnly: Boolean = false): Boolean {
+    private fun recachingPrefs(isRefreshCacheOnly: Boolean = false, isRefreshNotificationPanelOnly: Boolean = false): Boolean {
         // 必要的延迟防止 Sp 存储不刷新
         SystemClock.sleep(300)
         // 获取可读写状态
         return preferences.isAvailable.also {
             isUsingCachingMethod = true
             if (isRefreshCacheOnly) return@also
-            refreshStatusBarIcons()
+            if (isRefreshNotificationPanelOnly.not()) refreshStatusBarIcons()
             refreshNotificationIcons()
         }
     }
