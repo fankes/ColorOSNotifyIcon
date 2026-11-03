@@ -55,6 +55,7 @@ import com.fankes.coloros.notify.utils.factory.showDialog
 import com.fankes.coloros.notify.utils.tool.GithubReleaseTool
 import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
+import com.fankes.coloros.notify.wrapper.BuildConfigWrapper
 import com.fankes.projectpromote.ProjectPromote
 import com.highcapable.betterandroid.ui.component.adapter.factory.bindAdapter
 import com.highcapable.betterandroid.ui.component.adapter.viewholder.delegate.base.ViewHolderDelegate
@@ -172,6 +173,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     /** 初始化主页的版本文本、CI 自动构建标识、检查更新和各项设置的初始状态，它们不依赖模块是否激活 */
     private fun initHomeInfo() {
+        // 仅 Legacy 版本显示缎带
+        homeBinding.mainTextLegacy.isVisible = BuildConfigWrapper.isLegacy
         // 检查更新
         GithubReleaseTool.checkingForUpdate(context = this, ModuleVersion.NAME) { version, function ->
             homeBinding.mainTextReleaseVersion.apply {
