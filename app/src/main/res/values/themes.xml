@@ -38,6 +38,12 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <style name="Theme.ColorOSNotifyIcon.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/colorThemeBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.ColorOSNotifyIcon</item>
+    </style>
+
     <style name="Widget.ColorOSNotifyIcon.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/colorNavIndicator</item>
     </style>

@@ -101,6 +101,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private val configBinding by lazy { PageConfigBinding.inflate(layoutInflater, binding.mainViewPager, false) }
     private val aboutBinding by lazy { PageAboutBinding.inflate(layoutInflater, binding.mainViewPager, false) }
 
+    override val showSplashScreen = true
+
     override fun onCreate() {
         // 注册导出调试日志启动器，必须在 STARTED 之前，不能放进框架服务回调里
         SystemUITool.registerExportDebugLogsLauncher(activity = this)
@@ -124,7 +126,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         isActivityLive = true
         when {
             // 判断是否为 ColorOS 系统
-            isNotColorOS ->
+            isNotColorOS -> afterStartup {
                 showDialog {
                     title = getString(R.string.common_not_coloros)
                     msg = getString(R.string.main_not_coloros_msg)
@@ -135,10 +137,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     cancelButton(text = getString(R.string.common_exit)) { finish() }
                     noCancelable()
                 }
+            }
             else -> {
                 // 判断是否 Hook
                 if (available && YukiHook.Status.isModuleActive) {
-                    if (isNotNoificationEnabled && ConfigData.isEnableNotifyIconFix)
+                    if (isNotNoificationEnabled && ConfigData.isEnableNotifyIconFix) afterStartup {
                         showDialog {
                             title = getString(R.string.main_notify_permission_off)
                             msg = getString(R.string.main_notify_permission_off_msg)
@@ -146,21 +149,25 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             cancelButton()
                             noCancelable()
                         }
+                    }
                     // 推广、恰饭
-                    if (ConfigData.isShowProjectPromotion) ProjectPromote.show(activity = this, ModuleVersion.toString())
+                    if (ConfigData.isShowProjectPromotion) afterStartup { ProjectPromote.show(activity = this, ModuleVersion.toString()) }
                 } else {
                     homeBinding.mainOptimizeListSummaryText.text = getString(R.string.config_module_unavailable)
-                    showDialog {
-                        title = getString(R.string.main_module_not_active)
-                        msg = getString(R.string.main_module_not_active_msg)
-                        confirmButton(text = getString(R.string.common_got_it))
-                        noCancelable()
+                    afterStartup {
+                        showDialog {
+                            title = getString(R.string.main_module_not_active)
+                            msg = getString(R.string.main_module_not_active_msg)
+                            confirmButton(text = getString(R.string.common_got_it))
+                            noCancelable()
+                        }
                     }
                 }
             }
         }
         // 框架服务状态确定后同步刷新模块状态，否则需要切换后台触发 onResume 才会更新
         checkModuleStatus()
+        callStartupReady()
     }
 
     /** 初始化主页的版本文本、CI 自动构建标识、检查更新和各项设置的初始状态，它们不依赖模块是否激活 */
