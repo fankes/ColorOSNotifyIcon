@@ -44,8 +44,11 @@ object ConfigData {
     /** 启用模块日志 */
     val ENABLE_MODULE_LOG = PreferenceData("_enable_module_log", false)
 
-    /** 启用通知图标兼容模式 */
-    val ENABLE_COLOR_ICON_COMPAT = PreferenceData("_color_icon_compat", false)
+    /** 使用系统图标反色模式 */
+    val USE_SYSTEM_ICON_INVERSION = PreferenceData("_use_system_icon_inversion", false)
+
+    /** 启用单色图标重采样 */
+    val ENABLE_NOTIFY_ICON_RESAMPLING = PreferenceData("_notify_icon_resampling", false)
 
     /** 移除开发者选项警告通知 */
     val ENABLE_REMOVE_DEV_NOTIFY = PreferenceData("_remove_dev_notify", true)
@@ -214,13 +217,23 @@ object ConfigData {
         }
 
     /**
-     * 是否启用通知图标兼容模式
+     * 是否使用系统图标反色模式
      * @return [Boolean]
      */
-    var isEnableColorIconCompat
-        get() = getBoolean(ENABLE_COLOR_ICON_COMPAT)
+    var isUseSystemIconInversion
+        get() = getBoolean(USE_SYSTEM_ICON_INVERSION)
         set(value) {
-            putBoolean(ENABLE_COLOR_ICON_COMPAT, value)
+            putBoolean(USE_SYSTEM_ICON_INVERSION, value)
+        }
+
+    /**
+     * 是否启用单色图标重采样
+     * @return [Boolean]
+     */
+    var isEnableNotifyIconResampling
+        get() = getBoolean(ENABLE_NOTIFY_ICON_RESAMPLING)
+        set(value) {
+            putBoolean(ENABLE_NOTIFY_ICON_RESAMPLING, value)
         }
 
     /**

@@ -34,8 +34,10 @@
     <string name="main_remove_dnd">Remove Do Not Disturb notification</string>
     <string name="main_remove_dnd_desc">The system posts a notification whenever Do Not Disturb is turned on, however long it lasts. When enabled, this nagging notification is removed entirely.</string>
     <string name="main_group_icon">Icon Adjustments</string>
-    <string name="common_enable_compat_mode">Enable compatibility mode</string>
-    <string name="main_compat_mode_desc">Enable compatibility mode if the module detects the notification icon color incorrectly. It is generally not recommended. If any problem occurs, turn it off.</string>
+    <string name="main_use_system_icon_inversion">Use the system implementation for icon color inversion</string>
+    <string name="main_system_icon_inversion_desc">To ensure compatibility, the module uses an algorithm to determine whether notification icons are grayscale. If icon color inversion behaves incorrectly, try enabling this option to use the system implementation instead.</string>
+    <string name="main_enable_icon_resampling">Enable monochrome icon resampling</string>
+    <string name="main_icon_resampling_desc">This option is off by default. When enabled, it resamples monochrome bitmaps to the notification icon display size and sharpens them when enlarged. This may change stroke thickness and spacing. Vector icons are not affected.</string>
     <string name="main_group_appearance">Notification Appearance</string>
     <string name="main_enable_material3">Material 3 notification icons</string>
     <string name="main_enable_material3_desc">On any version, when enabled, the notification icons in the notification shade use the Material 3 design introduced in Android 12, which adds an outer outline to the icons.\nOn Android 12 and above, the system theme color is used for tinting automatically.</string>
@@ -107,8 +109,6 @@
     <string name="main_force_app_icon_msg">When enabled, all notification icons in the notification shade are forcibly replaced with the icon of the app that posted the notification. Some system app notification icons may be displayed incorrectly or go missing. Do you still want to enable it?</string>
     <string name="main_destructive_warn">Destructive Feature Warning</string>
     <string name="main_system_default_tint_msg">When enabled, all notification icons in the notification shade ignore their own tint attribute and are tinted with the system default color (the uniform color provided by the system). Do you still want to enable it?</string>
-    <string name="main_compat_mode_msg">Compatibility mode can fix notification icon inversion not being detected correctly on some system versions, but it may also cause new problems. It is generally not recommended. Are you sure you want to continue?\n\nIf the notification icon colors are wrong after System UI refreshes, try restarting System UI once.</string>
-    <string name="main_compat_mode_title">Enable Compatibility Mode</string>
     <string name="main_system_version_detail">[%1$s] %2$s</string>
     <string name="common_got_it">Got It</string>
     <string name="main_ci_msg">You are using a CI build with Commit ID %1$s.\n\nCI builds are triggered, built and released automatically after each code commit, without any stability testing. Use at your own risk.</string>

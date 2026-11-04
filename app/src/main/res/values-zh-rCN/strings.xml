@@ -34,8 +34,10 @@
     <string name="main_remove_dnd">移除免打扰通知</string>
     <string name="main_remove_dnd_desc">开启免打扰后无论任何时长，总是会推送一条通知，开启后将直接移除这个 “你在教我做事” 的通知功能。</string>
     <string name="main_group_icon">图标调整</string>
-    <string name="common_enable_compat_mode">启用兼容模式</string>
-    <string name="main_compat_mode_desc">如果发现通知图标颜色判定不正常可启用兼容模式，一般情况下不建议启用兼容模式，发生问题请关闭兼容模式。</string>
+    <string name="main_use_system_icon_inversion">图标反色使用系统方案</string>
+    <string name="main_system_icon_inversion_desc">为了确保兼容，模块会使用算法判断通知图标颜色是否为灰度，如果你发现图标反色异常，可以尝试启用此选项，开启后将交由系统方案接管。</string>
+    <string name="main_enable_icon_resampling">启用单色图标重采样</string>
+    <string name="main_icon_resampling_desc">此选项默认关闭，开启后，会按通知图标的显示尺寸重新采样单色位图，并在放大时进行锐化。这可能改变笔画粗细和间隙，矢量图标不受影响。</string>
     <string name="main_group_appearance">通知外观</string>
     <string name="main_enable_material3">启用 Material 3 通知图标风格</string>
     <string name="main_enable_material3_desc">无论任何版本，开启后都将使用从 Android 12 开始的 Material 3 通知图标设计方式为通知栏的通知图标增加外部轮廓。\n目标为 Android 12 及以上的系统将自动使用系统主题色着色。</string>
@@ -107,8 +109,6 @@
     <string name="main_force_app_icon_msg">开启这个功能后，任何通知栏中的通知图标都会被强制替换为当前推送通知的应用的图标，某些系统级别的应用通知图标可能会显示异常或发生图标丢失，仍然继续开启吗？</string>
     <string name="main_destructive_warn">破坏性功能警告</string>
     <string name="main_system_default_tint_msg">开启这个功能后，任何通知栏中的通知图标都会忽略图标自身的着色属性，全部使用系统默认颜色 (系统提供的统一色调) 着色，仍然继续开启吗？</string>
-    <string name="main_compat_mode_msg">启用兼容模式可修复部分系统版本可能出现无法判定通知图标反色的问题，但是这也可能会导致新的问题，一般情况下不建议开启，确定要继续吗？\n\n如果系统界面刷新后通知图标颜色发生错误，请尝试重启一次系统界面。</string>
-    <string name="main_compat_mode_title">启用兼容模式</string>
     <string name="main_system_version_detail">[%1$s] %2$s</string>
     <string name="common_got_it">我知道了</string>
     <string name="main_ci_msg">你正在使用的是 CI 自动构建版本，Commit ID 为 %1$s。\n\n它是由代码提交后自动触发并构建、自动编译发布的，并未经任何稳定性测试，使用风险自负。</string>

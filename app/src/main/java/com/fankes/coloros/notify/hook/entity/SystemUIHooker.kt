@@ -73,7 +73,7 @@ import com.fankes.coloros.notify.utils.factory.safeOfNull
 import com.fankes.coloros.notify.utils.factory.stampToDate
 import com.fankes.coloros.notify.utils.factory.systemAccentColor
 import com.fankes.coloros.notify.utils.tool.ActivationPromptTool
-import com.fankes.coloros.notify.utils.tool.BitmapCompatTool
+import com.fankes.coloros.notify.utils.tool.ContrastBitmapTool
 import com.fankes.coloros.notify.utils.tool.IconAdaptationTool
 import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
@@ -541,13 +541,13 @@ object SystemUIHooker : YukiBaseHooker() {
     /**
      * - 这个是修复彩色图标的关键核心代码判断
      *
-     * 判断是否为灰度图标 - 反射执行系统方法
+     * 判断是否为灰度图标，默认使用模块算法，可切换到系统方案
      * @param context 实例
      * @param drawable 要判断的图标
      * @return [Boolean]
      */
     private fun isGrayscaleIcon(context: Context, drawable: Drawable) =
-        if (ConfigData.isEnableColorIconCompat.not()) safeOfFalse {
+        if (ConfigData.isUseSystemIconInversion) safeOfFalse {
             ContrastColorUtilClass.resolve()
                 .optional(silent = true)
                 .let {
@@ -561,7 +561,7 @@ object SystemUIHooker : YukiBaseHooker() {
                         }?.invoke(context)
                     )?.invokeQuietly<Boolean>(drawable) == true
                 }
-        } else BitmapCompatTool.isGrayscaleDrawable(drawable)
+        } else ContrastBitmapTool.isGrayscale(drawable)
 
     /**
      * 取 APP 当前在桌面上显示的图标 - 系统主题生效时为主题图标
@@ -701,8 +701,8 @@ object SystemUIHooker : YukiBaseHooker() {
 
         // 优化 (锐化) 后的单色图标
         val glyph = (customTriple.first ?: drawable).let { d ->
-            (d as? BitmapDrawable)?.bitmap
-                ?.let { BitmapCompatTool.optimizeForSize(it, contentPx).toDrawable(context.resources) } ?: d
+            (d as? BitmapDrawable)?.takeIf { ConfigData.isEnableNotifyIconResampling }?.bitmap
+                ?.let { ContrastBitmapTool.resampling(it, contentPx).toDrawable(context.resources) } ?: d
         }
 
         // 旧版风格 - ColorOS 17+ 通知面板为液态玻璃背景，浅色模式下的深色图标看不清，始终使用夜间模式颜色
