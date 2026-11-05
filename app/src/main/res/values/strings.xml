@@ -253,6 +253,6 @@
     <string name="about_copyright">Reproducing, modifying or copying my work without permission is prohibited</string>
     <string name="config_restore_rules">Undo Changes</string>
     <string name="config_restore_rules_confirm">This will revert your current changes to the upstream cloud rules. Continue?</string>
-    <string name="config_additional_badge">Extra</string>
+    <string name="config_additional_badge" translatable="false">3P</string>
     <string name="common_save">Save</string>
 </resources>

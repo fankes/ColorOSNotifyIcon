@@ -253,6 +253,5 @@
     <string name="about_copyright">未经允许不得转载、修改复制我的劳动成果</string>
     <string name="config_restore_rules">撤销更改</string>
     <string name="config_restore_rules_confirm">这将恢复当前所做的更改到上游云端规则，要继续吗？</string>
-    <string name="config_additional_badge">附加</string>
     <string name="common_save">保存</string>
 </resources>
