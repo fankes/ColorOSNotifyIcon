@@ -28,7 +28,7 @@
 
 ## 适配说明
 
-- 推荐使用 **LSPosed** (作用域 “系统界面”)
+- 推荐使用 **LSPosed** (作用域 “系统界面”，如需在 ColorOS 16+ 适配流体云通知图标功能请添加 “系统消息”)
 - 目前仅在 ColorOS 11、12、12.1、13 和 17 上测试通过，如有问题请 [提交 issues](https://github.com/fankes/ColorOSNotifyIcon/issues)
 - 建议在不低于 ColorOS 11 的版本上使用
 

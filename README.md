@@ -32,7 +32,8 @@ charging complete notification) will not be migrated to the new project.
 
 ## Compatibility Notes
 
-- **LSPosed** (scope: "System UI") is recommended
+- **LSPosed** is recommended (scope: "System UI", if you want to adapt the liquid cloud notification icon function on ColorOS 16+, please add "System
+  Messages")
 - It has only been tested on ColorOS 11, 12, 12.1, 13 and 17. If you have problems,
   please [submit an issue](https://github.com/fankes/ColorOSNotifyIcon/issues)
 - It is recommended to use ColorOS 11 or above
@@ -47,10 +48,10 @@ Thanks to [Nep-Timeline](https://github.com/Nep-Timeline) for providing the solu
 
 ## Background
 
-ColorOS, the second-largest system after MIUI, supports native notification icons, but it has not been adapted for the colorful icons pushed by third
+ColorOS, the second-largest system after MIUI, supports stock notification icons, but it has not been adapted for the colorful icons pushed by third
 parties, and even the system's own icons are colored, which is extremely unfriendly.
 
-Moreover, starting from ColorOS 12 the native icons lost their tint attribute, which is also a kind of damage to the native Android ecosystem. In
+Moreover, starting from ColorOS 12 the stock icons lost their tint attribute, which is also a kind of damage to the stock Android ecosystem. In
 ColorOS 15 and later, the system even forcibly replaces icons with the colored app icon during icon initialization.
 
 ## Contribute to the ANIP
