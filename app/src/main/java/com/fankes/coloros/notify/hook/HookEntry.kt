@@ -23,8 +23,8 @@
 package com.fankes.coloros.notify.hook
 
 import com.fankes.coloros.notify.const.PackageName
-import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.hook.entity.FrameworkHooker
+import com.fankes.coloros.notify.hook.entity.McsHooker
 import com.fankes.coloros.notify.hook.entity.SystemUIHooker
 import com.fankes.coloros.notify.utils.factory.isNotColorOS
 import com.highcapable.yukihookapi.hook.factory.configure
@@ -46,9 +46,7 @@ object HookEntry : YukiHookXposedModule {
     override fun onHook() = encase {
         if (isNotColorOS) return@encase YLog.warn("Aborted Hook -> This System is not ColorOS")
         loadSystem(FrameworkHooker)
-        loadApp(PackageName.SYSTEMUI) {
-            ConfigData.init(instance = this)
-            loadHooker(SystemUIHooker)
-        }
+        loadApp(PackageName.SYSTEMUI, SystemUIHooker)
+        loadApp(PackageName.MCS, McsHooker)
     }
 }

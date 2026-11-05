@@ -65,6 +65,7 @@ import com.highcapable.betterandroid.ui.extension.component.runDelayed
 import com.highcapable.betterandroid.ui.extension.component.startActivity
 import com.highcapable.betterandroid.ui.extension.insets.factory.removeWindowInsetsListener
 import com.highcapable.betterandroid.ui.extension.view.animate
+import com.highcapable.betterandroid.ui.extension.view.toast
 import com.highcapable.betterandroid.ui.extension.view.walkThroughChildren
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.runtime.YukiHookRuntime
@@ -222,6 +223,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         }
         configBinding.notifyIconResamplingSwitch.bind(ConfigData.ENABLE_NOTIFY_ICON_RESAMPLING) {
             onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity) }
+        }
+        configBinding.mcsNotifyIconSwitch.bind(ConfigData.ENABLE_MCS_NOTIFY_ICON) {
+            onChanged { enabled ->
+                SystemUITool.notifyMcsToggle(context = this@MainActivity, enabled = enabled) { success ->
+                    if (success.not()) toast(getString(R.string.tool_refresh_failed))
+                }
+            }
         }
         configBinding.md3StyleConfigSwitch.bind(ConfigData.ENABLE_MD3_NOTIFY_ICON_STYLE) {
             onInitialize { configBinding.notifyIconCustomCornerItem.isVisible = it && ConfigData.isEnableNotifyIconForceAppIcon.not() }

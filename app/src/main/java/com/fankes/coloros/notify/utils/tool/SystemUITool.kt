@@ -58,6 +58,10 @@ object SystemUITool {
     private const val CALL_HOST_REFRESH_NOTIFICATION_PANEL = "call_host_refresh_notification_panel"
     private val CALL_HOST_REFRESH_ICON_DATA = ChannelData("call_host_refresh_icon_data", "" to 0L)
     private val CALL_MODULE_REFRESH_ICON_DATA_RESULT = ChannelData("call_module_refresh_icon_data_result", false)
+    private val CALL_HOST_MCS_TOGGLE = ChannelData("call_host_mcs_toggle", true)
+    private val CALL_MODULE_MCS_TOGGLE_RESULT = ChannelData("call_module_mcs_toggle_result", false)
+    private val CALL_HOST_REFRESH_MCS = ChannelData("call_host_refresh_mcs", false)
+    private val CALL_MODULE_REFRESH_MCS_RESULT = ChannelData("call_module_refresh_mcs_result", false)
     private const val CALL_HOST_DISMISS_ACTIVATION_PROMPT = "call_host_dismiss_activation_prompt"
     private const val CALL_HOST_ICON_RULE_UPDATE_STARTED = "call_host_icon_rule_update_started"
     private const val CALL_HOST_INSTALLED_APPS_GET = "call_host_installed_apps_get"
@@ -103,6 +107,22 @@ object SystemUITool {
                 wait(CALL_HOST_REFRESH_ICON_DATA) { version ->
                     refresh(version) { put(CALL_MODULE_REFRESH_ICON_DATA_RESULT, it) }
                 }
+            }
+        }
+
+        /** 监听模块的流体云图标开关，并由 MCS 自己清理缓存和退出 */
+        fun onMcsToggle(param: PackageParam, callback: (Boolean) -> Boolean, onCleared: () -> Unit) {
+            param.dataChannel.wait(CALL_HOST_MCS_TOGGLE) { enabled ->
+                val result = callback(enabled)
+                param.dataChannel.put(CALL_MODULE_MCS_TOGGLE_RESULT, result)
+                if (result) onCleared()
+            }
+        }
+
+        /** 监听 MCS 图标规则刷新请求 */
+        fun onRefreshMcs(param: PackageParam, refresh: () -> Boolean) {
+            param.dataChannel.wait(CALL_HOST_REFRESH_MCS) {
+                param.dataChannel.put(CALL_MODULE_REFRESH_MCS_RESULT, refresh())
             }
         }
 
@@ -254,6 +274,26 @@ object SystemUITool {
         else context.snake(msg = context.getString(R.string.tool_module_not_active_activate))
     }
 
+    /** 请求 MCS 按新开关状态清理图标缓存并重启自身 */
+    fun notifyMcsToggle(context: Context, enabled: Boolean, callback: (Boolean) -> Unit) {
+        context.dataChannel(PackageName.MCS).with {
+            wait(CALL_MODULE_MCS_TOGGLE_RESULT) { callback(it) }
+            put(CALL_HOST_MCS_TOGGLE, enabled)
+        }
+    }
+
+    /** 停止 MCS，并等待进程名从进程表消失 */
+    fun stopMcs(): Boolean {
+        val result = execShell(
+            cmd = "pids=\$(pidof ${PackageName.MCS}); " +
+                "if [ -n \"\$pids\" ]; then kill -9 \$pids || { printf kill_failed; exit 0; }; fi; " +
+                "i=0; while pidof ${PackageName.MCS} >/dev/null 2>&1; do " +
+                "i=\$((i + 1)); [ \$i -ge 30 ] && { printf stop_timeout; exit 0; }; sleep 0.1; done; " +
+                "printf stopped"
+        )
+        return result == "stopped"
+    }
+
     /**
      * 重启系统界面
      * @param context 实例
@@ -274,11 +314,11 @@ object SystemUITool {
             msg = context.getString(R.string.tool_restart_system_ui_msg_coloros) + (if (isDynamicAvailable)
                 context.getString(R.string.tool_restart_system_ui_dynamic) else "")
             confirmButton {
-                execShell(cmd = "pgrep systemui").also { pid ->
-                    if (pid.isNotBlank())
-                        execShell(cmd = "kill -9 $pid")
-                    else showWhenAccessRootFail()
-                }
+                val systemUiPid = execShell(cmd = "pgrep systemui")
+                if (systemUiPid.isNotBlank()) {
+                    execShell(cmd = "kill -9 $systemUiPid")
+                    stopMcs()
+                } else showWhenAccessRootFail()
             }
             cancelButton()
             if (isDynamicAvailable) neutralButton(text = context.getString(R.string.tool_apply_now)) { refreshSystemUI(context) }
@@ -305,6 +345,7 @@ object SystemUITool {
          * @param result 回调结果
          */
         fun doRefresh(result: (Boolean) -> Unit) {
+            context?.dataChannel(PackageName.MCS)?.put(CALL_HOST_REFRESH_MCS)
             context?.dataChannel(PackageName.SYSTEMUI)?.with {
                 if (isRefreshIconData) {
                     wait(CALL_MODULE_REFRESH_ICON_DATA_RESULT) { result(it) }

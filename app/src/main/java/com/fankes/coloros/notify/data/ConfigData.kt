@@ -50,6 +50,9 @@ object ConfigData {
     /** 启用单色图标重采样 */
     val ENABLE_NOTIFY_ICON_RESAMPLING = PreferenceData("_notify_icon_resampling", false)
 
+    /** 替换流体云通知图标 */
+    val ENABLE_MCS_NOTIFY_ICON = PreferenceData("_enable_mcs_notify_icon", true)
+
     /** 移除开发者选项警告通知 */
     val ENABLE_REMOVE_DEV_NOTIFY = PreferenceData("_remove_dev_notify", true)
 
@@ -234,6 +237,16 @@ object ConfigData {
         get() = getBoolean(ENABLE_NOTIFY_ICON_RESAMPLING)
         set(value) {
             putBoolean(ENABLE_NOTIFY_ICON_RESAMPLING, value)
+        }
+
+    /**
+     * 是否替换流体云通知图标
+     * @return [Boolean]
+     */
+    var isEnableMcsNotifyIcon
+        get() = getBoolean(ENABLE_MCS_NOTIFY_ICON)
+        set(value) {
+            putBoolean(ENABLE_MCS_NOTIFY_ICON, value)
         }
 
     /**

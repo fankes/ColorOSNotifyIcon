@@ -40,6 +40,9 @@ object PackageName {
 
     /** 系统界面 (系统 UI) */
     const val SYSTEMUI = "com.android.systemui"
+
+    /** 流体云媒体内容服务 - 生成普通流体云的应用图标文件 */
+    const val MCS = "com.heytap.mcs"
 }
 
 /**

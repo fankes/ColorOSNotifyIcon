@@ -3,5 +3,6 @@
     <string-array name="module_scope">
         <item>android</item>
         <item>com.android.systemui</item>
+        <item>com.heytap.mcs</item>
     </string-array>
 </resources>
