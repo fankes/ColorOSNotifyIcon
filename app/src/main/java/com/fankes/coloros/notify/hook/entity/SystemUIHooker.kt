@@ -119,6 +119,9 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 object SystemUIHooker : YukiBaseHooker() {
 
+    /** 私有定时执行记录 */
+    private const val LAST_AUTO_UPDATE_DATE = "${BuildConfigWrapper.APPLICATION_ID}.last_auto_update_date"
+
     /** 原生存在的类 */
     private val ContrastColorUtilClass by lazyClass("com.android.internal.util.ContrastColorUtil")
 
@@ -387,9 +390,6 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 是否已经使用过缓存刷新功能 */
     private var isUsingCachingMethod = false
-
-    /** 上次自动更新 ANIP 资源的日期 */
-    private var lastAutoUpdateIconRuleDate = ""
 
     /** 模块定时更新服务未响应时的兜底提醒 */
     private var iconRuleUpdateFallbackJob: Job? = null
@@ -1395,8 +1395,9 @@ object SystemUIHooker : YukiBaseHooker() {
                     val today = timestamp.stampToDate(format = "yyyy-MM-dd")
                     // 息屏 Doze 时 TIME_TICK 会被合并为几分钟一次，可能错过设定的那一分钟，
                     // 所以过了设定时间后当天的任意一次 TIME_TICK 都可以补触发，两者均为补零的 "HH:mm" 可直接比较
-                    if (nowTime >= ConfigData.notifyIconFixAutoTime && today != lastAutoUpdateIconRuleDate) {
-                        lastAutoUpdateIconRuleDate = today
+                    val preferences = preferences.native()
+                    if (nowTime >= ConfigData.notifyIconFixAutoTime && today != preferences.getString(LAST_AUTO_UPDATE_DATE)) {
+                        preferences.edit { putString(LAST_AUTO_UPDATE_DATE, today) }
                         requestIconRuleUpdate(context)
                     }
                 }
