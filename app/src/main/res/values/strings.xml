@@ -44,7 +44,7 @@
     <string name="main_mcs_notify_icon_desc">This option is enabled by default. When enabled, notification icons in Fluid Cloud on ColorOS 16 and above also use the replaced notification icons. It has no effect on older systems without Fluid Cloud support.</string>
     <string name="main_group_appearance">Notification Appearance</string>
     <string name="main_enable_material3">Material 3 notification icons</string>
-    <string name="main_enable_material3_desc">On any version, when enabled, the notification icons in the notification shade use the Material 3 design introduced in Android 12, which adds an outer outline to the icons.\nOn Android 12 and above, the system theme color is used for tinting automatically.</string>
+    <string name="main_enable_material3_desc">This option is enabled by default on Android 12 and above. When enabled, it uses the Material 3 design for notification icons, adding an outer outline to the icons. On Android 12 and above, the system theme color is used for tinting automatically.</string>
     <string name="main_notify_icon_radius">Notification icon corner radius</string>
     <string name="main_current">Current</string>
     <string name="main_notify_icon_radius_desc">Drag the slider to adjust the corner radius of the icon border in the notification shade.</string>

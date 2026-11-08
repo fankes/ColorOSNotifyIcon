@@ -44,7 +44,7 @@
     <string name="main_mcs_notify_icon_desc">此选项默认开启，开启后在 ColorOS 16 及以上系统中，流体云的通知图标将同样应用替换后的通知图标，在不支持流体云的低版本系统中将无作用。</string>
     <string name="main_group_appearance">通知外观</string>
     <string name="main_enable_material3">启用 Material 3 通知图标风格</string>
-    <string name="main_enable_material3_desc">无论任何版本，开启后都将使用从 Android 12 开始的 Material 3 通知图标设计方式为通知栏的通知图标增加外部轮廓。\n目标为 Android 12 及以上的系统将自动使用系统主题色着色。</string>
+    <string name="main_enable_material3_desc">此选项在 Android 12 及以上系统默认开启，开启后将使用 Material 3 通知图标设计方式为通知栏的通知图标增加外部轮廓，同时目标为 Android 12 及以上的系统将自动使用系统主题色着色。</string>
     <string name="main_notify_icon_radius">调整通知栏中的图标边框圆角大小</string>
     <string name="main_current">当前</string>
     <string name="main_notify_icon_radius_desc">你可以拖拽滑动条来调整通知栏中的图标边框圆角大小。</string>
