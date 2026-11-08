@@ -108,6 +108,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import java.util.WeakHashMap
@@ -393,6 +394,9 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 模块定时更新服务未响应时的兜底提醒 */
     private var iconRuleUpdateFallbackJob: Job? = null
+
+    /** 旧版宿主内当前的后台同步任务 */
+    private var legacyIconRuleUpdateJob: Job? = null
 
     /** 记录已处理过的图标 [ImageView] - 值 true 表示本模块接管，false 表示交还系统；用于拦截判断与避免重复处理 */
     private val moduleStyledIcons = WeakHashMap<ImageView, Boolean>()
@@ -1385,6 +1389,10 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 注册生命周期 */
     private fun registerLifecycle() {
         registerAppLifecycle {
+            registerReceiver(IconRuleManagerTool.ACTION_CANCEL_SYNC, exported = false) { context, _ ->
+                legacyIconRuleUpdateJob?.cancel()
+                IconRuleManagerTool.dismissSyncing(context)
+            }
             // 解锁后重新刷新状态栏图标防止系统重新设置它
             registerReceiver(Intent.ACTION_USER_PRESENT) { _, _ -> if (isUsingCachingMethod) refreshStatusBarIcons() }
             // 注册定时监听
@@ -1532,6 +1540,7 @@ object SystemUIHooker : YukiBaseHooker() {
         wallpaperColorsListener = null
         val job = iconRuleScope.coroutineContext.job
         job.invokeOnCompletion {
+            legacyIconRuleUpdateJob = null
             IconRuleManagerTool.release()
             iconRuleUpdateFallbackJob = null
             notificationIconContainer = null
@@ -1635,32 +1644,43 @@ object SystemUIHooker : YukiBaseHooker() {
         isNotifyResult: Boolean = false,
         result: (Boolean) -> Unit = {}
     ) {
-        iconRuleScope.launch {
+        if (isNotifyResult && legacyIconRuleUpdateJob?.isCompleted == false) return
+        val job = iconRuleScope.launch {
             if (requestedVersion != null && IconRuleManagerTool.hasSnapshotVersion(requestedVersion)) {
                 result(true)
                 return@launch
             }
-            val previousVersion = IconRuleManagerTool.snapshotVersion
-            val fetchResult = runCatching {
-                IconRuleManagerTool.reload(context)
-                IconRuleManagerTool.fetch(context, module.resources).also {
-                    val isAvailable = IconRuleManagerTool.icons.isNotEmpty()
-                    if (isAvailable && previousVersion != IconRuleManagerTool.snapshotVersion) {
-                        refreshStatusBarIcons()
-                        refreshNotificationIcons()
+            if (isNotifyResult) IconRuleManagerTool.notifySyncing(context, module.resources)
+            try {
+                val previousVersion = IconRuleManagerTool.snapshotVersion
+                val fetchResult = runCatching {
+                    IconRuleManagerTool.reload(context)
+                    IconRuleManagerTool.fetch(context, module.resources).also {
+                        coroutineContext.ensureActive()
+                        val isAvailable = IconRuleManagerTool.icons.isNotEmpty()
+                        if (isAvailable && previousVersion != IconRuleManagerTool.snapshotVersion) {
+                            refreshStatusBarIcons()
+                            refreshNotificationIcons()
+                        }
+                        result(it.isOk && isAvailable &&
+                            (requestedVersion == null || IconRuleManagerTool.hasSnapshotVersion(requestedVersion)))
                     }
-                    result(it.isOk && isAvailable &&
-                        (requestedVersion == null || IconRuleManagerTool.hasSnapshotVersion(requestedVersion)))
+                }.getOrElse {
+                    if (it is CancellationException) throw it
+                    YLog.error("Failed to refresh ANIP icon resources", it)
+                    result(false)
+                    Anip.FetchResult(it.message ?: "Failed to get ANIP icon resources", Anip.FetchResult.Status.FAILED)
                 }
-            }.getOrElse {
-                if (it is CancellationException) throw it
-                YLog.error("Failed to refresh ANIP icon resources", it)
-                result(false)
-                Anip.FetchResult(it.message ?: "Failed to get ANIP icon resources", Anip.FetchResult.Status.FAILED)
+                if (isNotifyResult) runCatching { IconRuleManagerTool.notifyFetchResult(context, fetchResult, module.resources) }
+                    .onFailure { YLog.error("Failed to notify icon resource update", it) }
+            } finally {
+                if (isNotifyResult) {
+                    IconRuleManagerTool.dismissSyncing(context)
+                    legacyIconRuleUpdateJob = null
+                }
             }
-            if (isNotifyResult) runCatching { IconRuleManagerTool.notifyFetchResult(context, fetchResult, module.resources) }
-                .onFailure { YLog.error("Failed to notify icon resource update", it) }
         }
+        if (isNotifyResult) legacyIconRuleUpdateJob = job
     }
 
     /** 获取媒体会话管理器 */
