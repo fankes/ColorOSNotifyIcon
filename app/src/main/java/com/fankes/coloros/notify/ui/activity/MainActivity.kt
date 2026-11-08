@@ -149,7 +149,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             msg = getString(R.string.main_notify_permission_off_msg)
                             confirmButton { openNotifySetting() }
                             cancelButton()
-                            noCancelable()
+                            noCancelableOnTouchOutside()
                         }
                     }
                     // 推广、恰饭
@@ -161,7 +161,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                             title = getString(R.string.main_module_not_active)
                             msg = getString(R.string.main_module_not_active_msg)
                             confirmButton(text = getString(R.string.common_got_it))
-                            noCancelable()
                         }
                     }
                 }
@@ -195,7 +194,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         title = getString(R.string.main_ci_title)
                         msg = getString(R.string.main_ci_msg, ModuleVersion.GITHUB_COMMIT_ID)
                         confirmButton(text = getString(R.string.common_got_it))
-                        noCancelable()
                     }
                 }
             }
@@ -251,7 +249,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     msg = getString(R.string.main_system_default_tint_msg)
                     confirmButton { applyChangesAndRefresh() }
                     cancelButton { cancelChanges() }
-                    noCancelable()
+                    onCancel { cancelChanges() }
                 } else applyChangesAndRefresh()
             }
         }
@@ -272,7 +270,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     msg = getString(R.string.main_force_app_icon_msg)
                     confirmButton { applyChangesAndRefresh() }
                     cancelButton { cancelChanges() }
-                    noCancelable()
+                    onCancel { cancelChanges() }
                 } else applyChangesAndRefresh()
             }
         }
