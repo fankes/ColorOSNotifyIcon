@@ -324,8 +324,8 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 原生存在的类 - 依赖容器，媒体数据管理器以 Lazy 字段保存在其中 */
     private val DependencyClass by lazyClassOrNull("${PackageName.SYSTEMUI}.Dependency")
 
-    /** 系统配置变化分发器 */
-    private val ConfigurationControllerClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.policy.ConfigurationController")
+    /** 原生存在的类 - 通知面板布局控制器，持有面板实际使用的配置分发器 */
+    private val NotificationStackScrollLayoutControllerClass by lazyClassOrNull("${PackageName.SYSTEMUI}.statusbar.notification.stack.NotificationStackScrollLayoutController")
 
     /** ColorOS 进程应用新系统配置时的通用注入类 */
     private val OplusCommonInjectorClass by lazyClassOrNull("oplus.android.OplusCommonInjector")
@@ -569,6 +569,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 刷新通知小图标 */
     private fun refreshNotificationIcons() = runInSafe {
+        restoreNotificationPresenter()
         notificationPresenter?.asResolver()?.optional()?.firstMethodOrNull {
             name = "updateNotificationsOnDensityOrFontScaleChanged"
             emptyParameters()
@@ -1517,19 +1518,21 @@ object SystemUIHooker : YukiBaseHooker() {
     /**
      * 热重载后通知控制器的构造方法不会再次执行，[notificationPresenter] 会一直为空直到下一个实例被创建
      *
-     * 通知控制器在 attach 时会把自己注册到 ConfigurationController，这里从它的监听列表中找回已存在的实例
+     * 通知控制器在 attach 时会注册到面板的配置分发器，从其监听列表中找回已存在的实例
+     * ColorOS 16 的 Oplus 依赖容器没有注册配置分发器，需从原生依赖容器取得通知面板布局控制器
      */
     private fun restoreNotificationPresenter() = runInSafe {
         if (notificationPresenter != null) return@runInSafe
         val presenterClass = (if (isNotificationPresenter) StatusBarNotificationPresenterClass else ViewConfigCoordinatorClass)
             ?: return@runInSafe
-        val listeners = DependencyExClass?.resolve()?.optional(silent = true)
+        val listeners = DependencyClass?.resolve()?.optional(silent = true)
             ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
             ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
-                name = "getDependency"
-                parameters(Class::class)
-            }?.invokeQuietly<Any>(ConfigurationControllerClass)
-            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getListeners" }?.invokeQuietly<List<*>>()
+                name = "getDependencyInner"
+                parameters(Any::class)
+            }?.invoke<Any>(NotificationStackScrollLayoutControllerClass)
+            ?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "mConfigurationController" }?.get<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getListeners" }?.invoke<List<*>>()
         notificationPresenter = listeners?.let { synchronized(it) { it.firstOrNull { e -> presenterClass.isInstance(e) } } }
         if (notificationPresenter == null) YLog.warn("Failed to restore notification presenter after reloaded")
     }
