@@ -48,6 +48,7 @@
     <string name="main_notify_icon_radius">调整通知栏中的图标边框圆角大小</string>
     <string name="main_current">当前</string>
     <string name="main_notify_icon_radius_desc">你可以拖拽滑动条来调整通知栏中的图标边框圆角大小。</string>
+    <string name="main_notify_icon_radius_support">此功能仅在启用 Material 3 通知图标风格时生效。</string>
     <string name="main_system_default_tint">通知栏中的图标使用系统默认着色</string>
     <string name="main_system_default_tint_desc">此选项默认关闭，开启后下拉通知栏中的通知图标将忽略图标自身的着色属性，全部使用系统默认颜色 (系统提供的统一色调) 着色，这是一个破坏原生通知图标的行为，仅针对部分有需要的用户而添加，我们不推荐开启这个功能，请根据个人偏好进行选择是否需要开启。</string>
     <string name="main_force_app_icon">通知栏中的图标强制为应用图标</string>

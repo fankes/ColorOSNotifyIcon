@@ -267,7 +267,6 @@
                     android:id="@+id/notify_icon_custom_corner_item"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
                     android:orientation="vertical">
 
                     <TextView
@@ -339,6 +338,19 @@
                         android:text="@string/main_notify_icon_radius_desc"
                         android:textColor="@color/colorTextDark"
                         android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="15dp"
+                        android:layout_marginRight="15dp"
+                        android:layout_marginBottom="10dp"
+                        android:alpha="0.6"
+                        android:lineSpacingExtra="6dp"
+                        android:text="@string/main_notify_icon_radius_support"
+                        android:textColor="@color/colorTextDark"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <LinearLayout

@@ -48,6 +48,7 @@
     <string name="main_notify_icon_radius">Notification icon corner radius</string>
     <string name="main_current">Current</string>
     <string name="main_notify_icon_radius_desc">Drag the slider to adjust the corner radius of the icon border in the notification shade.</string>
+    <string name="main_notify_icon_radius_support">This function only works when Material 3 notification icons are enabled.</string>
     <string name="main_system_default_tint">Use system default icon tint</string>
     <string name="main_system_default_tint_desc">This option is off by default. When enabled, the notification icons in the notification shade ignore their own tint attribute and are all tinted with the system default color (the uniform color provided by the system). This overrides native notification icon behavior and is only provided for users who need it. We do not recommend enabling it, so please decide based on your own preference.</string>
     <string name="main_force_app_icon">Force app icons in notifications</string>
