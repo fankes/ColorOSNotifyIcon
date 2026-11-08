@@ -46,6 +46,7 @@ import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
 import android.os.SystemClock
 import android.service.notification.StatusBarNotification
 import android.view.View
@@ -183,8 +184,11 @@ object SystemUIHooker : YukiBaseHooker() {
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationHeaderViewWrapperExImpClass by lazyClassOrNull("com.oplus.systemui.statusbar.notification.row.wrapper.OplusNotificationHeaderViewWrapperExImp")
 
-    /** ColorOS 存在的类 - 旧版本不存在 */
+    /** ColorOS 16 的折叠通知组包装器，17 已移除此类 */
     private val OplusNotificationGroupTemplateWrapperClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupTemplateWrapper")
+
+    /** ColorOS 存在的类 - 旧版本不存在 */
+    private val GroupIconManagerClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.GroupIconManager")
 
     /** ColorOS 存在的类 - 旧版本不存在 */
     private val OplusNotificationGroupExtImplClass by lazyClassOrNull("com.oplus.systemui.notification.row.oplusgroup.OplusNotificationGroupExtImpl")
@@ -513,7 +517,10 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     /** 刷新状态栏小图标 */
-    private fun refreshStatusBarIcons() = runInSafe {
+    private fun refreshStatusBarIcons() = iconRuleScope.launch { refreshStatusBarIconsOnMain() }
+
+    /** 在主线程读取当前通知来源，再将图标处理交给后台线程 */
+    private fun refreshStatusBarIconsOnMain() = runInSafe {
         // 新版本的状态栏图标由 IconManager 创建，交给它重新创建
         if (isNewNotification) {
             refreshEntryIcons()
@@ -532,6 +539,7 @@ object SystemUIHooker : YukiBaseHooker() {
         }.apply {
             if (this == null) YLog.error("Your system not support \"getRoundRectDrawable\"!")
         }?.of(RoundRectDrawableUtilClass.resolve().optional().firstFieldOrNull { name = "Companion" }?.get())
+        val notifications = activeNotificationEntries()?.mapNotNull { statusBarNotificationOfEntry(it) }.orEmpty()
         // 启动一个线程防止卡顿
         thread {
             (notificationIconContainer?.children?.toList() ?: notificationIconInstances.takeIf { it.isNotEmpty() })?.forEach {
@@ -548,7 +556,8 @@ object SystemUIHooker : YukiBaseHooker() {
                         nf = nf,
                         isGrayscaleIcon = isGrayscaleIcon(it.context, iconDrawable),
                         packageName = nf.packageName,
-                        drawable = iconDrawable
+                        drawable = iconDrawable,
+                        notifications = notifications
                     ).also { pair ->
                         // 得到图标圆角
                         val sRadius = sRadiusField?.of(it)?.get<Float>()
@@ -590,11 +599,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
                 ?.asResolver()?.optional(silent = true)
             // 热重载不会重跑 NotificationEntry.setSbn，需要从系统当前集合恢复原始图标来源
-            val notifications = dependency?.firstFieldOrNull { name = "mNotificationMediaManager" }?.getQuietly<Any>()
-                ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "get"; emptyParameters() }?.invokeQuietly<Any>()
-                ?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "mNotifPipeline" }?.getQuietly<Any>()
-                ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getAllNotifs"; emptyParameters() }
-                ?.invokeQuietly<Collection<*>>()
+            val notifications = activeNotificationEntries()
             val sources = notifications?.mapNotNull { entry ->
                 if (entry == null) return@mapNotNull null
                 val nf = statusBarNotificationOfEntry(entry) ?: return@mapNotNull null
@@ -745,6 +750,36 @@ object SystemUIHooker : YukiBaseHooker() {
         return customPair ?: Triple(null, 0, false)
     }
 
+    /** 取系统当前的通知集合，后台调用不访问只允许主线程读取的 NotifPipeline */
+    private fun activeNotificationEntries(): Collection<*>? {
+        if (Looper.myLooper() != Looper.getMainLooper()) return null
+        return DependencyClass?.resolve()?.optional(silent = true)
+            ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "mNotificationMediaManager" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "get"; emptyParameters() }?.invokeQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "mNotifPipeline" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getAllNotifs"; emptyParameters() }
+            ?.invokeQuietly<Collection<*>>()
+    }
+
+    /** 选择通知组图标来源，不修改通知实体或系统的图标缓存 */
+    private fun groupIconSource(context: Context, nf: StatusBarNotification, notifications: List<StatusBarNotification>? = null): Pair<StatusBarNotification, Drawable?> {
+        if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0) return nf to null
+        if (ConfigData.isEnableNotifyGroupSummaryIcon) {
+            @Suppress("DiscouragedApi")
+            val resId = context.resources.getIdentifier("ic_notification_summary_auto", "drawable", PackageName.SYSTEM_FRAMEWORK)
+            if (resId != 0) return nf to context.resources.getDrawableCompat(resId)
+        }
+        val children = notifications ?: activeNotificationEntries()?.mapNotNull { statusBarNotificationOfEntry(it) }.orEmpty()
+
+        @Suppress("DEPRECATION")
+        val child = children.filter {
+            it.groupKey == nf.groupKey && it.userId == nf.userId && it.packageName == nf.packageName &&
+                it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
+        }.maxByOrNull { it.postTime }
+        return (child ?: nf) to null
+    }
+
     /**
      * 自动适配状态栏小图标
      * @param context 实例
@@ -752,6 +787,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param isGrayscaleIcon 是否为灰度图标
      * @param packageName APP 包名
      * @param drawable 原始图标
+     * @param notifications 主线程读取的通知快照，供后台刷新使用
      * @return [Pair] - ([Drawable] 图标,[Boolean] 是否替换)
      */
     private fun compatStatusIcon(
@@ -759,17 +795,26 @@ object SystemUIHooker : YukiBaseHooker() {
         nf: StatusBarNotification,
         isGrayscaleIcon: Boolean,
         packageName: String,
-        drawable: Drawable
-    ) = compatCustomIcon(context, isGrayscaleIcon, packageName).let {
-        // 打印日志
-        loggerDebug(tag = "Status Bar Icon",
-            context,
-            nf,
-            isCustom = it.first != null && it.third.not(),
-            isGrayscaleIcon,
-            context.packageName,
-            nf.notification.color)
-        it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatLauncherIcon(context, drawable), isGrayscaleIcon.not())
+        drawable: Drawable,
+        notifications: List<StatusBarNotification>? = null
+    ): Pair<Drawable, Boolean> {
+        val (source, summaryIcon) = groupIconSource(context, nf, notifications)
+        if (summaryIcon != null) return summaryIcon to true
+        if (source !== nf) {
+            val childIcon = source.notification.smallIcon?.loadDrawable(context)
+            if (childIcon != null) return compatStatusIcon(context, source, isGrayscaleIcon(context, childIcon), source.packageName, childIcon).first to true
+        }
+        return compatCustomIcon(context, isGrayscaleIcon, packageName).let {
+            // 打印日志
+            loggerDebug(tag = "Status Bar Icon",
+                context,
+                nf,
+                isCustom = it.first != null && it.third.not(),
+                isGrayscaleIcon,
+                context.packageName,
+                nf.notification.color)
+            it.first?.let { e -> Pair(e, true) } ?: Pair(if (isGrayscaleIcon) drawable else nf.compatLauncherIcon(context, drawable), isGrayscaleIcon.not())
+        }
     }
 
     /**
@@ -857,7 +902,22 @@ object SystemUIHooker : YukiBaseHooker() {
         drawable: Drawable,
         iconColor: Int,
         iconView: ImageView
-    ) = runInSafe {
+    ): Unit = runInSafe {
+        val (source, summaryIcon) = groupIconSource(context, nf)
+        if (summaryIcon != null) {
+            // 系统摘要图标使用模块默认配色，不继承最后一条子通知的颜色
+            iconView.setCustomNotifyIcon(context, Triple(null, 0, false), summaryIcon, 0)
+            return@runInSafe
+        }
+        if (source !== nf) {
+            val childIcon = source.notification.smallIcon?.loadDrawable(context)
+            if (childIcon != null) {
+                // 子通知按自己的规则、颜色和来源处理，不改写摘要通知
+                iconView.setImageDrawable(childIcon)
+                compatNotifyIcon(context, source, isGrayscaleIcon(context, childIcon), source.packageName, childIcon, source.notification.color, iconView)
+                return@runInSafe
+            }
+        }
         // 系统已将头像和应用图标合成，此处只替换角标，不覆盖整个图标
         if (DrawableWithBadgeClass?.isInstance(iconView.drawable) == true) {
             moduleStyledIcons[iconView] = false
@@ -874,19 +934,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     // 设置默认样式
                     setDefaultNotifyIconViewStyle()
                 }
-                (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon -> iconView.apply {
-                    // 标记为本模块接管（兜底判断/防止重复处理用）
-                    moduleStyledIcons[this] = true
-                    // 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/内边距/着色，并用 FIT_XY 让 Drawable 充满视图
-                    clipToOutline = false
-                    scaleType = ImageView.ScaleType.FIT_XY
-                    background = null
-                    setPadding(0)
-                    clearColorFilter()
-                    // 图标视图尺寸
-                    val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
-                    setImageDrawable(customNotifyIconOf(context, customTriple, drawable, iconColor, viewSizePx))
-                }
+                (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon ->
+                    iconView.setCustomNotifyIcon(context, customTriple, drawable, iconColor)
                 else -> iconView.apply {
                     // 标记为已处理但非本模块接管
                     moduleStyledIcons[this] = false
@@ -906,6 +955,49 @@ object SystemUIHooker : YukiBaseHooker() {
                 isGrayscaleIcon,
                 realPackageName,
                 customTriple.second.takeIf { it != 0 } ?: iconColor.takeIf { it != 0 } ?: 0)
+        }
+    }
+
+    /** 将图标的背景和着色交给模块的自绘 Drawable */
+    private fun ImageView.setCustomNotifyIcon(context: Context, customTriple: Triple<Drawable?, Int, Boolean>, drawable: Drawable, iconColor: Int) {
+        // 标记为本模块接管（兜底判断/防止重复处理用）
+        moduleStyledIcons[this] = true
+        // 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/内边距/着色，并用 FIT_XY 让 Drawable 充满视图
+        clipToOutline = false
+        scaleType = ImageView.ScaleType.FIT_XY
+        background = null
+        setPadding(0)
+        clearColorFilter()
+        // 图标视图尺寸
+        val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
+        setImageDrawable(customNotifyIconOf(context, customTriple, drawable, iconColor, viewSizePx))
+    }
+
+    /** 根据通知实体更新折叠通知组的可见图标 */
+    private fun compatGroupIcon(entry: Any?, iconView: ImageView?) {
+        val nf = statusBarNotificationOfEntry(entry) ?: return
+        if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0 || iconView == null) return
+        val context = iconView.context
+        val drawable = nf.notification.smallIcon?.loadDrawable(context) ?: return
+        compatNotifyIcon(context, nf, isGrayscaleIcon(context, drawable), nf.packageName, drawable, nf.notification.color, iconView)
+    }
+
+    /** 在 ColorOS 16 的组成员变化后更新同组的折叠、展开图标 */
+    private fun updateLegacyGroupIcons(container: Any?) {
+        val resolver = container?.asResolver()?.optional(silent = true) ?: return
+        val row = resolver.firstMethodOrNull { name = "getContainingNotification"; emptyParameters() }?.invoke<Any>() ?: return
+        val entry = ExpandableNotificationRowClass.resolve().optional(silent = true).firstMethodOrNull {
+            name = "getEntry"
+            emptyParameters()
+        }?.of(row)?.invoke<Any>() ?: return
+        val header = resolver.firstMethodOrNull { name = "getNotificationHeaderWrapper"; emptyParameters() }?.invoke<Any>()
+        val ext = resolver.firstMethodOrNull { name = "getExt"; emptyParameters() }?.invoke<Any>()
+        val collapsedHeader = ext?.asResolver()?.optional(silent = true)?.firstFieldOrNull { name = "oplusHeaderWrapper" }?.get<Any>()
+        listOfNotNull(header, collapsedHeader).forEach { wrapper ->
+            val iconView = NotificationHeaderViewWrapperClass.resolve().optional(silent = true).firstFieldOrNull {
+                name = "mIcon"
+            }?.of(wrapper)?.get<ImageView>()
+            compatGroupIcon(entry, iconView)
         }
     }
 
@@ -2124,49 +2216,79 @@ object SystemUIHooker : YukiBaseHooker() {
                 }
             }
 
-            OplusNotificationGroupTemplateWrapperClass?.resolve()?.optional()?.apply {
-                firstMethodOrNull {
-                    name = "initIcon"
-                }?.hook()?.before {
-                    val instanceContext = firstFieldOrNull {
-                        name = "context"
-                    }?.of(instance)?.get() as Context?
-                    if (instanceContext == null)
-                        return@before
-                    result = null
-                    NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull { name = "mIcon" }?.of(instance)?.get<ImageView>()
-                        ?.apply {
-                            ExpandableNotificationRowClass.resolve().optional()
-                                .firstMethodOrNull { name = "getEntry" }
-                                ?.of(NotificationViewWrapperClass.resolve().optional().firstFieldOrNull {
-                                    name = "mRow"
-                                }?.of(instance)?.get())?.invokeQuietly()?.let {
-                                    it.asResolver().optional().firstMethodOrNull {
-                                        name = "getSbn"
-                                    }?.invoke<StatusBarNotification>()
-                                }.also { nf ->
-                                    val context = StatusBarNotification::class.resolve().firstMethod {
-                                        name = "getPackageContext"
-                                    }.of(nf).invoke<Context>(instanceContext)
-                                    if (context == null) return@also
-
-                                    nf?.notification?.also {
-                                        if (!isMediaNotification(context, it, context.packageName))
-                                            it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                                compatNotifyIcon(
-                                                    context = context,
-                                                    nf = nf,
-                                                    isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                                    packageName = context.packageName,
-                                                    drawable = iconDrawable,
-                                                    iconColor = it.color,
-                                                    iconView = this
-                                                )
-                                            }
-                                    }
-                                }
-                        }
+            // ColorOS 16 首次绑定会异步回写原图标，直接接管组包装器的加载入口，避免覆盖模块样式
+            OplusNotificationGroupTemplateWrapperClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+                name = "initIcon"
+                emptyParameters()
+            }?.hook()?.before {
+                val nf = statusBarNotificationOf(instance) ?: return@before
+                if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0) return@before
+                val iconView = NotificationHeaderViewWrapperClass.resolve().optional(silent = true).firstFieldOrNull {
+                    name = "mIcon"
+                }?.of(instance)?.get<ImageView>() ?: return@before
+                val drawable = nf.notification.smallIcon?.loadDrawable(iconView.context) ?: return@before
+                result = null
+                compatNotifyIcon(iconView.context, nf, isGrayscaleIcon(iconView.context, drawable), nf.packageName, drawable, nf.notification.color, iconView)
+            }
+            if (OplusNotificationGroupTemplateWrapperClass != null) {
+                // 16 的子通知内容更新不会重新加载折叠组图标，在绑定结束后同步所属组。
+                NotificationHeaderViewWrapperClass.resolve().optional(silent = true).firstMethodOrNull {
+                    name = "onContentUpdated"
+                    parameterCount = 1
+                }?.hook()?.after {
+                    val row = firstArg().get<Any>() ?: return@after
+                    val parent = ExpandableNotificationRowClass.resolve().optional(silent = true).firstMethodOrNull {
+                        name = "getNotificationParent"
+                        emptyParameters()
+                    }?.of(row)?.invoke<Any>() ?: row
+                    val container = ExpandableNotificationRowClass.resolve().optional(silent = true).firstMethodOrNull {
+                        name = "getChildrenContainer"
+                        emptyParameters()
+                    }?.of(parent)?.invoke<Any>()
+                    updateLegacyGroupIcons(container)
                 }
+                // 16 的增删入口只更新展开按钮位置，需要同时更新两个组头的图标。
+                OplusNotificationGroupExtImplClass?.resolve()?.optional(silent = true)?.method {
+                    name { it == "onNotificationAdd" || it == "onNotificationRemoved" || it == "recreateOplusNotificationHeader" }
+                }?.hookAll()?.after { updateLegacyGroupIcons(firstArg().get()) }
+            }
+
+            // ColorOS 16 在后台加载后写图标，完成回调在图标与胶囊颜色写入后执行
+            // 保留系统的胶囊颜色和回调，只在完成后更新这个视图，不改写管理器缓存
+            GroupIconManagerClass?.resolve()?.optional(silent = true)?.method {
+                name = "initEntryIconDrawable"
+            }?.hookAll()?.before {
+                val entry = firstArg().get<Any>() ?: return@before
+                val nf = statusBarNotificationOfEntry(entry) ?: return@before
+                if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0) return@before
+                val iconView = arg(1).get<ImageView>() ?: return@before
+                val callback = lastArg().get<(Boolean) -> Unit>()
+                lastArg().set { grayscale: Boolean ->
+                    callback?.invoke(grayscale)
+                    compatGroupIcon(entry, iconView)
+                }
+            }
+            // ColorOS 17 只在 initIcon 中更新胶囊颜色，真正显示的是独立的 oplusIcon
+            OplusNotificationGroupExtImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+                name = "initIcon"
+                parameterCount = 1
+            }?.hook()?.after {
+                val container = firstArg().get<Any>() ?: return@after
+                val wrapper = container.asResolver().optional(silent = true).firstMethodOrNull {
+                    name = "getNotificationHeaderWrapper"
+                    emptyParameters()
+                }?.invokeQuietly<Any>() ?: return@after
+                val row = NotificationViewWrapperClass.resolve().optional(silent = true).firstFieldOrNull {
+                    name = "mRow"
+                }?.of(wrapper)?.getQuietly<Any>() ?: return@after
+                val entry = ExpandableNotificationRowClass.resolve().optional(silent = true).firstMethodOrNull {
+                    name = "getEntry"
+                    emptyParameters()
+                }?.of(row)?.invokeQuietly<Any>()
+                val iconView = instance.asResolver().optional(silent = true).firstFieldOrNull {
+                    name = "oplusIcon"
+                }?.getQuietly<ImageView>()
+                compatGroupIcon(entry, iconView)
             }
         } else {
             // 注入状态栏通知图标容器实例

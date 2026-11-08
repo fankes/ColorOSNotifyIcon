@@ -185,6 +185,26 @@
                     android:textSize="12sp" />
 
                 <com.fankes.coloros.notify.ui.widget.AppSwitch
+                    android:id="@+id/notify_group_summary_icon_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/main_notify_group_summary_icon"
+                    android:textColor="@color/colorTextGray"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:alpha="0.6"
+                    android:lineSpacingExtra="6dp"
+                    android:text="@string/main_notify_group_summary_icon_desc"
+                    android:textColor="@color/colorTextDark"
+                    android:textSize="12sp" />
+
+                <com.fankes.coloros.notify.ui.widget.AppSwitch
                     android:id="@+id/mcs_notify_icon_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
