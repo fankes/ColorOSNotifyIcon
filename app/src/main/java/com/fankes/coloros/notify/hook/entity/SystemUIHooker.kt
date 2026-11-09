@@ -112,6 +112,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Proxy
 import java.util.WeakHashMap
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.milliseconds
@@ -2262,11 +2264,18 @@ object SystemUIHooker : YukiBaseHooker() {
                 val nf = statusBarNotificationOfEntry(entry) ?: return@before
                 if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0) return@before
                 val iconView = arg(1).get<ImageView>() ?: return@before
-                val callback = lastArg().get<(Boolean) -> Unit>()
-                lastArg().set { grayscale: Boolean ->
-                    callback?.invoke(grayscale)
-                    compatGroupIcon(entry, iconView)
-                }
+                val callback = lastArg().get() ?: return@before
+                // 模块的 Kotlin 回调不能直接传给宿主，使用宿主参数类型创建代理；空回调保持不变
+                val callbackType = method.parameterTypes.last()
+                lastArg().set(Proxy.newProxyInstance(callbackType.classLoader, arrayOf(callbackType)) { _, callbackMethod, callbackArgs ->
+                    val callbackResult = try {
+                        callbackMethod.invoke(callback, *callbackArgs.orEmpty())
+                    } catch (e: InvocationTargetException) {
+                        throw e.targetException
+                    }
+                    if (callbackMethod.name == "invoke") compatGroupIcon(entry, iconView)
+                    callbackResult
+                })
             }
             // ColorOS 17 只在 initIcon 中更新胶囊颜色，真正显示的是独立的 oplusIcon
             OplusNotificationGroupExtImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
