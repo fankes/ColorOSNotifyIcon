@@ -737,9 +737,10 @@ object SystemUIHooker : YukiBaseHooker() {
             ConfigData.isEnableNotifyIconFix -> run {
                 val icon = IconRuleManagerTool.getIcon(packageName)
                 if (icon != null) {
-                    if (isAppNotifyEnabledOf(icon) && (isGrayscaleIcon.not() || isAppNotifyOverlayOf(icon)))
+                    if (isAppNotifyEnabledOf(icon))
                         customPair = Triple(
-                            IconRuleManagerTool.getBitmap(icon)?.toDrawable(context.resources),
+                            if (isGrayscaleIcon.not() || isAppNotifyOverlayOf(icon))
+                                IconRuleManagerTool.getBitmap(icon)?.toDrawable(context.resources) else null,
                             icon.color ?: 0,
                             false
                         )
@@ -859,8 +860,9 @@ object SystemUIHooker : YukiBaseHooker() {
         // 原生通知图标颜色
         val nativeIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else iconColor
 
-        // 自定义通知图标颜色
-        val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor) 0 else customTriple.second
+        // 保留原生单色图标时，规则颜色只补充通知未提供的颜色
+        val customIconColor = if (ConfigData.isEnableNotifyIconForceSystemColor || (customTriple.first == null && iconColor != 0))
+            0 else customTriple.second
 
         // 旧版图标着色
         val oldApplyColor = customIconColor.takeIf { it != 0 } ?: nativeIconColor.takeIf { it != 0 } ?: oldStyle
