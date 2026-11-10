@@ -768,18 +768,31 @@ object SystemUIHooker : YukiBaseHooker() {
     /** 选择通知组图标来源，不修改通知实体或系统的图标缓存 */
     private fun groupIconSource(context: Context, nf: StatusBarNotification, notifications: List<StatusBarNotification>? = null): Pair<StatusBarNotification, Drawable?> {
         if (nf.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0) return nf to null
+        val entries = notifications?.asSequence()
+            ?: activeNotificationEntries()?.asSequence()?.mapNotNull { statusBarNotificationOfEntry(it) }
+            ?: return nf to null
+        val children = entries.filter {
+            it.groupKey == nf.groupKey && it.user == nf.user && it.packageName == nf.packageName &&
+                it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
+        }
         if (ConfigData.isEnableNotifyGroupSummaryIcon) {
             @Suppress("DiscouragedApi")
-            val resId = context.resources.getIdentifier("ic_notification_summary_auto", "drawable", PackageName.SYSTEM_FRAMEWORK)
-            if (resId != 0) return nf to context.resources.getDrawableCompat(resId)
+            val iconId = context.resources.getIdentifier("ic_notification_summary_auto", "drawable", PackageName.SYSTEM_FRAMEWORK)
+            if (iconId != 0) {
+                val icons = children.mapNotNull { it.notification.smallIcon }.iterator()
+                if (!icons.hasNext()) return nf to null
+                val firstIcon = icons.next()
+                if (!icons.hasNext()) return nf to null
+                // GroupHelper 也用 Icon.sameAs 比较原始图标，渠道 ID 不参与比较
+                val sameAs = Icon::class.resolve().optional(silent = true).firstMethodOrNull {
+                    name = "sameAs"
+                    parameters(Icon::class)
+                }?.of(firstIcon) ?: return nf to null
+                return if (icons.asSequence().any { sameAs.invokeQuietly<Boolean>(it) == false })
+                    nf to context.resources.getDrawableCompat(iconId) else nf to null
+            }
         }
-        val children = notifications ?: activeNotificationEntries()?.mapNotNull { statusBarNotificationOfEntry(it) }.orEmpty()
-
-        @Suppress("DEPRECATION")
-        val child = children.filter {
-            it.groupKey == nf.groupKey && it.userId == nf.userId && it.packageName == nf.packageName &&
-                it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0
-        }.maxByOrNull { it.postTime }
+        val child = children.maxByOrNull { it.postTime }
         return (child ?: nf) to null
     }
 
