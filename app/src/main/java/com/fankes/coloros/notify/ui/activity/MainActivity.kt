@@ -106,8 +106,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     override val showSplashScreen = true
 
     override fun onCreate() {
-        // 注册导出调试日志启动器，必须在 STARTED 之前，不能放进框架服务回调里
-        SystemUITool.registerExportDebugLogsLauncher(activity = this)
         initPager()
         initHomeInfo()
         initListeners()
@@ -209,10 +207,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     /** 初始化读写偏好设置的状态文本和开关绑定 */
     private fun initConfigBindings() {
-        homeBinding.moduleEnableLogSwitch.bind(ConfigData.ENABLE_MODULE_LOG) {
-            onInitialize { homeBinding.expAllDebugLogButton.isVisible = it }
-            onChanged { reinitialize() }
-        }
         configBinding.devNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DEV_NOTIFY)
         configBinding.crcpNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_CHANGE_COMPLETE_NOTIFY)
         configBinding.dndNotifyConfigSwitch.bind(ConfigData.ENABLE_REMOVE_DND_ALERT_NOTIFY)
@@ -300,8 +294,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
 
     /** 初始化按钮的点击事件，它们不依赖模块是否激活 */
     private fun initListeners() {
-        // 导出全部日志按钮点击事件
-        homeBinding.expAllDebugLogButton.setOnClickListener { SystemUITool.obtainAndExportDebugLogs(context = this) }
+        // 调试页面入口
+        binding.titleLoggerIcon.setOnClickListener { startActivity<DebugActivity>() }
         // 通知图标优化名单卡片点击事件
         homeBinding.mainOptimizeListItem.setOnClickListener { startActivity<ConfigureActivity>() }
         // 重启按钮点击事件

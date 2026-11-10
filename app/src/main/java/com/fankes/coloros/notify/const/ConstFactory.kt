@@ -43,6 +43,9 @@ object PackageName {
 
     /** 流体云媒体内容服务 - 生成普通流体云的应用图标文件 */
     const val MCS = "com.heytap.mcs"
+
+    /** 系统界面插件，包含流体云 Hook 点位 */
+    const val SYSTEMUI_PLUGIN = "com.oplus.systemui.plugins"
 }
 
 /**
@@ -88,6 +91,9 @@ enum class AdditionalSourceTemplate {
  * MIME 类型常量定义类
  */
 object MimeType {
+
+    /** Android 安装包 */
+    const val APK = "application/vnd.android.package-archive"
 
     /**
      * 日志文件
