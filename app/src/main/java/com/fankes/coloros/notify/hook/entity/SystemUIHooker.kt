@@ -978,10 +978,8 @@ object SystemUIHooker : YukiBaseHooker() {
 
     /** 将图标的背景和着色交给模块的自绘 Drawable */
     private fun ImageView.setCustomNotifyIcon(context: Context, customTriple: Triple<Drawable?, Int, Boolean>, drawable: Drawable, iconColor: Int) {
-        if (!isUpperOfColorOS17) {
-            // 标记为本模块接管（兜底判断/防止重复处理用）
-            moduleStyledIcons[this] = true
-        }
+        // 标记为本模块接管（兜底判断/防止重复处理用）
+        moduleStyledIcons[this] = true
         // 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/内边距/着色，并用 FIT_XY 让 Drawable 充满视图
         clipToOutline = false
         scaleType = ImageView.ScaleType.FIT_XY
@@ -2246,7 +2244,13 @@ object SystemUIHooker : YukiBaseHooker() {
                     name = "updateIconRoundness"
                     parameterCount = 1
                 }?.hook()?.apply {
-                    before { if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) result = null }
+                    before {
+                        if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) {
+                            if (isUpperOfColorOS17)
+                                instance.asResolver().firstMethodOrNull { name = "hideRightIconForBadge" }?.invokeQuietly()
+                            result = null
+                        }
+                    }
                     after { headerIconOf(instance)?.let { styleHeaderIcon(instance) } }
                     // after { headerIconOf(instance)?.let { if (!moduleStyledIcons.containsKey(it)) styleHeaderIcon(instance) } }
                 }
