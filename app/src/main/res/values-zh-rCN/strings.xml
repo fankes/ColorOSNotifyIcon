@@ -48,6 +48,8 @@
     <string name="main_notify_group_summary_icon_desc">此选项在 Android 14 及以上系统默认开启，开启后将使用系统提供的摘要图标作为这组通知的首个图标，关闭后，将改用最后发送的通知图标。</string>
     <string name="main_enable_mcs_notify_icon">替换流体云通知图标</string>
     <string name="main_mcs_notify_icon_desc">此选项默认开启，开启后在 ColorOS 16 及以上系统中，流体云的通知图标将同样应用替换后的通知图标，在不支持流体云的低版本系统中将无作用。</string>
+    <string name="main_enable_aod_notify_icon">替换 AOD 通知图标</string>
+    <string name="main_aod_notify_icon_desc">此选项默认开启，开启后将在可用的系统版本中替换息屏 (AOD) 通知图标，在不支持的系统版本中将无作用。</string>
     <string name="main_group_appearance">通知外观</string>
     <string name="main_enable_material3">启用 Material 3 通知图标风格</string>
     <string name="main_enable_material3_desc">此选项在 Android 12 及以上系统默认开启，开启后将使用 Material 3 通知图标设计方式为通知栏的通知图标增加外部轮廓，同时目标为 Android 12 及以上的系统将自动使用系统主题色着色。</string>

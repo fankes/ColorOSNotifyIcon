@@ -230,6 +230,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                 }
             }
         }
+        configBinding.aodNotifyIconSwitch.bind(ConfigData.ENABLE_AOD_NOTIFY_ICON) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity, isRefreshCacheOnly = true) }
+        }
         configBinding.md3StyleConfigSwitch.bind(ConfigData.ENABLE_MD3_NOTIFY_ICON_STYLE) {
             onInitialize { configBinding.notifyIconCustomCornerItem.isVisible = it && ConfigData.isEnableNotifyIconForceAppIcon.not() }
             onChanged {

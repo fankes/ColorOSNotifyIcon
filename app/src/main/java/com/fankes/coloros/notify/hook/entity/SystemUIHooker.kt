@@ -41,6 +41,7 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.Icon
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
@@ -1214,29 +1215,42 @@ object SystemUIHooker : YukiBaseHooker() {
     /**
      * 自动适配息屏通知图标
      *
-     * 系统在把图标交给息屏插件之前，会从锁屏通知分发器取出图标数据列表，此处直接替换其中的图标
+     * 息屏与锁屏岛共用图标数据，只在交给息屏插件时替换，关闭适配时使用系统原始图标，调用后恢复锁屏岛图标
+     * @param updateIcons 系统向息屏插件传递图标的调用
+     * @return 系统调用的返回值
      */
-    private fun compatAodIconData() = runInSafe {
-        val context = globalContext ?: return@runInSafe
-        val dispatcher = DependencyExClass?.resolve()?.optional(silent = true)
-            ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
-            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
-                name = "getDependency"
-                parameters(Class::class)
-            }?.invokeQuietly<Any>(LockScreenNotificationDispatcherClass)?.asResolver()?.optional(silent = true)
-            ?: return@runInSafe
-        val iconDataList = dispatcher.firstMethodOrNull { name = "getLockScreenNotificationIconData" }?.invokeQuietly<Any>()
-            ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getValue" }?.invokeQuietly<List<*>>()
-            ?: return@runInSafe
-        val entries = dispatcher.firstMethodOrNull { name = "getNotificationListOnKg" }?.invokeQuietly<List<*>>()
-            ?: return@runInSafe
-        iconDataList.forEach { iconData ->
-            val data = iconData?.asResolver()?.optional(silent = true) ?: return@forEach
-            val key = data.firstMethodOrNull { name = "getKey" }?.invokeQuietly<String>() ?: return@forEach
-            val nf = statusBarNotificationOfKey(entries, key) ?: return@forEach
-            val bitmap = compatAodBitmap(context, nf) ?: return@forEach
-            data.firstMethodOrNull { name = "setIcon" }?.invokeQuietly(bitmap.toDrawable(context.resources))
+    private fun compatAodIconData(updateIcons: () -> Any?): Any? {
+        val isEnabled = ConfigData.isEnableAodNotifyIcon
+        val restoreIcons = ArrayList<() -> Unit>()
+        runInSafe {
+            val context = globalContext
+            val dispatcher = DependencyExClass?.resolve()?.optional(silent = true)
+                ?.firstFieldOrNull { name = "sDependency" }?.getQuietly<Any>()
+                ?.asResolver()?.optional(silent = true)?.firstMethodOrNull {
+                    name = "getDependency"
+                    parameters(Class::class)
+                }?.invokeQuietly<Any>(LockScreenNotificationDispatcherClass)?.asResolver()?.optional(silent = true)
+                ?: return@runInSafe
+            val iconDataList = dispatcher.firstMethodOrNull { name = "getLockScreenNotificationIconData" }?.invokeQuietly<Any>()
+                ?.asResolver()?.optional(silent = true)?.firstMethodOrNull { name = "getValue" }?.invokeQuietly<List<*>>()
+                ?: return@runInSafe
+            val entries = if (isEnabled) dispatcher.firstMethodOrNull { name = "getNotificationListOnKg" }?.invokeQuietly<List<*>>()
+                ?: emptyList() else emptyList<Any?>()
+            iconDataList.forEach { iconData ->
+                val data = iconData?.asResolver()?.optional(silent = true) ?: return@forEach
+                val icon = data.firstMethodOrNull { name = "getIcon" }?.invoke<Drawable>()
+                val fallback = if (isEnabled || icon !is LockScreenIconDrawable) icon else icon.original
+                val key = data.firstMethodOrNull { name = "getKey" }?.invokeQuietly<String>()
+                val nf = if (isEnabled && key != null) statusBarNotificationOfKey(entries, key) else null
+                val drawable = if (context != null && nf != null)
+                    compatAodBitmap(context, nf)?.toDrawable(context.resources) ?: fallback else fallback
+                if (drawable === icon) return@forEach
+                val setter = data.firstMethodOrNull { name = "setIcon" } ?: return@forEach
+                restoreIcons.add { setter.invoke(icon) }
+                setter.invoke(drawable)
+            }
         }
+        return updateIcons().also { restoreIcons.forEach { it() } }
     }
 
     /**
@@ -1245,9 +1259,12 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param nf 通知实例
      * @return [Bitmap] or null - 为 null 时交还系统处理
      */
-    private fun compatAodBitmap(context: Context, nf: StatusBarNotification) = safeOfNull {
-        val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@safeOfNull null
-        compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0)?.toBitmap()
+    private fun compatAodBitmap(context: Context, nf: StatusBarNotification): Bitmap? {
+        if (ConfigData.isEnableAodNotifyIcon.not()) return null
+        return safeOfNull {
+            val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@safeOfNull null
+            compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0)?.toBitmap()
+        }
     }
 
     /**
@@ -2089,7 +2106,7 @@ object SystemUIHooker : YukiBaseHooker() {
             // 系统传入的 Drawable 可能已是应用图标，只对原始通知 smallIcon 判断单色
             val smallIcon = nf?.notification?.smallIcon?.loadDrawable(context)
             compatAppIconDrawable(context, packageName, smallIcon, capsuleIconSizeOf(context), nf?.notification?.color ?: 0)
-                ?.also { arg(2).set(it) }
+                ?.also { arg(2).set(LockScreenIconDrawable(arg(2).get<Drawable>(), it)) }
         }
 
         // 替换通知头像右下角的应用图标角标 - ColorOS 16+
@@ -2119,7 +2136,7 @@ object SystemUIHooker : YukiBaseHooker() {
         AodPluginCallImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
             name = "updateNotificationIconData"
             emptyParameters()
-        }?.hook()?.before { compatAodIconData() }
+        }?.hook()?.intercept { compatAodIconData { callOriginal() } }
         // 替换全屏应用通知轻反馈图标 - ColorOS 16+
         FullScreenBannerHelperClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
             name = "buildNotification"
@@ -2429,6 +2446,13 @@ object SystemUIHooker : YukiBaseHooker() {
             }
         }
     }
+
+    /**
+     * 锁屏岛使用适配图标，同时保留系统构造时传入的原始图标，供息屏关闭适配时使用
+     * @param original 系统原始图标，可能为空
+     * @param icon 锁屏岛的适配图标
+     */
+    private class LockScreenIconDrawable(val original: Drawable?, icon: Drawable) : DrawableWrapper(icon)
 
     /**
      * 通知图标自绘 [Drawable] 灵感来源: @1Dot
