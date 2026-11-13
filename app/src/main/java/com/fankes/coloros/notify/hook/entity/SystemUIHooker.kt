@@ -2247,7 +2247,11 @@ object SystemUIHooker : YukiBaseHooker() {
                     before {
                         if (moduleStyledIcons[headerIconOf(instance)] == true && isHeaderBadgeComposite(instance).not()) {
                             if (isUpperOfColorOS17)
-                                instance.asResolver().firstMethodOrNull { name = "hideRightIconForBadge" }?.invokeQuietly()
+                                instance.asResolver().optional().firstMethodOrNull {
+                                    name = "hideRightIconForBadge"
+                                    emptyParameters()
+                                    superclass()
+                                }?.invokeQuietly()
                             result = null
                         }
                     }
