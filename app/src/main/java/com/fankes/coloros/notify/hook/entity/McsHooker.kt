@@ -25,14 +25,17 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Process
 import androidx.core.net.toUri
+import com.fankes.coloros.notify.const.PackageName
 import com.fankes.coloros.notify.data.ConfigData
 import com.fankes.coloros.notify.param.factory.isAppNotifyEnabledOf
 import com.fankes.coloros.notify.utils.factory.runInSafe
 import com.fankes.coloros.notify.utils.tool.IconRuleManagerTool
+import com.fankes.coloros.notify.utils.tool.NotificationIconTool
 import com.fankes.coloros.notify.utils.tool.SystemUITool
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.YukiHook
 import com.highcapable.yukihookapi.extension.kavaref.hook
+import com.highcapable.yukihookapi.extension.kavaref.lazyClass
 import com.highcapable.yukihookapi.extension.kavaref.lazyClassOrNull
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.runtime.YukiHookRuntime
@@ -55,11 +58,14 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 object McsHooker : YukiBaseHooker() {
 
+    /** 系统灰度图标检测类 */
+    private val ContrastColorUtilClass by lazyClass("com.android.internal.util.ContrastColorUtil")
+
     /** 下载流体云卡片信息类 */
-    private val DownloadLiquidCardDisplayInfoClass by lazyClassOrNull("com.heytap.mcs.liquid.domain.download.cardinfo.DownloadLiquidCardDisplayInfo")
+    private val DownloadLiquidCardDisplayInfoClass by lazyClassOrNull("${PackageName.MCS}.liquid.domain.download.cardinfo.DownloadLiquidCardDisplayInfo")
 
     /** 流体云图标文件提供器 */
-    private val LiquidIconFileProviderClass by lazyClassOrNull("com.heytap.mcs.liquid.image.FileProvider")
+    private val LiquidIconFileProviderClass by lazyClassOrNull("${PackageName.MCS}.liquid.image.FileProvider")
 
     /** 用于恢复规则快照的私有协程作用域 */
     private var iconScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -154,7 +160,7 @@ object McsHooker : YukiBaseHooker() {
         val icon = IconRuleManagerTool.getIcon(packageName) ?: return@runInSafe
         if (context.isAppNotifyEnabledOf(icon).not()) return@runInSafe
         val sizePx = (context.resources.displayMetrics.density * 40).toInt().coerceAtLeast(1)
-        val bitmap = SystemUIHooker.renderMcsIcon(context, packageName, sizePx)
+        val bitmap = NotificationIconTool.renderMcsIcon(context, packageName, sizePx, { module.resources }, { ContrastColorUtilClass })
             ?: IconRuleManagerTool.getBitmap(icon)
             ?: return@runInSafe
         name ?: return@runInSafe
