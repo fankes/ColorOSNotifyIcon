@@ -2151,7 +2151,7 @@ object SystemUIHooker : YukiBaseHooker() {
 
         if (isNewNotification) {
             // 阻止颜色覆盖
-            OplusNotificationGroupExtImplClass?.resolve()?.optional()?.firstMethodOrNull {
+            OplusNotificationGroupExtImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
                 name = "updateExpandIconColorFilter"
                 parameterCount = 1
             }?.hook()?.intercept()
