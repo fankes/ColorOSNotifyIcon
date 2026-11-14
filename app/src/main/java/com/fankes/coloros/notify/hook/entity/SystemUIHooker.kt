@@ -980,11 +980,9 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun ImageView.setCustomNotifyIcon(context: Context, customTriple: Triple<Drawable?, Int, Boolean>, drawable: Drawable, iconColor: Int) {
         // 标记为本模块接管（兜底判断/防止重复处理用）
         moduleStyledIcons[this] = true
-        // 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/内边距/着色，并用 FIT_XY 让 Drawable 充满视图
+        // 背景与图标都交由自绘 Drawable 处理：清空视图层裁切/背景/着色
         clipToOutline = false
-        scaleType = ImageView.ScaleType.FIT_XY
         background = null
-        setPadding(0)
         clearColorFilter()
         // 图标视图尺寸
         val viewSizePx = layoutParams?.width?.takeIf { it > 0 } ?: width.takeIf { it > 0 } ?: 0
