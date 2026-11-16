@@ -306,6 +306,15 @@ object SystemUIHooker : YukiBaseHooker() {
     /** ColorOS 16 存在的类 - 通知媒体面板在主线程写入封面与应用图标 */
     private val LegacyMediaPanelIconBinderClass by lazyClassOrNull($$"com.oplus.systemui.media.controls.ui.MediaControlPanelExtImp$proxyBindArtworkAndColors$1$1$1")
 
+    /** ColorOS 16+ 控制中心独立播放器的图标加载入口 */
+    private val QsMediaViewHolderClass by lazyClassOrNull($$"com.oplus.systemui.qs.media.OplusMediaViewPagerAdapter$OplusMediaViewHolder")
+
+    /** ColorOS 16+ 控制中心独立播放器面板 */
+    private val QsMediaDetailPanelClass by lazyClassOrNull("com.oplus.systemui.qs.media.OplusQsMediaDetailPanelDialog")
+
+    /** 原生窗口管理器，用于读取当前显示的控制中心媒体面板 */
+    private val WindowManagerGlobalClass by lazyClass("android.view.WindowManagerGlobal")
+
     /** ColorOS 存在的类 - 流体云插件连接入口 */
     private val SeedlingPluginManagerClass by lazyClassOrNull("com.oplus.systemui.statusbar.seeding.SeedlingPluginManager")
 
@@ -794,8 +803,33 @@ object SystemUIHooker : YukiBaseHooker() {
         }
     }
 
+    /** 从当前窗口取得独立播放器，由系统取消旧图标任务并重新绑定，不缓存面板或 ViewHolder */
+    private fun refreshQsMediaIcons() = runInSafe {
+        val panelClass = QsMediaDetailPanelClass ?: return@runInSafe
+        val manager = WindowManagerGlobalClass.resolve().firstMethod {
+            name = "getInstance"
+            emptyParameters()
+        }.invoke() ?: return@runInSafe
+        val roots = manager.asResolver().firstMethod {
+            name = "getWindowViews"
+            emptyParameters()
+        }.invoke<List<View>>() ?: return@runInSafe
+        fun refresh(view: View) {
+            if (panelClass.isInstance(view)) {
+                val adapter = view.asResolver().firstField { name = "adapter" }.get() ?: return
+                val holders = adapter.asResolver().firstField { name = "mViewHolderList" }.get<List<*>>() ?: return
+                holders.filterNotNull().forEach { holder ->
+                    val resolver = holder.asResolver()
+                    val data = resolver.firstMethod { name = "getMediaData"; emptyParameters() }.invoke() ?: return@forEach
+                    resolver.firstMethod { name = "bindMediaIcon"; parameterCount = 1 }.invoke(data)
+                }
+            } else if (view is ViewGroup) view.children.forEach { refresh(it) }
+        }
+        roots.forEach { refresh(it) }
+    }
+
     /**
-     * 刷新通知媒体面板和媒体流体云卡片的应用图标
+     * 刷新通知媒体面板、控制中心独立播放器和媒体流体云卡片的应用图标
      *
      * 系统只在客户端首次初始化时加载应用图标，普通数据重发不会更新它
      * 在主线程从系统监听器现取客户端并重置初始化标记，再由系统的后台路径加载图标
@@ -818,6 +852,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 sources.forEach { (entry, nf) -> appIconNotifications[entry] = nf }
             }
             refreshMediaPanelIcons()
+            refreshQsMediaIcons()
             val manager = dependency?.firstFieldOrNull { name = "mMediaDataManager" }?.getQuietly<Any>()
                 ?.asResolver()?.optional(silent = true)
                 ?.firstMethodOrNull { name = "get"; emptyParameters() }?.invokeQuietly<Any>()
@@ -2122,6 +2157,30 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     private fun installMediaBindings() {
+        // 独立播放器在后台取得图标后才切回主线程，替换加载结果以保留系统取消任务和绑定流程
+        QsMediaViewHolderClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = $$"access$getAppIcon"
+            parameterCount = 3
+        }?.hook {
+            after {
+                // 挂起标记必须原样返回，只有图标加载与系统缓存更新完成后才替换结果
+                if (ConfigData.isEnableMediaNotifyIcon.not() || result !is Drawable) return@after
+                val holder = firstArg().get() ?: return@after
+                val resolver = holder.asResolver()
+                val data = resolver.firstMethod { name = "getMediaData"; emptyParameters() }.invoke()
+                    ?.asResolver()?.optional(silent = true) ?: return@after
+                val packageName = arg(1).get<String>()
+                    ?: data.firstMethodOrNull { name = "getPackageName" }?.invoke<String>() ?: return@after
+                val key = data.firstMethodOrNull { name = "getNotificationKey" }?.invoke<String>()
+                val userId = data.firstMethodOrNull { name = "getUserId" }?.invoke<Int>()
+                val context = resolver.firstField { name = "itemView"; superclass() }.get<View>()?.context ?: return@after
+                val nf = notificationOfAppIcon(packageName, key, userId)
+                val smallIcon = (nf?.notification?.smallIcon
+                    ?: data.firstMethodOrNull { name = "getAppIcon" }?.invoke<Icon>())?.loadDrawable(context)
+                compatAppIconDrawable(context, packageName, smallIcon, NotificationIconTool.headerIconSizeOf(context), nf?.notification?.color ?: 0)
+                    ?.also { result = it }
+            }
+        }
         // 替换通知媒体面板右上角的应用图标，跟随系统异步加载后的主线程绑定
         listOfNotNull(MediaPanelIconBinderClass, LegacyMediaPanelIconBinderClass).forEach { binderClass ->
             binderClass.resolve().optional(silent = true).apply {
