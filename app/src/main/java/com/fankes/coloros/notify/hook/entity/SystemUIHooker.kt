@@ -297,6 +297,9 @@ object SystemUIHooker : YukiBaseHooker() {
         $$"com.oplus.systemui.notification.lockscreen.notification.CapsuleNotificationDataController$NotificationIconData"
     )
 
+    /** 原生存在的类 - 当前媒体面板及其数据由系统统一保存 */
+    private val MediaPlayerDataClass by lazyClassOrNull("${PackageName.SYSTEMUI}.media.controls.ui.controller.MediaPlayerData")
+
     /** ColorOS 17+ 存在的类 - 通知媒体面板在主线程写入封面与应用图标 */
     private val MediaPanelIconBinderClass by lazyClassOrNull($$"com.oplus.systemui.media.controls.ui.MediaControlPanelExtImp$proxyBindArtworkAndColors$1$1$2")
 
@@ -769,8 +772,30 @@ object SystemUIHooker : YukiBaseHooker() {
         modifyNotifyPanelAlpha(notificationPlayerView, isTint = true)
     }
 
+    /** 由系统重新加载已存在的媒体面板图标，不等待下一次媒体数据更新 */
+    private fun refreshMediaPanelIcons() = runInSafe {
+        val players = MediaPlayerDataClass?.resolve()?.optional(silent = true)
+            ?.firstFieldOrNull { name = "INSTANCE" }?.getQuietly<Any>()
+            ?.asResolver()?.optional(silent = true) ?: return@runInSafe
+        val keys = players.firstMethodOrNull { name = "dataKeys"; emptyParameters() }?.invoke<Set<*>>() ?: return@runInSafe
+        val getPlayer = players.firstMethodOrNull { name = "getMediaPlayer"; parameters(String::class) } ?: return@runInSafe
+        keys.toList().forEach { key ->
+            runInSafe panelRefresh@{
+                val panel = getPlayer.invoke<Any>(key)?.asResolver()?.optional(silent = true) ?: return@panelRefresh
+                val data = panel.firstFieldOrNull { name = "mMediaData" }?.get<Any>() ?: return@panelRefresh
+                val ext = panel.firstFieldOrNull { name = "mExt" }?.get<Any>()
+                    ?.asResolver()?.optional(silent = true) ?: return@panelRefresh
+                // 此入口会取消上次图标任务、重新读取原生应用图标并在主线程绑定，封面也交给系统处理
+                ext.firstMethodOrNull {
+                    name = "proxyBindArtworkAndColors"
+                    parameterCount = 3
+                }?.invoke(data, key, false)
+            }
+        }
+    }
+
     /**
-     * 刷新媒体流体云卡片的应用图标
+     * 刷新通知媒体面板和媒体流体云卡片的应用图标
      *
      * 系统只在客户端首次初始化时加载应用图标，普通数据重发不会更新它
      * 在主线程从系统监听器现取客户端并重置初始化标记，再由系统的后台路径加载图标
@@ -792,6 +817,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 appIconNotifications.clear()
                 sources.forEach { (entry, nf) -> appIconNotifications[entry] = nf }
             }
+            refreshMediaPanelIcons()
             val manager = dependency?.firstFieldOrNull { name = "mMediaDataManager" }?.getQuietly<Any>()
                 ?.asResolver()?.optional(silent = true)
                 ?.firstMethodOrNull { name = "get"; emptyParameters() }?.invokeQuietly<Any>()
@@ -980,6 +1006,10 @@ object SystemUIHooker : YukiBaseHooker() {
         iconColor: Int,
         iconView: ImageView
     ): Unit = runInSafe {
+        if (ConfigData.isEnableMediaNotifyIcon.not() && isMediaNotificationAOSP(nf.notification)) {
+            moduleStyledIcons[iconView] = false
+            return@runInSafe
+        }
         val (source, summaryIcon) = groupIconSource(context, nf)
         if (summaryIcon != null) {
             // 系统摘要图标使用模块默认配色，不继承最后一条子通知的颜色
@@ -1137,6 +1167,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param binder 系统写入封面与应用图标的协程实例
      */
     private fun compatMediaPanelIcon(binder: Any) = runInSafe {
+        if (ConfigData.isEnableMediaNotifyIcon.not()) return@runInSafe
         val binding = binder.asResolver().optional(silent = true)
         val data = binding.firstFieldOrNull { name = $$"$data" }?.getQuietly<Any>()
             ?.asResolver()?.optional(silent = true) ?: return@runInSafe
@@ -1165,6 +1196,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * 插件优先读取 oplus_small_icon，因此需要与 smallIcon 一起替换
      */
     private fun compatSeedlingNotification(context: Context, nf: StatusBarNotification): StatusBarNotification? {
+        if (ConfigData.isEnableMediaNotifyIcon.not() && isMediaNotificationAOSP(nf.notification)) return null
         val smallIcon = nf.notification.smallIcon?.loadDrawable(context)
         val sizePx = NotificationIconTool.headerIconSizeOf(context)
         val drawable = compatAppIconDrawable(context, nf.packageName, smallIcon, sizePx, nf.notification.color) ?: return null
@@ -1202,6 +1234,7 @@ object SystemUIHooker : YukiBaseHooker() {
      * 生成媒体流体云卡片的应用图标 URI，保留系统原有的文件共享方式
      */
     private fun compatMediaAppIcon(context: Context, mediaData: Any?): Uri? = safeOfNull {
+        if (ConfigData.isEnableMediaNotifyIcon.not()) return@safeOfNull null
         val data = mediaData?.asResolver()?.optional(silent = true) ?: return@safeOfNull null
         val packageName = data.firstMethodOrNull { name = "getPackageName" }?.invokeQuietly<String>() ?: return@safeOfNull null
         val userId = data.firstMethodOrNull { name = "getUserId" }?.invokeQuietly<Int>()
@@ -1931,7 +1964,11 @@ object SystemUIHooker : YukiBaseHooker() {
             firstMethodOrNull {
                 name = "useAppIconForSmallIcon"
                 parameters(Notification::class)
-            }?.hook()?.intercept(false)
+            }?.hook()?.intercept {
+                if (ConfigData.isEnableMediaNotifyIcon.not() && isMediaNotificationAOSP(firstArg().get<Notification>()))
+                    callOriginal()
+                else false
+            }
         }
         // 修复并替换 ColorOS 以及原生灰度图标色彩判断
         NotificationUtilsClass.resolve().optional(silent = true).apply {
@@ -2103,6 +2140,7 @@ object SystemUIHooker : YukiBaseHooker() {
                 name = "loadAppIconToIcon"
                 parameterCount = 2
             }?.hook()?.intercept {
+                if (ConfigData.isEnableMediaNotifyIcon.not()) return@intercept callOriginal()
                 val context = globalContext ?: return@intercept callOriginal()
                 val packageName = firstArg().get<String>() ?: return@intercept callOriginal()
                 val userId = lastArg().get<Int>()

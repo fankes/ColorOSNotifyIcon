@@ -53,6 +53,9 @@ object ConfigData {
     /** 通知组使用系统摘要图标 */
     val ENABLE_NOTIFY_GROUP_SUMMARY_ICON = PreferenceData("_notify_group_summary_icon", AndroidVersion.isAtLeast(AndroidVersion.U))
 
+    /** 替换媒体通知图标 */
+    val ENABLE_MEDIA_NOTIFY_ICON = PreferenceData("_enable_media_notify_icon", true)
+
     /** 替换流体云通知图标 */
     val ENABLE_MCS_NOTIFY_ICON = PreferenceData("_enable_mcs_notify_icon", true)
 
@@ -272,6 +275,16 @@ object ConfigData {
         get() = getBoolean(ENABLE_NOTIFY_GROUP_SUMMARY_ICON)
         set(value) {
             putBoolean(ENABLE_NOTIFY_GROUP_SUMMARY_ICON, value)
+        }
+
+    /**
+     * 是否替换媒体通知图标
+     * @return [Boolean]
+     */
+    var isEnableMediaNotifyIcon
+        get() = getBoolean(ENABLE_MEDIA_NOTIFY_ICON)
+        set(value) {
+            putBoolean(ENABLE_MEDIA_NOTIFY_ICON, value)
         }
 
     /**

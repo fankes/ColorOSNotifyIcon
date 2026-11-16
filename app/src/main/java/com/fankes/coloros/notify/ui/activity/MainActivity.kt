@@ -223,6 +223,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         configBinding.notifyGroupSummaryIconSwitch.bind(ConfigData.ENABLE_NOTIFY_GROUP_SUMMARY_ICON) {
             onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity) }
         }
+        configBinding.mediaNotifyIconSwitch.bind(ConfigData.ENABLE_MEDIA_NOTIFY_ICON) {
+            onChanged { SystemUITool.refreshSystemUI(context = this@MainActivity) }
+        }
         configBinding.mcsNotifyIconSwitch.bind(ConfigData.ENABLE_MCS_NOTIFY_ICON) {
             onChanged { enabled ->
                 SystemUITool.notifyMcsToggle(context = this@MainActivity, enabled = enabled) { success ->
