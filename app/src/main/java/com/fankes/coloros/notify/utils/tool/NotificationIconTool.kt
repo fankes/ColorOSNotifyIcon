@@ -148,6 +148,7 @@ object NotificationIconTool {
      * @param drawable 原始图标
      * @param iconColor 原生图标颜色
      * @param viewSizePx 图标视图尺寸 (px) - 未知时为 0
+     * @param isUseMaterial3Style 是否使用 M3 风格，默认跟随设置
      * @return [Drawable]
      */
     fun createNotificationIcon(
@@ -155,12 +156,11 @@ object NotificationIconTool {
         customTriple: Triple<Drawable?, Int, Boolean>,
         drawable: Drawable,
         iconColor: Int,
-        viewSizePx: Int
+        viewSizePx: Int,
+        isUseMaterial3Style: Boolean = ConfigData.isEnableMd3NotifyIconStyle
     ): Drawable {
-        val isMd3 = ConfigData.isEnableMd3NotifyIconStyle
-
         // 图标相对背景的留白比例，折叠/展开等比一致
-        val padRatio = if (isMd3) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
+        val padRatio = if (isUseMaterial3Style) NOTIFY_ICON_PADDING_RATIO_MD3 else NOTIFY_ICON_PADDING_RATIO_CLASSIC
 
         // 图标实际显示尺寸 - 位图直接优化到该尺寸，避免二次缩放产生毛边
         val contentPx = if (viewSizePx > 0) (viewSizePx * (1f - padRatio * 2)).toInt().coerceAtLeast(1) else 0
@@ -193,7 +193,7 @@ object NotificationIconTool {
 
         // 用自绘 [CustomIconDrawable] 承载 “背景 + 着色图标”，其内部把 setColorFilter/setTint 覆盖为重申自身颜色，
         // 背景也画在图标自身而非视图 background
-        return if (isMd3) CustomIconDrawable(
+        return if (isUseMaterial3Style) CustomIconDrawable(
             glyph = glyph,
             badgeColor = newApplyColor,
             glyphColor = if (newApplyColor == -1) Color.BLACK else Color.WHITE,

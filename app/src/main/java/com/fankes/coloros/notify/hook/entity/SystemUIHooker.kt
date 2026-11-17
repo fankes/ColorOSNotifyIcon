@@ -271,6 +271,11 @@ object SystemUIHooker : YukiBaseHooker() {
         )
     )
 
+    /** ColorOS 16+ 存在的类 - 会话通知模板包装器 */
+    private val NotificationConversationTemplateViewWrapperClass by lazyClassOrNull(
+        "${PackageName.SYSTEMUI}.statusbar.notification.row.wrapper.NotificationConversationTemplateViewWrapper"
+    )
+
     /** ColorOS 16+ 存在的类 - 息屏时钟的通知图标布局 */
     private val AodNotificationLayoutClass by lazyClassOrNull("com.oplus.systemui.aod.aodclock.off.notification.NotificationLayout")
 
@@ -380,6 +385,9 @@ object SystemUIHooker : YukiBaseHooker() {
         NotificationHeaderViewWrapperClass.resolve().optional().firstFieldOrNull {
             name = "mIcon"
         }
+    }
+    private val conversationBadgeBackgroundField by lazy {
+        NotificationConversationTemplateViewWrapperClass?.resolve()?.optional(silent = true)?.firstFieldOrNull { name = "conversationBadgeBg" }
     }
     private val rowChildrenContainerField by lazy {
         ExpandableNotificationRowClass.resolve().optional().firstFieldOrNull {
@@ -1182,14 +1190,15 @@ object SystemUIHooker : YukiBaseHooker() {
         smallIcon: Drawable?,
         sizePx: Int,
         iconColor: Int = 0,
-        fallbackToAppIcon: Boolean = true
+        fallbackToAppIcon: Boolean = true,
+        isUseMaterial3Style: Boolean = ConfigData.isEnableMd3NotifyIconStyle
     ): Drawable? {
         val isGrayscaleIcon = smallIcon?.let { isGrayscaleIcon(context, it) } == true
         val customTriple = compatCustomIcon(context, isGrayscaleIcon, packageName)
         return when {
             ConfigData.isEnableNotifyIconForceAppIcon -> hostLauncherIconOf(context, packageName)
             (customTriple.first != null && customTriple.third.not()) || isGrayscaleIcon ->
-                NotificationIconTool.createNotificationIcon(context, customTriple, smallIcon ?: customTriple.first!!, iconColor, sizePx)
+                NotificationIconTool.createNotificationIcon(context, customTriple, smallIcon ?: customTriple.first!!, iconColor, sizePx, isUseMaterial3Style)
             fallbackToAppIcon -> hostLauncherIconOf(context, packageName)
             else -> null
         }
@@ -1404,7 +1413,7 @@ object SystemUIHooker : YukiBaseHooker() {
         val nf = statusBarNotificationOf(base) ?: return@runInSafe
         val context = iconView?.context ?: return@runInSafe
         val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@runInSafe
-        val badge = compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0) ?: return@runInSafe
+        val badge = compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0, isUseMaterial3Style = true) ?: return@runInSafe
         drawable?.let { badgeDrawableSetBadgeMethod?.copy()?.of(it)?.invokeQuietly(badge, null) }
     }
 
@@ -1416,13 +1425,21 @@ object SystemUIHooker : YukiBaseHooker() {
      * @param nf 通知实例
      * @param smallIcon 原始小图标
      * @param sizePx 图标视图尺寸 (px) - 未知时为 0
+     * @param isUseMaterial3Style 是否使用 M3 风格，默认跟随设置
      * @return [Drawable] or null - 为 null 时交还系统处理
      */
-    private fun compatSmallIconDrawable(context: Context, nf: StatusBarNotification, smallIcon: Drawable, sizePx: Int): Drawable? {
+    private fun compatSmallIconDrawable(
+        context: Context,
+        nf: StatusBarNotification,
+        smallIcon: Drawable,
+        sizePx: Int,
+        isUseMaterial3Style: Boolean = ConfigData.isEnableMd3NotifyIconStyle
+    ): Drawable? {
         if (isMediaNotification(context, nf.notification, context.packageName)) return null
         return compatAppIconDrawable(
             context, nf.packageName, smallIcon, sizePx, nf.notification.color,
-            fallbackToAppIcon = nf.isOplusPush || nf.isLauncherSmallIcon(context)
+            fallbackToAppIcon = nf.isOplusPush || nf.isLauncherSmallIcon(context),
+            isUseMaterial3Style = isUseMaterial3Style
         )
     }
 
@@ -1476,6 +1493,8 @@ object SystemUIHooker : YukiBaseHooker() {
      * @return [Boolean]
      */
     private fun isHeaderBadgeComposite(headerWrapperExImp: Any?) = safeOfFalse {
+        if (NotificationConversationTemplateViewWrapperClass?.isInstance(headerIconOfEx(headerWrapperExImp).first) == true)
+            return@safeOfFalse false
         val hasAvatar = headerWrapperExImp?.let { headerRightIconField?.copy()?.of(it)?.getQuietly<ImageView>() }?.drawable != null
         val packageName = statusBarNotificationOf(headerIconOfEx(headerWrapperExImp).first)?.packageName
         if (hasAvatar.not() || packageName == null) return@safeOfFalse false
@@ -1503,6 +1522,25 @@ object SystemUIHooker : YukiBaseHooker() {
      */
     private fun headerIconOf(headerWrapperExImp: Any?) = headerIconOfEx(headerWrapperExImp).second
 
+    private fun compatConversationIcon(wrapper: Any) = runInSafe {
+        val iconView = notificationWrapperIconField?.copy()?.of(wrapper)?.get<ImageView>() ?: return@runInSafe
+        val nf = statusBarNotificationOf(wrapper) ?: return@runInSafe
+        val context = iconView.context
+        val smallIcon = nf.notification.smallIcon?.loadDrawable(context) ?: return@runInSafe
+        val drawable = compatSmallIconDrawable(context, nf, smallIcon, sizePx = 0, isUseMaterial3Style = true) ?: smallIcon
+        iconView.apply {
+            moduleStyledIcons[this] = true
+            clipToOutline = false
+            background = null
+            setPadding(0)
+            colorFilter = null
+            imageTintList = null
+            setImageDrawable(drawable)
+        }
+        // 原生底板是独立的 ImageView，保留 Drawable 供重要会话动画使用，只停用其绘制
+        conversationBadgeBackgroundField?.copy()?.of(wrapper)?.get<ImageView>()?.imageAlpha = 0
+    }
+
     /**
      * 对通知头部图标应用本模块样式
      * @param headerWrapperExImp [OplusNotificationHeaderViewWrapperExImpClass] 实例
@@ -1510,6 +1548,10 @@ object SystemUIHooker : YukiBaseHooker() {
     private fun styleHeaderIcon(headerWrapperExImp: Any?) = runInSafe {
         val (base, iconView) = headerIconOfEx(headerWrapperExImp)
         if (base == null || iconView == null) return@runInSafe
+        if (NotificationConversationTemplateViewWrapperClass?.isInstance(base) == true) {
+            compatConversationIcon(base)
+            return@runInSafe
+        }
         if (isHeaderBadgeComposite(headerWrapperExImp)) {
             moduleStyledIcons[iconView] = false
             return@runInSafe
@@ -2289,6 +2331,10 @@ object SystemUIHooker : YukiBaseHooker() {
     }
 
     private fun installNotificationBindings() {
+        NotificationConversationTemplateViewWrapperClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
+            name = "onContentUpdated"
+            parameterCount = 1
+        }?.hook { after { compatConversationIcon(instance) } }
         // 阻止颜色覆盖
         OplusNotificationGroupExtImplClass?.resolve()?.optional(silent = true)?.firstMethodOrNull {
             name = "updateExpandIconColorFilter"
@@ -2333,33 +2379,7 @@ object SystemUIHooker : YukiBaseHooker() {
             firstMethodOrNull {
                 name = "proxyOnContentUpdated"
                 parameterCount = 1
-            }?.hook()?.after {
-                headerIconOf(instance)?.apply {
-                    // 系统会合成头像与应用图标角标，此处不覆盖
-                    if (isHeaderBadgeComposite(instance)) {
-                        moduleStyledIcons[this] = false
-                        return@apply
-                    }
-                    notificationRowEntryMethod?.copy()
-                        ?.of(firstArg().get())?.invokeQuietly()?.let {
-                            notificationEntrySbnMethod?.copy()?.of(it)?.invoke<StatusBarNotification>()
-                        }.also { nf ->
-                            nf?.notification?.also {
-                                it.smallIcon.loadDrawable(context)?.also { iconDrawable ->
-                                    compatNotifyIcon(
-                                        context = context,
-                                        nf = nf,
-                                        isGrayscaleIcon = isGrayscaleIcon(context, iconDrawable),
-                                        packageName = context.packageName,
-                                        drawable = iconDrawable,
-                                        iconColor = it.color,
-                                        iconView = this
-                                    )
-                                }
-                            }
-                        }
-                }
-            }
+            }?.hook()?.after { styleHeaderIcon(instance) }
             firstMethodOrNull {
                 name = "updateIconColor"
                 emptyParameters()
