@@ -23,11 +23,8 @@
 package com.fankes.coloros.notify.hook
 
 import com.fankes.coloros.notify.const.PackageName
-import com.fankes.coloros.notify.hook.entity.McsHooker
-import com.fankes.coloros.notify.hook.entity.SystemUIHooker
 import com.highcapable.yukihookapi.annotation.xposed.YukiHookLibXposedEntry
 import com.highcapable.yukihookapi.hook.xposed.YukiHookXposedModule
-import com.highcapable.yukihookapi.hook.xposed.reload.lifecycle.registerModuleLifecycle
 
 @YukiHookLibXposedEntry(
     targetApiVersion = 102,
@@ -35,15 +32,4 @@ import com.highcapable.yukihookapi.hook.xposed.reload.lifecycle.registerModuleLi
     staticScope = true,
     hotReload = YukiHookLibXposedEntry.HotReload.AUTO
 )
-object ModernHookEntry : YukiHookXposedModule by HookEntry {
-
-    override fun onInit() {
-        HookEntry.onInit()
-        registerModuleLifecycle {
-            onDispose {
-                SystemUIHooker.release()
-                McsHooker.release()
-            }
-        }
-    }
-}
+object ModernHookEntry : YukiHookXposedModule by HookEntry
